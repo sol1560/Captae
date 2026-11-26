@@ -125,15 +125,16 @@ try {
     Invoke-WebRequest -UseBasicParsing -Uri "$YtdlpBase/SHA2-256SUMS.sig" -OutFile "$sums.sig"
     $gpg = Find-Gpg
     if (-not $gpg) { throw '没有 gpg（装 Git for Windows 就有），验不了 yt-dlp 的签名' }
-    $home_ = Join-Path $Tmp 'gnupg'
-    New-Item -ItemType Directory -Force -Path $home_ | Out-Null
-    # Git 带的 gpg 是 MSYS2 编的，参数里的 Windows 路径用正斜杠更稳
-    $h = $home_.Replace('\', '/')
-    $key = (Join-Path $Root 'crates\captae-core\assets\yt-dlp-public.key').Replace('\', '/')
-    $sumsU = $sums.Replace('\', '/')
-    $null = Capture $gpg @('--homedir', $h, '--batch', '--quiet', '--import', $key)
-    $v = Capture $gpg @('--homedir', $h, '--batch', '--verify', "$sumsU.sig", $sumsU)
-    if ($LASTEXITCODE -ne 0) { throw "SHA2-256SUMS 的签名验证没有通过：$($v -join ' ')" }
+    New-Item -ItemType Directory -Force -Path (Join-Path $Tmp 'gnupg') | Out-Null
+    Copy-Item -LiteralPath (Join-Path $Root 'crates\captae-core\assets\yt-dlp-public.key') -Destination (Join-Path $Tmp 'yt-dlp-public.key')
+    # 在临时目录里只传相对路径：Git 带的 gpg 是 MSYS2 编的，有的机器上（GitHub 的 Windows 机器）会把 D:/… 当成相对路径拼到当前目录后面
+    Push-Location -LiteralPath $Tmp
+    try {
+      $null = Capture $gpg @('--homedir', 'gnupg', '--batch', '--quiet', '--import', 'yt-dlp-public.key')
+      $v = Capture $gpg @('--homedir', 'gnupg', '--batch', '--verify', 'SHA2-256SUMS.sig', 'SHA2-256SUMS')
+      $rc = $LASTEXITCODE
+    } finally { Pop-Location }
+    if ($rc -ne 0) { throw "SHA2-256SUMS 的签名验证没有通过：$($v -join ' ')" }
     Write-Host '  SHA2-256SUMS 签名验证通过（yt-dlp 官方公钥）'
     $want = (Get-Content -LiteralPath $sums | Where-Object { $_ -match "^([0-9a-f]{64})\s+\*?$([regex]::Escape($YtdlpAsset))$" } | ForEach-Object { $Matches[1] } | Select-Object -First 1)
     if (-not $want) { throw "SHA2-256SUMS 里没有 $YtdlpAsset" }
