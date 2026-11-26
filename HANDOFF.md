@@ -70,7 +70,7 @@ macOS、Windows、Linux 上的开源下载器（AGPL-3.0-or-later），四块共
   Windows 上 Chrome / Edge 的登录状态读不了（app-bound 加密，设置里写明，可选 Firefox）；Flatpak / Snap 版浏览器的插件要用户放宽沙盒；
   YouTube、B 站在 Devin 的机器上被人机验证和地区限制拦，没在 Windows / Linux 上真的下过；ARM 版没有安装包。
 - 主目录新加的 `crates/captae-core/src/engine/remux.rs` 有三个测试把结果和本机 ffmpeg 精确比对（起点差 0.2 毫秒也算不过）：
-  Mac 上的 ffmpeg 8.0 能过，Linux 容器里的 ffmpeg 4.4、9.0 各有不过的，要改成允许一点误差（不是 Windows / Linux 这次的改动）。
+  Mac 上的 ffmpeg 8.0 能过，Linux 容器里的 ffmpeg 4.4、9.0 和 GitHub 的 macOS 机器上各有不过的；2026-11-26 `ts_h264_aac` 改成起点允许差 2 毫秒（CI 上差 0.22 毫秒），另外两个照旧，在别的 ffmpeg 版本上不过时照这样改。
 
 ## 目录
 

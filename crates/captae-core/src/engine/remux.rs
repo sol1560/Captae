@@ -1664,7 +1664,12 @@ mod tests {
         // 和 ffmpeg `-c copy -bsf:a aac_adtstoasc` 封装出来的对照：每一路的帧数、起点一样（音画对得齐）
         let reference = d.path().join("ref.mp4");
         assert!(ffmpeg(&["-i", ts.to_str().unwrap(), "-c", "copy", "-bsf:a", "aac_adtstoasc", reference.to_str().unwrap()]));
-        assert_eq!(streams(&out), streams(&reference));
+        // 起点允许差 2 毫秒：edit list 按毫秒记，不同版本的 ffmpeg 写出来的起点有零点几毫秒的出入（比如 0.023000 和 0.023222）
+        let (a, b) = (starts(&out), starts(&reference));
+        assert_eq!(a.iter().map(|x| (&x.0, &x.1)).collect::<Vec<_>>(), b.iter().map(|x| (&x.0, &x.1)).collect::<Vec<_>>());
+        for (x, y) in a.iter().zip(&b) {
+            assert!((x.2 - y.2).abs() < 0.002, "{} 的起点 {} 和 ffmpeg 的 {} 差太多（{a:?} / {b:?}）", x.0, x.2, y.2);
+        }
     }
 
     /// 每一路的 (编码, 帧数, 起点秒数)
