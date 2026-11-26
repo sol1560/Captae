@@ -211,6 +211,10 @@ scripts/render-dmg-background.sh              # 改了安装包窗口的背景�
 - 三个平台一起发：macOS 本机打包、签名、公证；Windows、Linux 用 `release-winlinux.yml` 在 GitHub 的机器上打，检查脚本过了才挂到 Release，安装包不签名（README 写明）。
 - 翻译先发 AI 翻的版本，README 写明欢迎纠正。
 - 用真账号在登录窗口里登录 YouTube、B 站、X 只能维护者自己做，还没做（见上面「给真人测试版之前要请人做的」）。
+- 2026-11-27 发布了 v0.2.0：https://github.com/sol1560/Captae/releases/tag/v0.2.0 （dmg、Windows 安装程序、deb、AppImage、4 个 GPL 源码包、SHA256SUMS.txt）。
+  三个平台的检查脚本都通过（Windows 两条提醒是没签名）；CI 通过。
+- 以后在本地分支 `public-main` 上开发（跟踪公开仓库的 `main`）。旧历史在本地 `round3` 等分支和远端 `archive`（`Captae-archive`），不要推到公开仓库。
+- 发新版：改四处版本号 → macOS 用 `scripts/build-release.sh` → 推标签、建草稿 Release 传 dmg 和源码包 → 手动运行 `release-winlinux.yml`（填标签、勾上传）→ 补 `SHA256SUMS.txt` → 发布。
 
 ## 许可证和商业模式（已定）
 
