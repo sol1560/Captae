@@ -1,0 +1,391 @@
+/* 工具栏面板（界面规范见 docs/design/README.md）。
+ * 颜色、字体、圆角、投影都用 theme.css 的变量；这里只写面板自己的版式。
+ * 面板是浏览器画的窗口、不透明（第二版：玻璃只给浮在内容上的东西）；打开不加动画（配方 l4）。 */
+
+html,
+body {
+  height: auto;
+  background: var(--main);
+}
+body {
+  width: 372px;
+  margin: 0;
+  overflow-x: hidden;
+}
+.xp {
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+}
+
+/* 顶上：logo + Captae + 连接状态 + 设置 */
+.xp-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 46px;
+  padding: 0 10px 0 14px;
+  font: 700 15px/1 var(--font);
+  letter-spacing: -0.02em;
+}
+.xp-head .st {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font: 400 12px/1 var(--font);
+  letter-spacing: 0;
+  color: var(--ink-3);
+}
+.xp-head .cp-live {
+  margin: 0;
+}
+/* 没开、没装、连不上：小圆点用状态色（和工具栏图标上的橙点一样） */
+.xp .cp-live[data-tone="warn"] {
+  background: var(--warn);
+}
+.xp-head .ui-icon-button {
+  margin-left: 2px;
+}
+
+/* 这个网页 */
+.xp-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--sh-card);
+}
+.xp-page strong {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.xp-page span {
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.xp-hello {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 10px 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--sh-card);
+  font-size: 12.5px;
+}
+.xp-hello svg {
+  color: var(--ok);
+}
+
+.xp-seg {
+  padding: 12px 10px 6px;
+}
+
+/* 一条条：照桌面端列表行的感觉。悬停底色即时，不过渡（高频，配方 1.10） */
+.xp-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* 露出半行，让人知道下面还有 */
+  max-height: 258px;
+  margin: 0;
+  padding: 0 6px;
+  overflow-y: auto;
+  list-style: none;
+  overscroll-behavior: contain;
+}
+.xp-seg + .xp-rows {
+  margin-top: 0;
+}
+.xp-page + .xp-rows {
+  margin-top: 8px;
+}
+.xp-row {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 6px;
+  border-radius: 10px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .xp-row:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+}
+.xp-th {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 34px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--well);
+  color: var(--ink-4);
+}
+.xp-th img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+}
+.xp-th img[data-ok] {
+  opacity: 1;
+}
+.xp-th img[data-ok="fade"] {
+  animation: xp-in 150ms ease;
+}
+@keyframes xp-in {
+  from {
+    opacity: 0;
+  }
+}
+.xp-row .body {
+  min-width: 0;
+}
+.xp-row strong {
+  display: block;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 560;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.xp-row .m {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 1px;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.xp-row .m > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.xp-row .ok {
+  color: var(--ok);
+}
+.xp-row .bad {
+  color: var(--err);
+  white-space: normal;
+  line-height: 1.35;
+}
+.xp-row .act {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+/* 录直播的那一行：两个按钮放到第二行（面板窄，和名字、「已录 12:34」挤在一行会被截断）；红点静止，同桌面端 .cp-rec-dot */
+.xp-row[data-v="rec"] {
+  grid-template-columns: 60px minmax(0, 1fr);
+  align-items: start;
+  /* 这一行比别的行高：列表放不下时别的行会被压到 46px（max-height 258 露出半行就是按这个算的），这一行不跟着压，
+     不然问「取消这次录制？」时按钮折到第二行（英文等）会叠到下一行上 */
+  flex: none;
+}
+.xp-row[data-v="rec"] .xp-th {
+  margin-top: 2px;
+}
+/* 按钮那一行占满整行（靠右，左边是缩略图下面的空白）：问「取消这次录制？」时有三个按钮，英文等译文长的语言放得下；
+   还放不下（德文）就折到下一行，不把按钮挤扁、不截断字。中文和原来一样在一行里、位置不变 */
+.xp-row[data-v="rec"] .act {
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+/* 「已录 12:34」和这一行别的字同一个颜色、字号（同桌面端 .cp-rec .grow .cp-elapsed） */
+.xp-row[data-v="rec"] .m .cp-elapsed {
+  color: inherit;
+  font-size: inherit;
+}
+.xp-row[data-v="rec"] .m .cp-rec-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin: 0 5px 1px 1px;
+  vertical-align: middle;
+}
+/* 「发给 AI」平时不占眼睛：鼠标移到这一行或键盘聚焦时出现（150ms 淡入） */
+.xp-ai {
+  opacity: 0;
+  transition: opacity var(--t-hover) ease;
+}
+.xp-row:hover .xp-ai,
+.xp-row:focus-within .xp-ai {
+  opacity: 1;
+}
+@media (hover: none) {
+  .xp-ai {
+    opacity: 1;
+  }
+}
+
+/* 清晰度：一个小灰块，点开是 affectUI 的下拉菜单 */
+.xp-q {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  height: 20px;
+  padding: 0 4px 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--ink-2);
+  font-size: 11.5px;
+  transition: background-color var(--t-hover) ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .xp-q:hover {
+    background: rgba(0, 0, 0, 0.1);
+  }
+}
+.xp-q:focus-visible,
+.xp-ring:focus-visible,
+.xp-link:focus-visible {
+  outline: 2px solid var(--aui-focus);
+  outline-offset: 2px;
+}
+
+/* 下载中：进度环，点一下停止；悬停时环里出现一个小方块（停止的样子） */
+.xp-ring {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  transition:
+    background-color var(--t-hover) ease,
+    transform var(--t-press) var(--ease-out-quad);
+}
+.xp-ring:active {
+  transform: scale(0.95);
+}
+@media (hover: hover) and (pointer: fine) {
+  .xp-ring:hover {
+    background: var(--hover);
+  }
+}
+.xp-ringsvg .sq {
+  opacity: 0;
+  transition: opacity var(--t-hover) ease;
+}
+.xp-ring:hover .sq,
+.xp-ring:focus-visible .sq {
+  opacity: 1;
+}
+.xp-ring:hover .cp-pulse,
+.xp-ring:focus-visible .cp-pulse {
+  opacity: 0;
+  animation: none;
+}
+
+/* 全部下载：近黑胶囊，占满一行 */
+.xp-all {
+  padding: 10px 12px 4px;
+}
+.xp-all .ui-button {
+  width: 100%;
+}
+
+/* 两个开关：白卡片里的设置行（同桌面端设置的 .cp-group，底换成白） */
+.xp-opts {
+  margin: 8px 10px 0;
+  background: var(--card);
+  box-shadow: var(--sh-card);
+}
+
+/* 空的、没开、没装 */
+.xp-empty {
+  margin: 14px 10px 4px;
+}
+.xp-off {
+  padding: 6px 10px 2px;
+}
+.xp-off > .ui-est,
+.xp-off.ui-est {
+  padding-top: 18px;
+}
+/* 空状态的图标位放的是 Captae 的标本身：去掉 affectUI 给图标垫的白色小卡片，不然是方块套方块 */
+.xp-off .ui-est__icon {
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.xp-off .ui-est__icon > svg {
+  width: 36px;
+  height: 36px;
+}
+.xp-steps {
+  margin: 8px 2px 0;
+  padding: 10px 12px 10px 30px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--sh-card);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.xp-steps li + li {
+  margin-top: 4px;
+}
+
+/* 底部 */
+.xp-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 14px 2px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.xp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 560;
+}
+@media (hover: hover) and (pointer: fine) {
+  .xp-link:hover {
+    color: var(--accent-ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xp-ring:active {
+    transform: none;
+  }
+  .xp-th img[data-ok="fade"] {
+    animation: none;
+  }
+}

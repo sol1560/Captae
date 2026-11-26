@@ -1,0 +1,74 @@
+/* 安装包窗口的背景（见 main.tsx）。尺寸、位置来自 src-tauri/dmg/layout.json，经 CSS 变量传进来：
+ * --w / --h 窗口内容区，--bleed 标题栏那截（截图最下面多出的底色），--icon-y 两个图标中心的高度，--arrow-x 两个图标中间，
+ * --dock-x / -y / -w / -h 玻璃那块（两个图标在它上面）。
+ * 一条胶片横穿窗口、从玻璃后面经过（玻璃外面清楚、里面糊开），标题在玻璃上方的浅底上。 */
+html,
+body {
+  height: auto;
+  overflow: hidden;
+  background: var(--main);
+}
+.dmg {
+  position: relative;
+  width: var(--w);
+  height: calc(var(--h) + var(--bleed));
+  overflow: hidden;
+  background: var(--main);
+}
+
+.dmg-head {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 34px;
+  text-align: center;
+}
+.dmg-head h1 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.dmg-head p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+/* 胶片：五格 16:9 的剧照，和图标中心一样高，以窗口中线居中、两头伸出窗口；两头那两格的里边压在玻璃下面一点 */
+.dmg-strip {
+  position: absolute;
+  left: 50%;
+  top: var(--icon-y);
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 10px;
+}
+.dmg-strip img {
+  display: block;
+  width: 148px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* 玻璃：和界面里浮在内容上的东西同一套（白 68% + 模糊 24px、饱和 1.8 + 亮边 + 阴影），圆角大一些，像程序坞 */
+.dmg-dock {
+  position: absolute;
+  left: var(--dock-x);
+  top: var(--dock-y);
+  width: var(--dock-w);
+  height: var(--dock-h);
+  border-radius: 30px;
+}
+
+/* 箭头：两个图标正中间，和图标中心一样高 */
+.dmg-arrow {
+  position: absolute;
+  left: var(--arrow-x);
+  top: var(--icon-y);
+  transform: translate(-50%, -50%);
+  color: var(--ink-2);
+  display: grid;
+}

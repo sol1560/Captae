@@ -1,0 +1,9 @@
+{
+  "window": { "x": 200, "y": 160, "width": 680, "height": 400 },
+  "titleBar": 32,
+  "iconSize": 128,
+  "textSize": 13,
+  "app": { "x": 205, "y": 222 },
+  "applications": { "x": 475, "y": 222 },
+  "dock": { "x": 90, "y": 122, "width": 500, "height": 222 }
+}

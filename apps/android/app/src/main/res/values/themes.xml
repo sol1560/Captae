@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- 不用 Material 主题的部件：系统主题只管窗口底色（主区 #F7F7F7，启动时不闪白）和没有标题栏 -->
+  <style name="Theme.Captae" parent="android:Theme.Material.Light.NoActionBar">
+    <item name="android:windowBackground">@color/main</item>
+    <item name="android:statusBarColor">@android:color/transparent</item>
+    <item name="android:navigationBarColor">@android:color/transparent</item>
+  </style>
+</resources>

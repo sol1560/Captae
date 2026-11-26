@@ -1,0 +1,34 @@
+{
+  "bundle": {
+    "externalBin": [
+      "binaries/captae",
+      "binaries/ffmpeg",
+      "binaries/ffprobe",
+      "binaries/aria2c",
+      "binaries/deno"
+    ],
+    "resources": {
+      "binaries/windows/yt-dlp/": "yt-dlp/",
+      "../../../extension/": "extension/",
+      "../../../licenses/": "licenses/",
+      "../../../LICENSE": "LICENSE",
+      "../../../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md"
+    },
+    "publisher": "Captae contributors",
+    "homepage": "https://github.com/sol1560/Captae",
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["English", "SimpChinese"],
+        "displayLanguageSelector": false,
+        "installerIcon": "icons/icon.ico",
+        "startMenuFolder": "Captae",
+        "installerHooks": "windows/installer-hooks.nsh"
+      }
+    }
+  }
+}

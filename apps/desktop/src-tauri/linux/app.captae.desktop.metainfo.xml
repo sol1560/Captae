@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream 元数据：软件中心（GNOME 软件、KDE Discover）显示的名字、简介和许可证。
+     deb 和 AppImage 都装到 /usr/share/metainfo/（tauri.release.linux.conf.json 的 files）。
+     launchable 是 Tauri 生成的 .desktop 文件名（productName + .desktop）。
+     scripts/check-bundle-linux.sh 用 appstreamcli validate 检查。 -->
+<component type="desktop-application">
+  <id>app.captae.desktop</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Captae</name>
+  <summary>Download and organize video and audio on your own computer</summary>
+  <summary xml:lang="zh-CN">在自己的电脑上下载和整理视频、音频</summary>
+  <description>
+    <p>
+      Paste a link, or click Download next to a video in your browser: Captae picks the quality, downloads it and files it
+      into a local library you can search by title, tag and subtitle text. AI assistants can use it through MCP.
+      Everything stays on your own computer.
+    </p>
+    <p xml:lang="zh-CN">
+      粘贴一个链接，或者在浏览器里点视频旁边的「下载」，Captae 挑好清晰度、下载、存进能搜字幕的素材库；
+      AI 助手也能通过 MCP 让它下载、找素材、转文字。所有文件和登录状态都只在你自己的电脑上。
+    </p>
+  </description>
+  <launchable type="desktop-id">Captae.desktop</launchable>
+  <icon type="stock">captae-desktop</icon>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+  </categories>
+  <url type="homepage">https://github.com/sol1560/Captae</url>
+  <url type="bugtracker">https://github.com/sol1560/Captae/issues</url>
+  <developer id="app.captae">
+    <name>Captae contributors</name>
+  </developer>
+  <content_rating type="oars-1.1"/>
+  <provides>
+    <binary>captae-desktop</binary>
+  </provides>
+  <releases>
+    <release version="0.2.0" date="2026-11-24"/>
+  </releases>
+</component>

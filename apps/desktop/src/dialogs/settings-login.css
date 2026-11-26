@@ -1,0 +1,39 @@
+/* 设置弹窗（Settings.tsx）补充的样式。
+   已登录的网站：「登录其他网站」那一行和输入框、「也读取浏览器里的登录状态」那一组（LoginSites）。
+   其余沿用 theme.css 的 .cp-group / .cp-set-row / .cp-site。展开收起用 parts 的 Collapse（配方 e：270ms / 200ms）。 */
+.cp-site-more {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0;
+}
+.cp-site-more .ui-button {
+  color: var(--ink-2);
+}
+.cp-site-other {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+  padding: 10px 0 12px;
+}
+/* 两个灰块之间留一点距离（不是新的一节，不加小标题） */
+.cp-group.cp-group-next {
+  margin-top: 10px;
+}
+
+/* 代理的下拉框：拉丁字母的语言里译文长（英文「Use system settings」要约 170px，西班牙文「Usar ajustes del sistema」要约 190px），放宽；
+   中文、韩文照 theme.css 的 150px，日文见文件末尾 */
+html:not(:lang(zh)):not(:lang(ja)):not(:lang(ko)) .cp-set-select.wide {
+  width: 192px;
+}
+
+/* 德文、西班牙文、法文的选项长（「Am schnellsten」「El más rápido」「3 gleichzeitig」要 80–91px，108px 的框只放得下 66px）：
+   普通的下拉框放宽到 136px。日文「システム設定に従う」要约 116px，代理的放宽到 160px */
+html:lang(de) .cp-set-select:not(.wide):not(.lang),
+html:lang(es) .cp-set-select:not(.wide):not(.lang),
+html:lang(fr) .cp-set-select:not(.wide):not(.lang) {
+  width: 136px;
+}
+html:lang(ja) .cp-set-select.wide {
+  width: 160px;
+}

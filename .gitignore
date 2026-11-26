@@ -1,0 +1,42 @@
+target/
+# Windows / Linux 并行开发时各子任务自己的编译目录（CARGO_TARGET_DIR=target-A、target-B……）
+/target-*/
+keys/
+apps/desktop/src-tauri/binaries/
+.DS_Store
+node_modules/
+apps/desktop/dist/
+apps/desktop/dist-mock/
+# 插件工具栏面板的演示构建（vite.popup.config.ts --mode mock）
+apps/desktop/dist-popup-mock/
+# 安装包窗口背景图的源码页（vite.dmg.config.ts，scripts/render-dmg-background.sh 截图用）
+apps/desktop/dist-dmg/
+# 官网落地页的构建产物（vite.site.config.ts，源码在 apps/desktop/src/site/）
+apps/desktop/dist-site/
+
+# 维护者本机的计划、实测记录和测试脚本（原来只靠本机的 .git/info/exclude 挡住）
+/work/
+# 安全扫描的结果
+/CLAUDE-SECURITY-*/
+# 私钥和密钥：插件 ID 的私钥（keys/extension-key.pem，打 .crx 包时才用）、证书、环境变量文件
+# 注意别加 *.key：crates/captae-core/assets/yt-dlp-public.key 是要进仓库的 yt-dlp 官方公钥
+*.pem
+*.p12
+*.p8
+*.crx
+.env
+.env.*
+# Claude Code 的本机设置
+.claude/settings.local.json
+apps/ios/*.xcodeproj/
+# Android 工程：本机 SDK 路径和编译产物
+apps/android/local.properties
+apps/android/.gradle/
+apps/android/**/build/
+apps/android/.kotlin/
+
+# build.rs 每次编译按词表生成的 InfoPlist.strings（M2，本地网络权限说明的各语言版本）
+apps/desktop/src-tauri/gen/infoplist/
+
+# Python 运行时生成的缓存
+__pycache__/

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 玻璃部件里给人看的字（读屏标签、默认按钮）。中文是默认语言；以后加多语言在 values-xx/ 里各放一份 -->
+<resources>
+  <string name="glass_back">返回</string>
+  <string name="glass_close">关闭</string>
+  <string name="glass_cancel">取消</string>
+  <string name="glass_done">完成</string>
+  <string name="glass_ok">好</string>
+  <string name="glass_resize">调整大小</string>
+  <!-- 标签栏角标的读屏：「下载，3 条未读」 -->
+  <string name="glass_tab_badge">%1$s，%2$d 条未读</string>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 玻璃组件里的读屏和按钮文字（英文） -->
+<resources>
+  <string name="glass_back">Back</string>
+  <string name="glass_close">Close</string>
+  <string name="glass_cancel">Cancel</string>
+  <string name="glass_done">Done</string>
+  <string name="glass_ok">OK</string>
+  <string name="glass_resize">Resize</string>
+  <string name="glass_tab_badge">%1$s, %2$d unread</string>
+</resources>

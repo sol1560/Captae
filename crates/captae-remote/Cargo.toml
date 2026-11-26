@@ -1,0 +1,70 @@
+[package]
+name = "captae-remote"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Captae remote control: the desktop app's local network service (pairing, allow-listed API, event push) and the Rust client used by the phone apps"
+publish = false
+
+[features]
+default = ["server", "client"]
+# 桌面端：局域网 HTTPS 服务、自签证书、配对、Bonjour 广播（交给系统的 mDNSResponder，不用 mdns-sd，见 server/bonjour.rs）。依赖 captae-core（不开它的 desktop 特性，桌面端自己会开）
+server = [
+  "dep:captae-core",
+  "dep:axum",
+  "dep:tokio-rustls",
+  "dep:rustls",
+  "dep:rcgen",
+  "dep:if-addrs",
+  "dep:tokio-util",
+]
+# 手机端（crates/captae-mobile 用）：按指纹钉死证书连接、调接口、订阅事件、断线重连。不依赖 captae-core
+client = ["dep:reqwest", "dep:tokio-rustls", "dep:rustls", "dep:tokio-tungstenite", "dep:futures-util"]
+# 用 Rust 做 Bonjour 发现（mdns-sd 自己收发组播）。iOS 上要 Apple 特批的组播权限，所以 iOS 不开它，改用系统的 NWBrowser；
+# Android、电脑上的测试可以开。见 CLIENT.md
+discover = ["client", "dep:mdns-sd"]
+
+[dependencies]
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+sha2 = "0.10"
+hex = "0.4"
+base64 = "0.22"
+rand = "0.9"
+url = "2"
+# 6 位数配对：SPAKE2（RustCrypto，MIT OR Apache-2.0；依赖 curve25519-dalek，BSD-3-Clause），确认消息用 HMAC-SHA256（MIT OR Apache-2.0）
+spake2 = "0.4"
+hmac = "0.12"
+
+# ---- server ----
+captae-core = { path = "../captae-core", default-features = false, optional = true }
+# MIT
+axum = { version = "0.8", default-features = false, features = ["ws", "json", "query", "tokio", "http1"], optional = true }
+# TLS：rustls（Apache-2.0 OR ISC OR MIT），只用 ring 这一套算法（和 reqwest 同一套），不碰 aws-lc
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"], optional = true }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12", "logging"], optional = true }
+# 自签证书（MIT OR Apache-2.0）
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "ring"], optional = true }
+# Bonjour 发现（Apache-2.0 OR MIT），只有手机端的 discover 特性用；电脑端的广播交给系统
+mdns-sd = { version = "0.22", optional = true }
+# 列出本机的局域网地址，写进二维码（MIT OR BSD-3-Clause）
+if-addrs = { version = "0.15", optional = true }
+tokio-util = { version = "0.7", features = ["io"], optional = true }
+futures-util = { version = "0.3", optional = true }
+
+# ---- client ----
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"], optional = true }
+# WebSocket（MIT）。TLS 自己接好再交给它（client_async），它不用带 TLS 特性
+tokio-tungstenite = { version = "0.29", default-features = false, features = ["handshake"], optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { workspace = true }
+
+[[example]]
+name = "remote-e2e"
+path = "examples/remote_e2e.rs"
+required-features = ["server", "client"]

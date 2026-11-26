@@ -1,0 +1,140 @@
+/* 设置 › 手机（SettingsPhones.tsx）。行、灰块沿用 theme.css 的 .cp-group / .cp-set-row / .cp-site；
+   二维码放在白卡上（--card，圆角 --r-md），旁边是说明、6 位数和倒计时。动效的取值写在 SettingsPhones.tsx 开头。 */
+
+.cp-pair {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  min-height: 148px;
+  padding: 14px 0 16px;
+}
+.cp-pair-msg {
+  display: block;
+  min-height: 0;
+  font-size: 12.5px;
+  color: var(--err);
+}
+
+/* 二维码：白底四周留出静区（扫码要求至少 4 个模块宽，这里 12px ≈ 4.5 个模块） */
+.cp-qr {
+  box-sizing: border-box;
+  width: 148px;
+  height: 148px;
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: #fff;
+  box-shadow: var(--sh-card);
+  color: #000;
+}
+.cp-qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* 换了新码：原地淡入 + 3px 模糊，200ms（课程 150–250ms 区间；和封面读到时同一种做法，只动透明度和小模糊） */
+.cp-qr[data-fresh] svg {
+  animation: cp-qr-in 200ms var(--ease-out-quint) both;
+}
+@keyframes cp-qr-in {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-qr[data-fresh] svg {
+    animation-name: cp-qr-fade;
+  }
+  @keyframes cp-qr-fade {
+    from {
+      opacity: 0;
+    }
+  }
+}
+
+.cp-pair-side {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.cp-pair-side > b {
+  font-size: 13.5px;
+  font-weight: 520;
+}
+.cp-pair-side > small {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cp-pair-code {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+}
+.cp-pair-code .lbl {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cp-pair-code .digits {
+  display: flex;
+  gap: 10px;
+  font-size: 24px;
+  font-weight: 560;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  user-select: all;
+}
+.cp-pair-code .void {
+  font-size: 12.5px;
+  color: var(--warn);
+}
+.cp-pair-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: 8px;
+}
+.cp-pair-foot .cp-countdown {
+  margin-top: 0;
+  font-variant-numeric: tabular-nums;
+}
+.cp-pair-foot .ui-button {
+  color: var(--ink-2);
+}
+
+/* 开关下面那行防火墙的说明：和开关的说明同一种小字，接在它下面 */
+.cp-phone-fw {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--ink-3);
+}
+
+/* 开关打开出错（端口被占……）：说明那一行换成提醒色 */
+.cp-phone-err {
+  color: var(--err);
+}
+
+/* 已配对的手机：图标块和「已登录的网站」的站点图标同一个样子 */
+.cp-phone .who .ico {
+  display: grid;
+  place-items: center;
+  color: var(--ink-2);
+}
+
+/* 窄的弹窗：二维码放上面 */
+@media (max-width: 560px) {
+  .cp-pair {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+  }
+}

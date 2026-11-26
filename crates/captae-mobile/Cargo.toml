@@ -1,0 +1,55 @@
+[package]
+name = "captae-mobile"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "UniFFI bindings for the Captae phone apps (iOS / Android): a Swift / Kotlin API for jobs, probing, the library, settings and events, reusing captae-core's queue and downloads"
+publish = false
+
+[lib]
+# staticlib：iOS 的 xcframework；cdylib：Android 的 .so；lib：examples/smoke.rs 和 Rust 里直接用
+crate-type = ["staticlib", "cdylib", "lib"]
+name = "captae_mobile"
+
+[features]
+# 生成 Swift / Kotlin 绑定的命令行（只在电脑上跑，不编进手机的库）
+bindgen = ["uniffi/cli"]
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+required-features = ["bindgen"]
+
+[dependencies]
+# 不开 desktop：不要本机控制接口、插件宿主、MCP、剪贴板。外部程序按平台找（tools::Runner），
+# 没有 aria2c 时直链走 engine/direct.rs，没有 ffmpeg 时 M3U8 走 engine/remux.rs
+captae-core = { path = "../captae-core", default-features = false }
+# UniFFI（MPL-2.0），proc-macro 写法。钉死版本：生成的绑定和库里的脚手架必须是同一个版本
+uniffi = "=0.32.2"
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tokio-util = "0.7"
+tracing.workspace = true
+# 上架版读网页：找网页里直接写着的媒体地址（page.rs）
+regex = "1"
+url = "2"
+# 遥控电脑（remote/）：只要客户端（按指纹钉死证书、配对、事件、断点续传），不要电脑端的服务；Bonjour 发现交给 App（NWBrowser / NSD）
+captae-remote = { path = "../captae-remote", default-features = false, features = ["client"] }
+
+# Android：JNI 入口初始化系统证书校验（android.rs）。版本和 captae-core 用的同一个（0.7.1 用 jni 0.22）。
+# 0.7.1（Android 部分 0.2.0）修了 Android 上拿不到吊销信息就判「已吊销」：Let's Encrypt 2025 年停了 OCSP，原来连 Blender 都连不上
+[target.'cfg(target_os = "android")'.dependencies]
+jni = { version = "0.22", default-features = false }
+rustls-platform-verifier = "0.7.1"
+
+[dev-dependencies]
+tempfile = "3"
+# 测试里在本机起一个电脑端的服务（只听 127.0.0.1、不广播），让 remote/ 去连
+captae-remote = { path = "../captae-remote", default-features = false, features = ["client", "server"] }
+# 测试里核对「存到手机」续传后的 SHA-256（和 captae-remote 用的同一个版本）
+sha2 = "0.10"
+# examples/smoke.rs 发 HEAD 核对 Content-Length（和核心库同一套 rustls + webpki-roots）
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }

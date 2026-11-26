@@ -1,0 +1,29 @@
+[workspace]
+resolver = "2"
+members = ["crates/captae-core", "crates/captae-cli", "crates/captae-mobile", "crates/captae-remote", "apps/desktop/src-tauri"]
+
+[workspace.package]
+version = "0.2.0"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/sol1560/Captae"
+
+[workspace.dependencies]
+anyhow = "1"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# 手机端的库（scripts/mobile/build-rust-*.sh 用 --profile mobile 编）：要小。桌面端的 release 不受影响。
+# panic 照旧 unwind：UniFFI 要接住 panic 变成 Swift / Kotlin 的错误，不能整个 App 崩掉。
+# opt-level "z"：2026-11-24 实测比 "s" 小（iOS 链接后 9.7 MB 对 10.8 MB，Android arm64 9.1 MB 对 9.4 MB），
+# 封装 M3U8 的速度量不出差别（都是 400–650 MB/s，卡在读写文件上；下载本身卡在网速上）。见 work/mobile/M1.md
+[profile.mobile]
+inherits = "release"
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true

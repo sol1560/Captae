@@ -1,0 +1,31 @@
+Captae Android :glass（app.captae.glass）
+Captae 本身是 MIT 许可（见仓库根目录 LICENSE）。这个模块里有下面这些第三方代码和素材。
+
+一、来自 Kyant0/AndroidLiquidGlass（Apache License 2.0）
+    https://github.com/Kyant0/AndroidLiquidGlass
+    Copyright 2025 Kyant
+    下面的文件是它 catalog 示例代码的改写，经 medcxy-v7 apps/android/glass 转手搬来，文件头保留了原来的
+    Apache-2.0 许可声明和每一手的改动说明：
+      src/main/kotlin/app/captae/glass/core/InteractiveHighlight.kt   （catalog utils/InteractiveHighlight.kt）
+      src/main/kotlin/app/captae/glass/core/DampedDragAnimation.kt    （catalog utils/DampedDragAnimation.kt）
+      src/main/kotlin/app/captae/glass/core/DragGestureInspector.kt   （catalog utils/DragGestureInspector.kt）
+      src/main/kotlin/app/captae/glass/nav/GlassTabBar.kt             （catalog components/LiquidBottomTabs.kt、LiquidBottomTab.kt）
+    Apache License 2.0 全文：http://www.apache.org/licenses/LICENSE-2.0
+
+二、依赖库（Gradle 引入，不在仓库里）
+    io.github.kyant0:backdrop 2.0.1、io.github.kyant0:shapes 1.2.1（Kyant，Apache License 2.0）
+    Jetpack Compose、AndroidX、kotlinx.coroutines（Apache License 2.0）
+
+三、其余玻璃部件
+    core/Glass.kt、core/GlassStyle.kt、nav/GlassScaffold.kt、nav/GlassTabScaffold.kt、nav/ScrollEdgeEffect.kt、
+    overlay/*、controls/GlassButtons.kt 是 medcxy-v7 在 backdrop 上写的部件，经作者同意搬来改了包名、去掉了 medcxy 专用的部分
+    （玻璃表面色改成中性白，见 GlassStyle.kt 的注释）。ScrollEdgeEffect 的渐变遮罩模糊照 AndroidLiquidGlass catalog 的
+    ProgressiveBlurContent 写法。
+
+四、字体：Geist、Geist Mono（SIL Open Font License 1.1）
+    https://github.com/vercel/geist-font  v1.9.2 官方 release 的静态 TTF
+    src/main/res/font/geist_*.ttf、geist_mono_*.ttf；许可全文 src/main/assets/licenses/Geist-OFL.txt
+
+五、图标：Hugeicons Free（MIT）
+    @hugeicons/core-free-icons 4.4.0（和桌面端同一份），scripts/gen-icons.mts 生成 src/main/kotlin/app/captae/glass/icons/Symbols.kt；
+    许可全文 src/main/assets/licenses/Hugeicons-MIT.md

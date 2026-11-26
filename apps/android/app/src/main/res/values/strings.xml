@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ 给人看的字都在这里（中文是默认语言；以后加多语言在 values-xx/ 里各放一份）。说法照桌面端 apps/desktop/src/，和 iOS 一个说法对一个说法。
+ %1$s 这类名字占位：代码里用 str() / Str.fmt() 填，名字是英文、数字开头或结尾时自动在中文那边加空格（「登录 YouTube」「登录哔哩哔哩」），
+ 所以模板里名字两边不写空格；数字两边照桌面端写空格（「3 个」）。
+ 演示数据（任务标题、错误原文）不在这里：接上 Rust 核心以后它们来自数据。
+-->
+<resources>
+  <string name="app_name">Captae</string>
+  <string name="share_label">用 Captae 下载</string>
+
+  <!-- ───── 标签（BRIEF 2.2：只有图标，读屏念这些） ───── -->
+  <string name="tab_downloads">下载</string>
+  <string name="tab_library">素材库</string>
+  <string name="tab_search">搜索</string>
+
+  <!-- ───── 设备（BRIEF 2.1：标题即设备菜单） ───── -->
+  <string name="device_all">全部设备</string>
+  <string name="device_phone">这台手机</string>
+  <string name="device_count">%1$d 台设备</string>
+  <string name="device_online">在线</string>
+  <string name="device_offline">离线</string>
+  <string name="device_running">正在下 %1$d 个</string>
+  <string name="device_last_seen">上次在线 %1$s</string>
+  <string name="device_add">添加电脑…</string>
+  <string name="device_manage">管理电脑…</string>
+  <string name="device_menu_a11y">%1$s，切换设备</string>
+
+  <!-- 右上角「更多」 -->
+  <string name="more">更多</string>
+  <string name="pause_all">全部暂停</string>
+  <string name="resume_all">全部继续</string>
+  <string name="clear_done">清空已完成</string>
+  <string name="settings">设置</string>
+
+  <!-- ───── 下载条（BRIEF 2.3） ───── -->
+  <string name="bar_running">正在下 %1$d 个 · %2$s</string>
+  <!-- 收起成一行时：个数 + 总进度（同 iOS） -->
+  <string name="bar_running_short">正在下 %1$d 个 · %2$d%%</string>
+  <string name="bar_current">%1$s %2$s</string>
+  <string name="bar_paused">全部暂停了 · %1$d 个</string>
+  <string name="bar_idle">粘贴链接下载</string>
+  <string name="bar_paste">粘贴</string>
+  <!-- 下载条右边一直在的「+」（BRIEF 2.3 末尾：开始下载的入口必须一直看得见） -->
+  <string name="bar_new">新下载</string>
+
+  <!-- ───── 下载页 ───── -->
+  <string name="empty_title">粘贴链接，开始下载</string>
+  <!-- 按版本说清楚能下什么（BRIEF 2.8 第 1 条）；安卓是完整版 -->
+  <string name="empty_sub">YouTube、B 站、X、抖音等上千个网站都可以，M3U8 和直链也行</string>
+  <string name="empty_tries">试试这些链接</string>
+
+  <!-- 任务卡 -->
+  <string name="job_reading">正在读取视频信息…</string>
+  <string name="job_reading_a11y">正在读取视频信息</string>
+  <string name="job_auto_pick">%1$d 秒后自动用 %2$s</string>
+  <string name="job_start_now">马上开始</string>
+  <string name="job_downloaded_a11y">已下载 %1$s</string>
+  <string name="job_eta">剩余 %1$s</string>
+  <string name="job_paused">已暂停</string>
+  <string name="job_queued">排队中</string>
+  <string name="job_queued_ahead">排队中 · 前面还有 %1$d 个</string>
+  <string name="job_starting">正在开始…</string>
+  <string name="job_done">已下载 · %1$s</string>
+  <string name="job_pause">暂停</string>
+  <string name="job_resume">继续</string>
+  <string name="job_retry">重试</string>
+  <string name="job_cancel">取消</string>
+  <string name="job_remove">移除</string>
+  <string name="job_more">更多操作</string>
+
+  <!-- 长按菜单（BRIEF 2.5：和左滑操作一致） -->
+  <string name="ctx_on_mac">在电脑上下</string>
+  <string name="ctx_on_phone">在手机上下</string>
+  <string name="ctx_copy_link">复制链接</string>
+  <string name="ctx_share">分享</string>
+  <string name="ctx_save_phone">存到手机</string>
+  <string name="ctx_send_mac">发到电脑</string>
+  <string name="ctx_show_files">在「文件」中查看</string>
+  <string name="ctx_delete">删除</string>
+  <!-- BRIEF 2.8 第 3 条：取消写全，同桌面端 -->
+  <string name="ctx_cancel_download">取消下载</string>
+  <string name="ctx_cancel_record">取消录制</string>
+
+  <!-- 网站名（中文名；YouTube、X 这类英文名不翻） -->
+  <string name="site_bilibili">哔哩哔哩</string>
+  <string name="site_douyin">抖音</string>
+
+  <!-- 清晰度说明（桌面端 variantNote） -->
+  <string name="variant_best">最清晰</string>
+  <string name="variant_saver">省流量</string>
+  <string name="variant_hd">高清</string>
+  <string name="variant_sd">标清</string>
+
+  <!-- 保存到哪（桌面端 saveDirOf 的手机版） -->
+  <string name="dir_music">音乐 › Captae</string>
+  <string name="dir_movies">影片 › Captae</string>
+  <string name="dir_files">文件 › Captae</string>
+  <string name="dir_photos">相册 › Captae</string>
+
+  <!-- 步骤（桌面端 flowOf / stepsOf） -->
+  <string name="step_probe">读取视频信息</string>
+  <string name="step_pick_variant">选择清晰度</string>
+  <string name="step_pick_quality">选择画质</string>
+  <string name="step_download">下载</string>
+  <string name="step_download_video">下载视频</string>
+  <string name="step_download_audio">下载声音</string>
+  <string name="step_merge_hls">生成视频文件</string>
+  <string name="step_merge_hls_sub">存成一个 MP4</string>
+  <string name="step_merge_video">整理成视频文件</string>
+  <string name="step_convert">转成 %1$s</string>
+  <string name="step_library">放进素材库</string>
+  <string name="step_connect">连接服务器</string>
+  <string name="step_resumable">暂停后可以继续</string>
+  <string name="step_verify">检查文件是否完整</string>
+  <string name="step_failed">没有成功</string>
+  <string name="step_queued">排队中 · 最多同时下载 %1$d 个</string>
+  <string name="step_paused">已暂停 · 已下载的 %1$s 会保留</string>
+  <string name="step_opening">正在打开网页</string>
+  <string name="step_pick_hint">选一个清晰度，倒计时结束自动用 %1$s</string>
+
+  <!-- 出错（桌面端 failInfo） -->
+  <string name="fail_generic">下载失败</string>
+  <string name="fail_login_on_mac_hint">电脑上登录过%1$s，交给%2$s下</string>
+  <string name="fail_login_hint">在电脑上的 Captae 里登录一次%1$s，以后会自动带上</string>
+  <string name="fail_login_action">登录%1$s</string>
+  <string name="fail_drm_hint">受版权保护的视频，所有下载工具都下不了</string>
+  <string name="fail_geo_hint">换个网络或者打开代理再试</string>
+  <string name="fail_network_hint">网络恢复以后重试，会从停下的地方继续</string>
+  <string name="fail_rate_hint">过几分钟会自动再试，也可以现在重试</string>
+  <string name="fail_disk_hint">换一个保存位置，或者清出一些空间</string>
+  <string name="fail_disk_action">换保存位置</string>
+  <string name="fail_tool_hint">下载组件出了问题，到设置里检查一下</string>
+  <string name="fail_tool_action">打开设置</string>
+  <string name="fail_unknown_hint">可以复制错误信息，再试一次</string>
+
+  <!-- 剩余时间（桌面端 format.ts dur） -->
+  <string name="dur_hm">%1$d 小时 %2$d 分</string>
+  <string name="dur_ms">%1$d 分 %2$d 秒</string>
+  <string name="dur_s">%1$d 秒</string>
+
+  <!-- ───── 任务详情（BRIEF 02） ───── -->
+  <string name="detail_title">下载详情</string>
+  <string name="detail_untitled">还没读到标题</string>
+  <string name="detail_on_mac">在电脑上</string>
+  <string name="detail_steps">进行到哪一步</string>
+  <string name="detail_save_as">会保存为</string>
+  <string name="detail_pick">选择清晰度</string>
+  <string name="detail_decide_later">读到以后再定</string>
+
+  <!-- ───── 输入卡（BRIEF 2.4） ───── -->
+  <string name="composer_placeholder">粘贴视频、音乐或图片的链接</string>
+  <string name="composer_paste">粘贴</string>
+  <string name="composer_dest_a11y">下载去哪</string>
+  <string name="composer_fmt_a11y">保存格式</string>
+  <string name="composer_to_mac">发到%1$s</string>
+  <string name="composer_to_phone">在这台手机上下</string>
+  <string name="composer_mac_offline_sub">现在连不上，回到同一个 Wi-Fi 后自动发过去</string>
+  <string name="composer_mac_offline_hint">%1$s现在连不上，回到同一个 Wi-Fi 后自动发过去</string>
+  <string name="composer_connect">连上电脑…</string>
+  <string name="composer_send">开始下载</string>
+  <string name="composer_reading">正在读取视频信息</string>
+  <string name="composer_stop">停止</string>
+  <string name="composer_site_a11y">%1$s的链接</string>
+
+  <!-- 格式（桌面端 pages/downloads/model.ts 的 FMT） -->
+  <string name="fmt_best">MP4 · 最清晰</string>
+  <string name="fmt_1080">MP4 · 1080p</string>
+  <string name="fmt_720">MP4 · 720p</string>
+  <string name="fmt_mp3">只要声音 · MP3</string>
+  <string name="fmt_webm">WebM · 最清晰</string>
+  <string name="fmt_mkv">MKV · 最清晰</string>
+  <string name="fmt_keep">保持原来的格式</string>
+  <string name="fmt_aac">只要声音 · AAC</string>
+  <string name="fmt_flac">只要声音 · FLAC</string>
+
+  <!-- ───── 素材库（BRIEF 03） ───── -->
+  <string name="kind_all">全部</string>
+  <string name="kind_video">视频</string>
+  <string name="kind_audio">音频</string>
+  <string name="kind_image">图片</string>
+  <string name="library_count">%1$d 项</string>
+  <string name="library_section">%1$s · %2$d 项</string>
+  <string name="library_last_seen">上次看到的 %1$d 项 · %2$s</string>
+  <string name="library_see_all">查看全部 %1$d 项</string>
+  <string name="library_empty_title">素材库还是空的</string>
+  <string name="library_empty_sub">下载完成的会出现在这里</string>
+  <string name="library_go_downloads">去下载</string>
+  <string name="mac_unreachable">%1$s现在连不上</string>
+  <string name="mac_unreachable_hint">回到同一个 Wi-Fi，打开电脑上的 Captae</string>
+
+  <!-- ───── 素材详情（BRIEF 04） ───── -->
+  <string name="asset_play">播放</string>
+  <string name="asset_send_mac">发到%1$s</string>
+  <string name="asset_share_link">分享链接</string>
+  <string name="asset_saving">正在存到手机</string>
+  <string name="asset_saving_a11y">正在存到手机 %1$d%%</string>
+  <string name="asset_info">信息</string>
+  <string name="asset_src">来源</string>
+  <string name="asset_fmt">格式</string>
+  <string name="asset_res">分辨率</string>
+  <string name="asset_dur">时长</string>
+  <string name="asset_size">大小</string>
+  <string name="asset_when">下载于</string>
+  <string name="asset_where">位置</string>
+  <string name="asset_tags">标签</string>
+
+  <!-- ───── 搜索（BRIEF 5.1 的 12） ───── -->
+  <string name="search_placeholder">搜标题、来源、标签</string>
+  <string name="search_hint">搜所有设备上的下载和素材：标题、来源、标签</string>
+  <string name="search_state_pick">等你选清晰度</string>
+  <string name="search_state_probe">正在读取</string>
+  <string name="search_state_done">已完成</string>
+  <string name="search_state_failed">没有成功</string>
+  <string name="search_clear">清除</string>
+  <string name="search_downloads">下载</string>
+  <string name="search_library">素材库</string>
+  <string name="search_title">搜索</string>
+  <string name="search_count_jobs">%1$d 个</string>
+  <string name="search_count_assets">%1$d 项</string>
+  <string name="search_none">没有找到「%1$s」</string>
+
+  <!-- ───── 管理电脑（原来的「电脑」标签，BRIEF 2.1） ───── -->
+  <string name="computers_title">管理电脑</string>
+  <string name="computers_illus_a11y">电脑上 Captae 的设置</string>
+  <string name="computers_connect">和电脑配对</string>
+  <string name="computers_connect_sub">配好以后，手机上的链接可以交给电脑下，也能看电脑上的素材库</string>
+  <string name="computers_step1">在电脑上打开 Captae › 设置 › 手机，打开「让手机连接」</string>
+  <string name="computers_step2">用这台手机扫电脑上的二维码</string>
+  <string name="computers_step3">好了。以后打开 Captae 会自动连上</string>
+  <string name="computers_scan">扫码配对</string>
+  <string name="computers_nearby">附近的电脑</string>
+  <string name="computers_nearby_footer">和这台手机在同一个 Wi-Fi 下、打开了「让手机连接」的电脑</string>
+  <string name="computers_enter_code">在同一个 Wi-Fi 里 · 输入电脑上的 6 位数配对</string>
+  <string name="computers_paired">已配对的电脑</string>
+  <string name="computers_version">Captae %1$s</string>
+  <string name="computers_waiting">等电脑上线</string>
+  <string name="computers_waiting_footer">回到同一个 Wi-Fi 后自动发过去。急着要的话，可以改成在这台手机上下</string>
+  <string name="computers_all_to_phone">都改成在这台手机上下</string>
+  <!-- BRIEF 2.8 第 5 条原话；安卓手机名是「Pixel 9」（BRIEF 第 3 节） -->
+  <string name="computers_lan_footer">在电脑上，这台手机叫「%1$s」，配对过的手机可以在电脑的「设置 › 手机」里撤销</string>
+  <string name="computers_waiting_count">%1$d 个</string>
+  <string name="computers_add">添加电脑</string>
+
+  <!-- ───── 配对（BRIEF 06） ───── -->
+  <string name="pair_back">返回</string>
+  <string name="pair_scan_hint">扫电脑上 Captae › 设置 › 手机 里的二维码</string>
+  <string name="pair_same_wifi">手机和电脑要在同一个 Wi-Fi 下</string>
+  <string name="pair_enter_code">输入 6 位数配对</string>
+  <!-- 输入配对码 sheet（BRIEF 2.8 第 6 条，照 iOS）：导航标题是电脑名 -->
+  <string name="pair_code_title">输入配对码</string>
+  <string name="pair_code_sub">在电脑上看到的 6 位数</string>
+  <string name="pair_code_where">在电脑上打开 Captae › 设置 › 手机，打开「让手机连接」就能看到</string>
+  <string name="pair_expired">配对码过期了，在电脑上重新打开二维码</string>
+  <string name="pair_expired_sub">配对码 5 分钟有效，用一次就作废</string>
+  <string name="pair_rescan">重新扫码</string>
+  <string name="pair_code_a11y">配对码，已输入 %1$d 位</string>
+
+  <!-- ───── 设置（BRIEF 07） ───── -->
+  <string name="set_downloads">下载</string>
+  <string name="set_downloads_footer">视频和图片存进相册里的 Captae，声音存进音乐里的 Captae 文件夹</string>
+  <string name="set_save_to">存到</string>
+  <string name="set_save_to_value">相册和音乐</string>
+  <string name="set_quality">默认清晰度</string>
+  <string name="set_format">格式</string>
+  <string name="set_concurrency">同时下载</string>
+  <string name="set_concurrency_value">%1$d 个</string>
+  <string name="set_computers">电脑</string>
+  <string name="set_paired">已配对的电脑</string>
+  <string name="set_paired_value">%1$d 台</string>
+  <string name="set_network">网络</string>
+  <string name="set_proxy">代理</string>
+  <string name="set_proxy_manual">手动填写</string>
+  <string name="set_proxy_off">不用</string>
+  <string name="set_about">关于</string>
+  <string name="set_version">版本</string>
+  <string name="set_engine">下载引擎</string>
+  <string name="set_licenses">开源许可</string>
+  <string name="set_source">源代码</string>
+  <string name="proxy_none">不用代理</string>
+  <string name="proxy_manual_footer">用下面填的地址</string>
+  <string name="proxy_none_footer">不经过代理，直接连接</string>
+  <string name="proxy_addr">代理地址</string>
+  <string name="proxy_addr_footer">写成 地址:端口，比如 127.0.0.1:7890。SOCKS 代理前面加 socks5://</string>
+  <string name="about_version">版本 %1$s</string>
+  <string name="about_tagline">开源的视频下载工具，AGPL-3.0 许可</string>
+  <string name="about_stills_footer">演示用的剧照来自 Blender 基金会的开放电影（CC BY）</string>
+  <string name="lic_use_app">这个 App</string>
+  <string name="lic_use_ytdlp">读取网页里的视频</string>
+  <string name="lic_use_ffmpeg">合并音视频、生成视频文件</string>
+  <string name="lic_use_python">运行 yt-dlp</string>
+  <string name="lic_use_quickjs">网站的 JS 验证</string>
+  <string name="lic_use_backdrop">玻璃效果</string>
+  <string name="lic_use_liquidglass">标签栏和按下的高光</string>
+  <string name="lic_use_compose">界面</string>
+  <string name="lic_use_fonts">字体</string>
+  <string name="lic_use_icons">图标</string>
+  <string name="lic_use_sites">网站图标</string>
+
+  <!-- ───── 分享卡片（BRIEF 08） ───── -->
+  <string name="share_title">Captae</string>
+  <string name="share_to">下载到</string>
+  <string name="share_to_mac">电脑</string>
+  <string name="share_to_phone">手机</string>
+  <string name="share_offline">%1$s现在连不上，先存着，回到同一个 Wi-Fi 后自动发过去</string>
+  <string name="share_fmt_a11y">清晰度和格式</string>
+  <string name="share_quality">清晰度</string>
+  <string name="share_later">先存着</string>
+  <string name="share_download">下载</string>
+
+  <!-- M3：接上真数据以后加的 -->
+  <string name="job_auto_retry">网络有点不稳，正在自动重试</string>
+  <string name="job_choose">播放列表 · %1$d 条，选要下的</string>
+  <string name="job_choose_action">选条目</string>
+  <string name="job_merging">正在生成视频文件 · %1$d%%</string>
+  <string name="job_stop_record">停止并保存</string>
+  <string name="search_state_choose">等你选条目</string>
+  <string name="detail_quality">清晰度</string>
+  <string name="detail_entries">播放列表 · %1$d 条</string>
+  <string name="detail_entries_go">下载选中的 %1$d 条</string>
+  <string name="library_none_kind">这一类还没有</string>
+  <string name="time_today">今天 %1$s</string>
+  <string name="time_yesterday">昨天 %1$s</string>
+  <string name="computers_nearby_found">发现到 %1$d 台</string>
+  <string name="computers_nearby_searching">正在找</string>
+  <string name="computers_nearby_none">还没发现电脑</string>
+  <string name="set_paired_none">还没有</string>
+  <string name="set_engine_missing">还没装上</string>
+  <string name="set_engine_missing_footer">这个版本还没带上下载引擎，YouTube 这类网站暂时下不了；直链和 M3U8 照常能下</string>
+  <string name="notify_channel">下载进度</string>
+  <string name="notify_queued">排队中 · %1$d 个</string>
+  <string name="notify_quota_title">今天的后台下载时间用完了</string>
+  <string name="notify_quota_text">Android 每天只给后台下载 6 小时。打开 Captae 会接着下，下好的部分都留着</string>
+  <!-- 遥控电脑 -->
+  <string name="job_waiting_mac">等电脑上线 · 回到同一个 Wi-Fi 后自动发过去</string>
+  <string name="pair_no_camera">没有相机权限：可以在系统设置里打开，或者从图片识别、输入 6 位数</string>
+  <string name="pair_from_image">从图片识别</string>
+  <string name="pair_not_captae">这不是 Captae 的配对二维码</string>
+  <string name="pair_pairing">正在和%1$s配对…</string>
+  <string name="pair_no_nearby">还没发现这台电脑，回到同一个 Wi-Fi 再试</string>
+  <string name="computers_remove">删除这台电脑</string>
+  <string name="computers_remove_title">删除%1$s？</string>
+  <string name="computers_remove_text">这台手机不再连它，等它上线的链接也一起去掉。电脑上的「设置 › 手机」里还会有这台手机，可以在那里撤销</string>
+  <string name="computers_needs_pairing">要重新配对：在电脑上打开配对码，再扫一次</string>
+  <string name="asset_saved_phone">已存到手机</string>
+  <string name="computers_rename">保存名字</string>
+  <string name="computers_name_placeholder">在这台手机上显示的名字</string>
+</resources>

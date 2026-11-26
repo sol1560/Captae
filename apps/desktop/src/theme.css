@@ -1,0 +1,2758 @@
+/* Captae 桌面端界面：轻玻璃（第二版设计稿，2026-11-23 定稿）。
+ * 视觉数值来自参考录屏实测，
+ * 动效数值来自 Emil Kowalski《Animations on the Web》课程（注释里的「配方 x」对应 docs/MOTION.md 的小节）。
+ * 只用无衬线：Geist + 苹方。 */
+
+@font-face {
+  font-family: Geist;
+  src: url("./assets/fonts/geist-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("./assets/fonts/geist-mono-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2191, U+2193, U+2212;
+}
+
+:root {
+  /* 表面：中性灰白（实测 m4：侧栏 #e9e9e9、主区 #f5f5f5–#f7f7f7、浮卡 #fdfdfd）。侧栏照参考用不透明灰，不做透明窗口 */
+  --side: #ebebeb;
+  --main: #f7f7f7;
+  --card: #ffffff;
+  --well: #f3f3f3;
+  --hover: rgba(0, 0, 0, 0.045);
+  --select: rgba(0, 0, 0, 0.065);
+  --line: rgba(0, 0, 0, 0.07);
+  --line-2: rgba(0, 0, 0, 0.12);
+
+  /* 文字：近黑和灰阶 */
+  --ink: #171717;
+  --ink-2: #525252;
+  --ink-3: #8b8b8b;
+  --ink-4: #b4b4b4;
+
+  /* 唯一的强调色（Captae 原来的蓝）：进度、焦点、选中的单选点、未读、链接 */
+  --accent: #007aff;
+  --accent-ink: #0066d6;
+  --accent-soft: rgba(0, 122, 255, 0.1);
+
+  /* 状态色只上在小图标和小字上 */
+  --ok: #1f8f50;
+  --warn: #c2660a;
+  --err: #d6382a;
+
+  /* 轻玻璃：只给浮在内容上面的东西 */
+  --glass: rgba(255, 255, 255, 0.68);
+  --glass-main: rgba(247, 247, 247, 0.74);
+  --glass-strong: rgba(255, 255, 255, 0.82);
+  --glass-blur: blur(24px) saturate(1.8);
+  --glass-edge: inset 0 0.5px 0 rgba(255, 255, 255, 0.95), inset 0 0 0 0.5px rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04), 0 12px 32px -10px rgba(0, 0, 0, 0.16);
+  --glass-dark: rgba(26, 26, 28, 0.8);
+
+  /* 投影 */
+  --sh-card: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --sh-float: 0 0 0 0.5px rgba(0, 0, 0, 0.07), 0 4px 12px -2px rgba(0, 0, 0, 0.05), 0 18px 44px -16px rgba(0, 0, 0, 0.16);
+  --sh-dialog: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 24px 70px -16px rgba(0, 0, 0, 0.3), 0 8px 20px -8px rgba(0, 0, 0, 0.1);
+
+  /* 遮罩：中灰洗白（实测 m2 E1、i1 A1：#f7f7f7 压到约 #c1c1c1），不是压黑 */
+  --scrim: rgba(140, 140, 140, 0.5);
+
+  --font: Geist, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 16px;
+  --r-2xl: 20px;
+
+  /* 缓动：只用课程出现过的曲线（课 09/05、05/04） */
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out-quart: cubic-bezier(0.165, 0.84, 0.44, 1);
+  --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-cubic: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --ease-height: cubic-bezier(0.25, 1, 0.5, 1);
+
+  /* 时长档位（配方 1.2） */
+  --t-press: 160ms;
+  --t-hover: 120ms; /* 课程 100–150ms；参考实测悬停进 92ms、出 100–108ms */
+  --t-pop-in: 200ms;
+  --t-pop-out: 150ms;
+  --t-panel: 200ms;
+
+  /* 减少动效：位移和缩放归零，只留透明度 */
+  --enter-shift: 8px;
+  --enter-scale: 0.96;
+}
+
+/* 界面语言（<html lang>，i18n/index.ts 设）：汉字、假名、韩文用对应地区的字体——同一个汉字简体、繁体、日文的字形不同。
+ * Geist 只有拉丁字母，其余的字落到后面这些字体上；英文、德文、西班牙文、法文用上面默认的那串 */
+:root:lang(zh-TW) {
+  --font: Geist, "PingFang TC", "Hiragino Sans CNS", "Noto Sans TC", system-ui, sans-serif;
+}
+:root:lang(ja) {
+  --font: Geist, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
+}
+:root:lang(ko) {
+  --font: Geist, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --enter-shift: 0px;
+    --enter-scale: 1;
+  }
+}
+/* 系统开了「减少透明度」：玻璃换成不透明 */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass: #ffffff;
+    --glass-main: #f7f7f7;
+    --glass-strong: #ffffff;
+    --glass-dark: #1c1c1e;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  font: 13.5px/1.45 var(--font);
+  color: var(--ink);
+  background: var(--side);
+  -webkit-font-smoothing: antialiased;
+}
+button {
+  font: inherit;
+  color: inherit;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.mono {
+  font-family: var(--mono);
+  font-size: 0.92em;
+}
+.glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), var(--glass-shadow);
+}
+
+/* ---------------- affectUI 主题桥：只改它公开的变量，不改组件源码 ---------------- */
+:root {
+  --aui-ink: var(--ink);
+  --aui-muted: var(--ink-3);
+  --aui-surface: var(--card);
+  --aui-overlay: rgba(255, 255, 255, 0.76);
+  --aui-subtle: var(--well);
+  --aui-border: rgba(0, 0, 0, 0.1);
+  --aui-border-strong: rgba(0, 0, 0, 0.18);
+  --aui-placeholder: var(--ink-4);
+  --aui-focus: rgba(0, 122, 255, 0.55);
+  --aui-font: var(--font);
+  --aui-radius: 10px;
+  --aui-radius-sm: 7px;
+  --aui-radius-lg: 16px;
+  --aui-ease: var(--ease-out-quint);
+  --aui-primary: var(--ink);
+  --aui-on-primary: #ffffff;
+  --aui-blue: var(--accent);
+  --aui-success: var(--ok);
+  --aui-danger: var(--err);
+  --aui-red: var(--err);
+  --aui-warning: var(--warn);
+  --aui-warning-soft: #fdf1e3;
+  --aui-info-soft: var(--accent-soft);
+  --aui-shadow-popover: var(--glass-edge), var(--glass-shadow);
+}
+/* 深色主按钮：affectUI 默认带一点紫，换成中性近黑（参考里的「完成」「继续」） */
+.ui-button,
+.ui-icon-button,
+.ui-dlg {
+  --ui-btn-dark-top: #2c2c2e;
+  --ui-btn-dark-bottom: #121213;
+  --ui-btn-dark-hover-top: #38383a;
+  --ui-btn-dark-hover-bottom: #1b1b1c;
+  --ui-btn-edge-top: #4a4a4d;
+  --ui-btn-edge-mid: #2a2a2c;
+  --ui-btn-edge-bottom: #0a0a0a;
+  --ui-btn-ring: #0d0d0d;
+  --ui-btn-fill: #ededed;
+  --ui-btn-ease: var(--ease-out-quint);
+  --ui-icb-ease: var(--ease-out-quint);
+  --ui-dlg-dark-top: #2c2c2e;
+  --ui-dlg-dark-bottom: #121213;
+  --ui-dlg-dark-hover-top: #38383a;
+  --ui-dlg-dark-hover-bottom: #1b1b1c;
+  --ui-dlg-edge-top: #4a4a4d;
+  --ui-dlg-edge-bottom: #0a0a0a;
+  --ui-dlg-ring: #0d0d0d;
+  --ui-dlg-scrim: var(--scrim);
+  --ui-dlg-wash: #ededed;
+}
+.ui-button.cp-pill {
+  --radius: 999px;
+}
+.ui-checkbox,
+.ui-chk {
+  --ui-chk-ease: var(--ease-out-quint);
+}
+.ui-sel {
+  --ui-sel-ease: var(--ease-out-quint);
+  --ui-sel-menu: rgba(255, 255, 255, 0.78);
+}
+.ui-tf,
+.ui-text-field {
+  --ui-tf-ease: var(--ease-out-quint);
+}
+.ui-switch,
+.ui-sw {
+  --ui-sw-ease: var(--ease-out-quint);
+}
+/* 分段控件的轨道用 iOS 的半透明填充，放在玻璃顶栏上也自然 */
+.ui-seg {
+  --ui-seg-tray: rgba(118, 118, 128, 0.12);
+}
+/* 菜单、下拉列表、右键菜单、小弹层：磨砂玻璃（affectUI 这几个面板的底色是半透明白，不加模糊底下的字会透出来；不给 backdrop-filter 做动画） */
+.ui-dm__panel,
+.ui-sel__list,
+.ui-ctx__panel,
+.ui-pop {
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+/* 弹窗退场：affectUI 用 ease-in，课程规定 UI 不用 ease-in（课 01/03），换成 ease-out */
+.ui-dlg[data-leaving] .ui-dlg__panel {
+  animation-timing-function: var(--ease-out-quint);
+}
+/* 菜单、右键菜单、下拉列表里的高亮块：affectUI 让它 180ms 滑到下一项，鼠标扫过和方向键都会落后一拍。
+ * 高亮跟着光标和键盘走，要即时（课 01/05、01/10「Frequency of use」；MOTION 1.4 菜单项高亮不动） */
+.ui-dm .ui-dm__glow,
+.ui-ctx .ui-ctx__glow,
+.ui-sel .ui-sel__glow {
+  transition: none;
+}
+/* 分段控件用方向键、Home、End 换选项时（新选项拿到键盘焦点）：滑块和文字颜色直接到位（课 01/09：键盘触发的不做动画）；
+ * 鼠标点还是 affectUI 自带的滑动 */
+.ui-seg:has(.ui-seg__opt:focus-visible) .ui-seg__pill,
+.ui-seg:has(.ui-seg__opt:focus-visible) .ui-seg__opt {
+  transition-duration: 0s;
+}
+/* 有状态文字、没有进度数字、要等一会儿的地方（AI 调用进行中、看网站有没有字幕、读取更多……）：
+ * 用 affectUI 的 ShimmerText 加 className="cp-wait"，不放转圈。照参考 m5 实测（mac-onboard 报告 4.1）：
+ * 一次 2.7s，前 21%（约 570ms）匀速扫过、其余时间停住；文字保持原来的颜色，光带浅一些。
+ * 仍然等 300ms 才出现（useDelayed）；减少动效时不扫（affectUI 自带的规则去掉渐变，这里再把动画停掉） */
+.ui-shm-text.cp-wait {
+  --ui-shm-text: currentColor;
+  --ui-shm-text-glow: #d9d9d9;
+  animation-name: cp-wait-sweep;
+  animation-duration: 2.7s;
+}
+@keyframes cp-wait-sweep {
+  0% {
+    background-position: 100% 0;
+  }
+  21%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-shm-text.cp-wait {
+    animation: none;
+  }
+}
+
+/* ---------------- 窗口骨架和侧栏 ---------------- */
+.cp-window {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 244px 1fr;
+  background: var(--side);
+  overflow: hidden;
+}
+.cp-side {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 10px 10px 12px;
+  min-height: 0;
+}
+.cp-traffic {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 6px;
+}
+/* Windows / Linux 没有系统的红绿灯，界面自己画；macOS 用系统的，只留出位置（.cp-lights-space） */
+.cp-traffic .dot {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #ff5f57;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+}
+.cp-traffic .dot:nth-child(2) {
+  background: #febc2e;
+}
+.cp-traffic .dot:nth-child(3) {
+  background: #28c840;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-traffic:hover .dot {
+    box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.28);
+  }
+}
+/* 红绿灯的中线在窗口顶上往下 36px，和主区顶栏（8px 外边距 + 56px 高）的中线对齐，侧栏收起时也在同一条线上。
+   系统红绿灯的位置在 tauri.conf.json 的 trafficLightPosition，和这里一起调 */
+.cp-lights-space {
+  width: 64px;
+  height: 30px;
+  flex: none;
+}
+/* 侧栏最上面一行：红绿灯 + 收起侧栏，也是拖动窗口的地方 */
+.cp-side-top {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  flex: none;
+}
+.cp-side-top .end {
+  margin-left: auto;
+  display: flex;
+  color: var(--ink-3);
+}
+.cp-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 2px 8px 14px;
+  font: 700 17px/1 var(--font);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.cp-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.cp-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 30px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  font-size: 13.5px;
+  text-align: left;
+  cursor: default;
+}
+.cp-nav-item svg {
+  color: var(--ink-2);
+  flex: none;
+}
+/* 侧栏是最高频的操作：悬停和选中都即时，不做过渡（实测 m2 I 节也是一帧切换；配方 a） */
+.cp-nav-item[aria-current="page"] {
+  background: var(--select);
+  font-weight: 560;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-nav-item:not([aria-current="page"]):hover {
+    background: var(--hover);
+  }
+}
+.cp-nav-item .count {
+  margin-left: auto;
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.cp-nav-item .kbd {
+  margin-left: auto;
+  color: var(--ink-4);
+  font-size: 12px;
+}
+.cp-side-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* 译文长的语言里标题和右边的「全部 N 个」不能挤在一起 */
+  gap: 8px;
+  padding: 16px 9px 4px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cp-side-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 28px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font-size: 13px;
+  color: var(--ink);
+  text-align: left;
+  min-width: 0;
+  cursor: default;
+}
+/* 侧栏的行和导航一样：悬停即时，不过渡（配方 a） */
+@media (hover: hover) and (pointer: fine) {
+  .cp-side-row:hover {
+    background: var(--hover);
+  }
+}
+.cp-side-row .trail {
+  flex: none;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cp-side-row .t {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-side-row .glyph {
+  width: 16px;
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+  flex: none;
+}
+.cp-dot-new {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+}
+.cp-side-foot {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-top: 8px;
+  flex: none;
+}
+.cp-side-foot .cp-side-row {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+}
+/* AI 助手的连接点：和上面各行的图标同一列（16px 宽） */
+.cp-live {
+  width: 7px;
+  height: 7px;
+  margin: 0 4.5px;
+  border-radius: 50%;
+  background: var(--ok);
+  flex: none;
+}
+.cp-live[data-off] {
+  background: var(--ink-4);
+}
+
+/* 主区：比侧栏亮一档的大圆角面板 */
+.cp-main {
+  position: relative;
+  margin: 8px 8px 8px 0;
+  background: var(--main);
+  border-radius: 12px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.03);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 356px;
+  min-height: 0;
+  overflow: hidden;
+}
+.cp-main.solo {
+  grid-template-columns: minmax(0, 1fr);
+}
+.cp-listwrap {
+  position: relative;
+  min-height: 0;
+}
+.cp-col {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 0 18px 150px 22px;
+}
+/* 顶栏：列表从它下面滚过去，所以是毛玻璃 */
+.cp-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  margin: 0 -18px 4px -22px;
+  padding: 0 18px 0 22px;
+  background: var(--glass-main);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: 0 0.5px 0 var(--line);
+}
+.cp-topbar h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+  /* 页面名不折行（「AI assistant」这种两个词的不会被挤成两行），挤的时候让后面那句状态先让 */
+  white-space: nowrap;
+}
+.cp-topbar .sub {
+  color: var(--ink-3);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  /* 一行放不下时末尾省略，不折成几行：英文、德文比中文长，窄窗口里会挤（AI 助手页、插件页在 agent.css 里也是这样） */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-topbar .mid {
+  margin-left: 8px;
+}
+.cp-topbar .end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* 顶栏右边的圆形玻璃按钮（参考 m4 右上角、i1 顶部圆钮） */
+.cp-round {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink-2);
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), 0 0 0 0.5px rgba(0, 0, 0, 0.09), 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform var(--t-press) var(--ease-out-quad), background-color var(--t-hover) ease;
+}
+.cp-round:active {
+  transform: scale(0.95);
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-round:hover {
+    background: #ffffff;
+    color: var(--ink);
+  }
+}
+
+/* ---------------- 底部输入框（毛玻璃，浮在列表上） ---------------- */
+.cp-dock {
+  position: absolute;
+  left: 22px;
+  right: 18px;
+  bottom: 16px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.cp-dock > * {
+  pointer-events: auto;
+}
+.cp-composer {
+  border-radius: var(--r-2xl);
+  padding: 13px 12px 10px 16px;
+  background: rgba(255, 255, 255, 0.74);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), 0 0 0 0.5px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.04), 0 18px 40px -14px rgba(0, 0, 0, 0.22);
+  transition: box-shadow var(--t-hover) ease;
+}
+.cp-composer:focus-within {
+  box-shadow: var(--glass-edge), 0 0 0 1px rgba(0, 122, 255, 0.5), 0 0 0 4px rgba(0, 122, 255, 0.12), 0 18px 40px -14px rgba(0, 0, 0, 0.22);
+}
+.cp-composer input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: 400 15px/1.4 var(--font);
+  color: var(--ink);
+  padding: 1px 0 0;
+}
+.cp-composer input::placeholder {
+  color: var(--ink-4);
+}
+.cp-composer-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+/* 输入框下面那一小行：认出来的链接类型和一句说明；换内容时上下交换（Swap），外面裁掉，行高不变 */
+.cp-hint {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  margin-left: 2px;
+  overflow: hidden;
+}
+.cp-hint-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.cp-hint-row > svg,
+.cp-hint-row > img {
+  flex: none;
+}
+.cp-hint-row b {
+  flex: none;
+  font-weight: 560;
+  color: var(--ink-2);
+}
+.cp-hint-row .note {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 空着、正在识别时的那句话（英文、德文比中文长）：窄的时候末尾省略，不在字中间裁断 */
+.cp-hint-row > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cp-hint-row[data-tone="warn"] > svg {
+  color: var(--warn);
+}
+.cp-composer-bar .end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cp-send {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--ink);
+  transition: transform var(--t-press) var(--ease-out-quad), background-color var(--t-hover) ease;
+}
+.cp-send:disabled {
+  background: #d4d4d4;
+}
+.cp-send:active:not(:disabled) {
+  transform: scale(0.95);
+}
+/* 复制了链接的提示：贴在输入框上方（配方 h2：进 200ms、退 150ms，不弹跳） */
+.cp-suggest {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), var(--glass-shadow);
+  font-size: 13px;
+}
+.cp-suggest .ico {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+  color: var(--ink-3);
+  flex: none;
+}
+.cp-suggest .k {
+  color: var(--ink-3);
+  flex: none;
+}
+.cp-suggest .t {
+  min-width: 0;
+  max-width: 46ch;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-weight: 560;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-suggest .t:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--ink-4);
+    text-underline-offset: 3px;
+  }
+}
+
+/* ---------------- 下载列表 ---------------- */
+.cp-jobs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 6px 0 0;
+}
+.cp-job {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 10px 10px 11px;
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-card);
+}
+/* 选中是高频操作：即时，不过渡；只加一圈淡灰和一点投影 */
+.cp-job[aria-selected="true"] {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.16), 0 8px 24px -12px rgba(0, 0, 0, 0.18);
+}
+.cp-thumb {
+  width: 120px;
+  height: 68px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e6e6e6;
+  position: relative;
+  align-self: start;
+}
+.cp-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* 封面读到的那一刻淡入：opacity + 3px 模糊，300ms ease-out-quint（配方 j3，课程演示 Skeleton 的内容到达）。
+ * 已经读到过的第一帧就带 data-on，不过渡；减少动效时直接出现（课程演示同样做法，和素材库网格一致） */
+.cp-cover {
+  transition:
+    opacity 300ms var(--ease-out-quint),
+    filter 300ms var(--ease-out-quint);
+}
+.cp-cover:not([data-on]) {
+  opacity: 0;
+  filter: blur(3px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-cover {
+    transition: none;
+  }
+}
+.cp-thumb .dur,
+.cp-tile-media .dur,
+.cp-preview .dur {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  padding: 3px 5px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font: 500 10.5px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.cp-thumb.is-empty {
+  display: grid;
+  place-items: center;
+  background: var(--well);
+  color: var(--ink-4);
+}
+.cp-thumb.is-empty img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  opacity: 0.28;
+  filter: grayscale(1);
+}
+.cp-job-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 1px;
+}
+.cp-job-title {
+  font-size: 14px;
+  font-weight: 580;
+  letter-spacing: -0.005em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  min-width: 0;
+  white-space: nowrap;
+}
+.cp-meta img {
+  width: 13px;
+  height: 13px;
+  opacity: 0.75;
+}
+.cp-meta svg {
+  flex: none;
+}
+.cp-meta .u {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.cp-block {
+  margin-top: 10px;
+}
+.cp-job-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* 进度条：clip-path 填充，linear，时长 = 刷新间隔（配方 c5），不动 width */
+.cp-progress {
+  position: relative;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+}
+.cp-progress > i {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: clip-path var(--tick, 500ms) linear, background-color var(--t-hover) ease;
+}
+.cp-progress[data-tone="paused"] > i {
+  background: var(--ink-4);
+}
+.cp-progress[data-indeterminate] > i {
+  clip-path: none;
+  background: linear-gradient(90deg, transparent, rgba(0, 122, 255, 0.5), transparent);
+  transform: translateX(-100%);
+  /* 骨架流光：1.1s 移动 + 0.4s 停顿（配方 c5 / m6） */
+  animation: cp-sheen 1.5s linear infinite;
+}
+@keyframes cp-sheen {
+  0% {
+    transform: translateX(-100%);
+  }
+  73%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-progress > i {
+    transition: none;
+  }
+  .cp-progress[data-indeterminate] > i {
+    animation: none;
+    transform: none;
+    opacity: 0.35;
+  }
+}
+.cp-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 7px;
+  font-size: 12px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.cp-stats .pct {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* 状态行：不铺彩色底，只有小图标上色，底是浅灰凹面 */
+.cp-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 7px 7px 11px;
+  border-radius: var(--r-md);
+  background: var(--well);
+  font-size: 13px;
+  line-height: 1.38;
+  color: var(--ink);
+}
+.cp-note > svg {
+  flex: none;
+}
+.cp-note[data-tone="warn"] > svg {
+  color: var(--warn);
+}
+.cp-note[data-tone="err"] > svg {
+  color: var(--err);
+}
+.cp-note[data-tone="wait"] > svg {
+  color: var(--accent);
+}
+.cp-note .grow {
+  flex: 1;
+  min-width: 0;
+}
+.cp-note .grow small {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+/* 录直播：「正在录制 · 已录 12:34」，时长和正文一样大（Elapsed 默认是读取时旁边的小灰字）；红点静止不闪（常驻界面不放循环动画，配方 i） */
+.cp-rec .grow .cp-elapsed {
+  color: inherit;
+  font-size: inherit;
+}
+.cp-rec-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin: 0 3px;
+  border-radius: 99px;
+  background: var(--err);
+}
+.cp-drec {
+  margin: 11px 2px 0;
+}
+/* 重试后又失败：抖一次，振幅递减、正负交替，约 300ms，不循环（配方 b3 / m2） */
+.cp-note[data-shake] {
+  animation: cp-shake 300ms var(--ease-in-out-cubic) 200ms;
+}
+@keyframes cp-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(3.5px);
+  }
+  60% {
+    transform: translateX(-2.5px);
+  }
+  80% {
+    transform: translateX(1.5px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-note[data-shake] {
+    animation: none;
+  }
+}
+
+/* 「几秒后自动选」：圆环匀速走完（时间在流逝，linear，配方 d2） */
+.cp-countdown {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.cp-countdown svg {
+  transform: rotate(-90deg);
+}
+.cp-countdown circle.run {
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: 0;
+  animation: cp-count var(--countdown, 6s) linear forwards;
+}
+@keyframes cp-count {
+  to {
+    stroke-dashoffset: 100;
+  }
+}
+/* 减少动效时圆环按秒跳：由 Countdown 直接按剩下的秒数写 stroke-dashoffset（parts/index.tsx），不在这里用 steps() */
+
+/* 多视频帖子 */
+.cp-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--r-md);
+  background: var(--well);
+}
+.cp-entry {
+  display: grid;
+  grid-template-columns: auto 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px 5px 6px;
+  border-radius: 7px;
+  font-size: 13px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-entry:hover {
+    background: rgba(255, 255, 255, 0.7);
+  }
+}
+.cp-entry img {
+  width: 44px;
+  height: 25px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+.cp-entry .t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-entry .d {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.cp-entries-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* ---------------- 右侧浮卡（照 m4 右上角的「来源 / 用量」） ---------------- */
+.cp-detail {
+  min-height: 0;
+  padding: 12px 12px 12px 0;
+}
+.cp-dcard {
+  max-height: 100%;
+  overflow: auto;
+  background: var(--card);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-float);
+  padding: 10px 10px 4px;
+}
+.cp-preview {
+  aspect-ratio: 16 / 9;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  position: relative;
+  background: #e6e6e6;
+}
+.cp-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cp-dtitle {
+  margin: 11px 4px 1px;
+  font-size: 14.5px;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+}
+.cp-dsrc {
+  display: block;
+  max-width: calc(100% - 8px);
+  margin: 0 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: 400 12px/1.4 var(--mono);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-dsrc:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+.cp-dactions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 11px 2px 12px;
+}
+.cp-dactions .end {
+  margin-left: auto;
+}
+.cp-dsec {
+  border-top: 0.5px solid var(--line-2);
+  padding: 2px 4px 0;
+}
+.cp-dsec-h {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+}
+/* 分节标题整行可以点；箭头收起时转 -90°，偶尔才点，200ms ease-out（配方 f） */
+.cp-dsec-h .t {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 560;
+  color: var(--ink-2);
+  cursor: default;
+}
+.cp-dsec-h .n {
+  padding: 1px 6px;
+  border-radius: 99px;
+  background: var(--well);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.cp-dsec-h .chev {
+  margin-left: auto;
+  color: var(--ink-4);
+  /* 纯旋转用 ease-in-out（课 02/02）；和 AI 助手页、插件页的箭头同一个值 */
+  transition: transform 200ms var(--ease-in-out-cubic);
+}
+.cp-dsec:not([data-open]) .chev {
+  transform: rotate(-90deg);
+}
+.cp-dsec-b {
+  padding-bottom: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-dsec-h .chev {
+    transition: none;
+  }
+}
+.cp-saveas {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+.cp-saveas strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 580;
+}
+.cp-saveas span {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+/* 纸张格式图标（brand-spec v2 里的 file3d，按格式着色） */
+.cp-file {
+  width: 30px;
+  height: 38px;
+  border-radius: 4px 10px 4px 4px;
+  background: linear-gradient(180deg, #ffffff, #f2f2f2);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.14), 0 3px 8px -3px rgba(0, 0, 0, 0.25);
+  position: relative;
+  margin-left: 4px;
+}
+.cp-file::after {
+  content: attr(data-ext);
+  position: absolute;
+  left: -4px;
+  bottom: 5px;
+  padding: 2px 3px;
+  border-radius: 3px;
+  background: #2f6fe8;
+  color: #fff;
+  font: 700 8px/1 var(--mono);
+}
+.cp-file[data-tone="audio"]::after {
+  background: #e4572e;
+}
+.cp-file[data-tone="slate"]::after {
+  background: #4b5563;
+}
+.cp-file[data-tone="web"]::after {
+  background: #2f9e5b;
+}
+.cp-file[data-tone="text"]::after {
+  background: #3f3f46;
+}
+.cp-file[data-tone="image"]::after {
+  background: #0e9fb3;
+}
+.cp-file[data-tone="stream"]::after {
+  background: #c98a12;
+}
+.cp-file[data-size="lg"] {
+  width: 40px;
+  height: 50px;
+  border-radius: 5px 13px 5px 5px;
+}
+.cp-file[data-size="lg"]::after {
+  font-size: 9px;
+  bottom: 7px;
+}
+
+/* 步骤时间线：灰字 + 图标 + 1px 连线（brand-spec v2） */
+.cp-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.cp-step {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  column-gap: 10px;
+  position: relative;
+  padding-bottom: 12px;
+}
+.cp-step:last-child {
+  padding-bottom: 0;
+}
+.cp-step::before {
+  content: "";
+  position: absolute;
+  left: 8.5px;
+  top: 21px;
+  bottom: 3px;
+  width: 1px;
+  background: var(--line-2);
+}
+.cp-step:last-child::before {
+  display: none;
+}
+.cp-step .ico {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--ink-4);
+}
+.cp-step[data-s="done"] .ico {
+  color: var(--ink);
+}
+.cp-step[data-s="now"] .ico {
+  color: var(--accent);
+}
+.cp-step[data-s="err"] .ico {
+  color: var(--warn);
+}
+.cp-step .label {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.cp-step:is([data-s="done"], [data-s="now"], [data-s="err"]) .label {
+  color: var(--ink);
+}
+.cp-step:is([data-s="now"], [data-s="err"]) .label {
+  font-weight: 560;
+}
+.cp-step .sub {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 1px;
+}
+/* 描线：pathLength=100，gap 略大于 dash，防止圆头线帽露头（配方 e3 / m1） */
+.cp-draw {
+  stroke-dasharray: 100 110;
+  stroke-dashoffset: 0;
+}
+.cp-draw.go {
+  stroke-dashoffset: 105;
+  animation: cp-draw 250ms var(--ease-in-out-cubic) forwards;
+}
+.cp-draw.go.late {
+  animation-duration: 200ms;
+  animation-delay: 150ms;
+}
+@keyframes cp-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+/* 进行中：opacity 往返脉冲（配方 k1 / m4） */
+.cp-pulse {
+  animation: cp-pulse 1s var(--ease-in-out-cubic) infinite alternate;
+}
+@keyframes cp-pulse {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-draw.go {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .cp-pulse {
+    animation-play-state: paused;
+    animation-delay: -0.4s;
+  }
+}
+
+/* 清晰度单选行：选中是 macOS 式的蓝色单选点 */
+.cp-qlist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cp-qrow {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  text-align: left;
+  cursor: default;
+  font-size: 13px;
+  transition: transform var(--t-press) var(--ease-out-quad);
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-qrow:not(:disabled):hover {
+    background: var(--hover);
+  }
+}
+.cp-qrow:not(:disabled):active {
+  transform: scale(0.98);
+}
+.cp-qrow:disabled {
+  color: var(--ink-3);
+}
+.cp-qrow:disabled[aria-checked="true"] {
+  color: var(--ink);
+}
+.cp-qrow[aria-checked="true"] {
+  background: var(--well);
+}
+.cp-qrow .radio {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22);
+  background: #fff;
+}
+.cp-qrow[aria-checked="true"] .radio {
+  background: #fff;
+  box-shadow: inset 0 0 0 4.5px var(--accent);
+}
+.cp-qrow small {
+  display: block;
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+.cp-qrow .size {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-qrow:active {
+    transform: none;
+  }
+}
+
+/* ---------------- 下载页空的时候：居中的标题和输入框（照 m4 首页） ---------------- */
+.cp-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 40px 60px;
+}
+.cp-empty-in {
+  width: min(640px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.cp-empty h2 {
+  margin: 16px 0 6px;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.cp-empty p {
+  margin: 0 0 22px;
+  color: var(--ink-3);
+  font-size: 13.5px;
+}
+.cp-empty .cp-composer {
+  width: 100%;
+}
+.cp-tries {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.cp-try {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 12px 0 10px;
+  border: 0;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.045);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out-quad);
+}
+.cp-try img {
+  width: 13px;
+  height: 13px;
+  opacity: 0.8;
+}
+.cp-try:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-try:hover {
+    background: rgba(0, 0, 0, 0.07);
+  }
+}
+.cp-empty .foot {
+  margin-top: 26px;
+  font-size: 12px;
+  color: var(--ink-4);
+}
+
+/* ---------------- 登录窗口（单独的系统窗口；窗口出现和消失交给系统，配方 g4） ---------------- */
+.cp-loginwin {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 640px;
+  height: 680px;
+  translate: -26% -50%;
+  border-radius: 12px;
+  background: #f6f6f6;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.22), 0 40px 100px -24px rgba(0, 0, 0, 0.42), 0 10px 30px -12px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  z-index: 20;
+}
+.cp-loginwin-title {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 12px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.cp-loginwin-title .name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+  font-weight: 600;
+  color: var(--ink);
+}
+.cp-loginbody {
+  position: relative;
+  margin: 0 8px 8px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+/* 工具条浮在网页上：毛玻璃 */
+.cp-loginbar {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 8px;
+  border-radius: 14px;
+}
+.cp-loginbar .site {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.05);
+  font: 500 12.5px/1 var(--mono);
+  color: var(--ink);
+  flex: none;
+}
+.cp-loginbar .site svg {
+  color: var(--ink-3);
+}
+.cp-loginbar .msg {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-loginbar .end {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+.cp-webview {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #fafafa;
+}
+.cp-webview .ph {
+  width: 340px;
+  padding: 30px 28px 26px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+.cp-webview .ph .bar {
+  height: 36px;
+  border-radius: 8px;
+  background: #f0f0f0;
+  margin-top: 10px;
+}
+.cp-webview .ph .bar.btn {
+  width: 42%;
+  margin: 18px auto 0;
+  border-radius: 99px;
+  background: #e4e4e4;
+}
+.cp-webview .ph .circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #ececec;
+  margin: 0 auto 14px;
+}
+.cp-webview .tag {
+  position: absolute;
+  bottom: 58px;
+  left: 50%;
+  translate: -50% 0;
+  font-size: 12px;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+.cp-loginfoot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  font-size: 12px;
+  color: var(--ink-3);
+  border-top: 0.5px solid var(--line);
+  background: rgba(250, 250, 250, 0.9);
+}
+.cp-loginfoot svg {
+  flex: none;
+}
+
+/* ---------------- 弹窗遮罩、上手引导 ---------------- */
+.cp-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  display: grid;
+  place-items: center;
+  z-index: 10;
+}
+.cp-ob {
+  width: 560px;
+  border-radius: var(--r-2xl);
+  background: #f9f9f9;
+  box-shadow: var(--sh-dialog);
+  overflow: hidden;
+  position: relative;
+}
+/* 头图：真实的电影画面 + 浮在上面的 Captae 界面片段，底部渐隐进卡片（参考 m2 引导卡） */
+.cp-ob-art {
+  position: relative;
+  height: 212px;
+  overflow: hidden;
+}
+.cp-ob-art > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+}
+.cp-ob-skip {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  z-index: 3;
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 99px;
+  font-size: 12.5px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.62);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+}
+.cp-ob-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+.cp-ob-body {
+  padding: 0 36px;
+  position: relative;
+}
+.cp-ob h2 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 620;
+  letter-spacing: -0.015em;
+}
+.cp-ob .lead {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.cp-ob-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 22px 0 6px;
+}
+.cp-ob-item {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 14px;
+  align-items: center;
+}
+.cp-ob-item .tile {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: #efefef;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+}
+.cp-ob-item strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+.cp-ob-item span {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.cp-ob-note {
+  margin: 16px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.cp-ob-foot {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 22px 24px 24px;
+}
+.cp-ob-foot .end {
+  justify-self: end;
+}
+/* 页码点：圆点 6px、激活胶囊 18px、间距 4px，约 150ms（实测 m2 A1） */
+.cp-dots {
+  display: flex;
+  gap: 4px;
+}
+.cp-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: #d3d3d3;
+  transition: width 150ms var(--ease-out-quint), background-color 150ms ease;
+}
+.cp-dots i[data-on] {
+  width: 18px;
+  background: #4a4a4a;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-dots i {
+    transition: background-color 150ms ease;
+  }
+}
+/* 头图里的界面片段：和真实界面同一套玻璃 */
+.cp-frag {
+  position: absolute;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(20px) saturate(1.7);
+  backdrop-filter: blur(20px) saturate(1.7);
+  box-shadow: var(--glass-edge), 0 0 0 0.5px rgba(0, 0, 0, 0.1), 0 14px 34px -12px rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  font-size: 12.5px;
+}
+
+/* ---------------- 素材库 ---------------- */
+.cp-libsearch {
+  width: 250px;
+}
+.cp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  padding-top: 8px;
+}
+/* 网格卡片：悬停只让描边出现（opacity 150ms ease），不抬起不放大；按下 scale(.98)（配方 j1） */
+.cp-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 6px 10px;
+  border: 0;
+  border-radius: var(--r-lg);
+  background: var(--card);
+  box-shadow: var(--sh-card);
+  text-align: left;
+  cursor: default;
+  transition: transform var(--t-press) var(--ease-out-quad);
+}
+.cp-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12), 0 8px 22px -14px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-hover) ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-tile:hover::after {
+    opacity: 1;
+  }
+}
+.cp-tile:active {
+  transform: scale(0.98);
+}
+.cp-tile[aria-selected="true"] {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.16), 0 8px 24px -12px rgba(0, 0, 0, 0.18);
+}
+.cp-tile:focus-visible {
+  outline: 2px solid rgba(0, 122, 255, 0.55);
+  outline-offset: 2px;
+}
+.cp-tile-media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #e6e6e6;
+}
+.cp-tile-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cp-tile-title {
+  margin: 9px 4px 0;
+  font-size: 13.5px;
+  font-weight: 580;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-tile .cp-meta {
+  margin: 3px 4px 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-tile:active {
+    transform: none;
+  }
+}
+/* 音频的封面：静态波形 */
+.cp-wave {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: #262628;
+}
+.cp-wave i {
+  width: 3px;
+  max-height: 62%;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.82);
+}
+.cp-play {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), 0 4px 14px -4px rgba(0, 0, 0, 0.35);
+}
+.cp-desc {
+  margin: 4px 4px 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.cp-kv {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 7px;
+  margin: 2px 0 0;
+  font-size: 12.5px;
+}
+.cp-kv dt {
+  color: var(--ink-3);
+}
+.cp-kv dd {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.cp-convert {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 12px 0;
+  padding: 16px 0 14px;
+  border-radius: var(--r-md);
+  background: var(--well);
+}
+.cp-convert .arrow {
+  color: var(--ink-4);
+}
+
+/* Sonner 提示条：照 m2 F 节的深色提示条（近黑、白字、内嵌灰色「撤销」）；动效用 Sonner 自己的（课程 02/03 讲的就是它） */
+.cp-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 8px 8px 14px;
+  border-radius: 12px;
+  background: var(--glass-dark);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.14), 0 12px 30px -10px rgba(0, 0, 0, 0.4);
+  color: #fff;
+  font: 500 13px/1.35 var(--font);
+}
+.cp-toast [data-content] {
+  flex: 1;
+  min-width: 0;
+}
+.cp-toast [data-description] {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 400;
+  font-size: 12px;
+}
+.cp-toast-action {
+  height: 26px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font: 500 12.5px/1 var(--font);
+}
+
+/* ---------------- 设置 ---------------- */
+.cp-set {
+  padding: 0 0 4px;
+}
+.cp-set-h {
+  margin: 18px 4px 6px;
+  font-size: 12px;
+  font-weight: 560;
+  color: var(--ink-3);
+}
+.cp-set-h:first-child {
+  margin-top: 0;
+}
+.cp-set-p {
+  margin: -2px 4px 8px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cp-group {
+  border-radius: 12px;
+  background: var(--well);
+  padding: 0 12px;
+}
+.cp-set-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 50px;
+  padding: 8px 0;
+}
+.cp-group > * + * {
+  border-top: 0.5px solid var(--line-2);
+}
+.cp-set-row b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 520;
+}
+.cp-set-row small {
+  display: block;
+  margin-top: 1px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cp-set-sw {
+  padding: 10px 0;
+}
+.cp-set-select {
+  width: 108px;
+}
+.cp-set-select.wide {
+  width: 150px;
+}
+/* 语言：「跟随系统（简体中文）」「System (English)」放得下 */
+.cp-set-select.lang {
+  width: 196px;
+}
+.cp-site .who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.cp-site .who > :first-child {
+  box-sizing: border-box;
+  width: 30px;
+  height: 30px;
+  padding: 7px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+  object-fit: contain;
+  opacity: 1;
+  flex: none;
+}
+.cp-site .st {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.cp-site .st.on {
+  color: var(--ok);
+}
+.cp-engines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 12px 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.cp-engines small {
+  color: var(--ink-3);
+  margin-left: 4px;
+}
+
+/* ---------------- 新界面补充 ---------------- */
+.cp-progress[data-tone="err"] > i {
+  background: var(--err);
+}
+.cp-site-ico {
+  flex: none;
+  opacity: 0.8;
+}
+.cp-elapsed {
+  color: var(--ink-4);
+  font-size: 12px;
+}
+.cp-step {
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+}
+.cp-step > .body {
+  min-width: 0;
+}
+.cp-step > :nth-child(3) {
+  align-self: start;
+  margin-top: 1px;
+}
+
+/* ---------------- 窗口骨架：侧栏收起、窄窗口 ---------------- */
+/* 主区固定在第二列：窄窗口时侧栏变成浮层、不占格子，主区也不能跑到第一列去 */
+.cp-window > .cp-main {
+  grid-column: 2;
+  grid-row: 1;
+}
+.cp-window {
+  grid-template-rows: minmax(0, 1fr);
+  /* 侧栏收起和展开：低频操作，宽度 250ms ease（配方 a；课 07/02 也接受这类宽度动画） */
+  transition: grid-template-columns 250ms ease;
+}
+/* 收起时侧栏内容保持原宽、被主区面板盖过去，不会挤成一团；收完再藏起来，Tab 不会走进去 */
+.cp-side {
+  width: 244px;
+}
+.cp-window[data-side="off"] {
+  grid-template-columns: 0 1fr;
+}
+.cp-window[data-side="off"] .cp-main,
+.cp-window[data-narrow] .cp-main {
+  margin-left: 8px;
+}
+.cp-window[data-side="off"]:not([data-narrow]) .cp-side {
+  visibility: hidden;
+  transition: visibility 0s linear 250ms;
+}
+.cp-side-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.cp-side-scroll::-webkit-scrollbar {
+  display: none;
+}
+.cp-brand-home {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  cursor: default;
+}
+.cp-brand .end {
+  margin-left: auto;
+  display: flex;
+  color: var(--ink-3);
+}
+.cp-side-link {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  color: var(--ink-4);
+  cursor: default;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-side-link:hover {
+    color: var(--ink-2);
+  }
+}
+.cp-side-empty {
+  padding: 2px 9px 4px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-4);
+}
+/* 侧栏收起时：红绿灯和「展开侧栏」浮在主区左上角，顶栏的标题往右让开 */
+.cp-side-float {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 52px;
+  color: var(--ink-3);
+}
+.cp-topbar {
+  transition: padding-left 250ms ease;
+}
+.cp-window[data-side="off"] .cp-topbar {
+  padding-left: 116px;
+}
+/* 窄窗口（760px 以下）：侧栏平时收着，要用时盖在主区上面，从左边滑进来 200ms ease-out-quart、收起 150ms（配方 e1） */
+.cp-window[data-narrow] {
+  grid-template-columns: 0 1fr;
+}
+.cp-window[data-narrow] .cp-side {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  width: 264px;
+  background: var(--side);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 12px 0 40px -12px rgba(0, 0, 0, 0.22);
+  transition: transform 200ms var(--ease-out-quart), visibility 0s;
+}
+.cp-window[data-narrow][data-side="off"] .cp-side {
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform 150ms var(--ease-out-quint), visibility 0s linear 150ms;
+}
+/* 遮罩和侧栏同进同出：进 200ms、退 150ms，只动透明度（ease，配方 1.1）；用过渡不用关键帧，连点开关时从当前值接着走 */
+.cp-side-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 19;
+  background: rgba(140, 140, 140, 0.32);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 150ms ease,
+    visibility 0s linear 150ms;
+}
+.cp-side-scrim[data-open] {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 200ms ease,
+    visibility 0s;
+}
+
+/* ---------------- Windows / Linux：标题条和窗口按钮（shell/WindowControls.tsx） ----------------
+ * 主窗口无边框，系统不画标题栏：窗口最上面留一条 --tb-h 高、和侧栏同色的标题条，左边「收起 / 展开侧栏」，右边窗口按钮；
+ * 侧栏和主区面板从它下面开始。macOS 不变（红绿灯和主区顶栏在一条线上，见上面的 .cp-lights-space）。
+ * Windows 32px（Windows 11 标准标题栏的高度，按钮 46×32）；Linux 38px（GNOME 的 24px 圆钮上下各留 7px） */
+:root[data-os="win"] {
+  --tb-h: 32px;
+}
+:root[data-os="linux"] {
+  --tb-h: 38px;
+}
+:root:not([data-os="mac"]) .cp-window {
+  padding-top: var(--tb-h);
+}
+:root:not([data-os="mac"]) .cp-window > .cp-main {
+  margin-top: 0;
+}
+:root:not([data-os="mac"]) .cp-side {
+  padding-top: 6px;
+}
+/* 收起侧栏时：「展开侧栏」在标题条里，顶栏的标题不用给它让位 */
+:root:not([data-os="mac"]) .cp-window[data-side="off"] .cp-topbar {
+  padding-left: 22px;
+}
+/* 窄窗口的侧栏浮层和遮罩从标题条下面开始，窗口按钮一直点得到 */
+:root:not([data-os="mac"]) .cp-window[data-narrow] .cp-side,
+:root:not([data-os="mac"]) .cp-side-scrim {
+  top: var(--tb-h);
+}
+.cp-titlebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  height: var(--tb-h);
+}
+/* 「收起侧栏」的图标和侧栏导航的图标对齐（侧栏左内边距 12px + 导航行 9px，按钮 32px 里图标居中） */
+.cp-titlebar-lead {
+  display: flex;
+  padding-left: 13px;
+  color: var(--ink-3);
+}
+.cp-titlebar-fill {
+  flex: 1;
+  align-self: stretch;
+}
+.cp-wc {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+}
+.cp-wc-btn {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: default;
+  /* 悬停、按下只变颜色，120ms ease（MOTION 1.2）；和系统的窗口按钮一样不缩放 */
+  transition:
+    background-color var(--t-hover) ease,
+    color var(--t-hover) ease;
+}
+.cp-wc-btn svg {
+  display: block;
+}
+/* Windows 11：贴着窗口右上角的 46×32 方块，悬停浅灰，关闭悬停红底白叉（#c42b1c，Windows 11 的值）；
+ * 窗口有圆角时系统会把右上角的红底一起裁圆 */
+.cp-wc[data-os="win"] .cp-wc-btn {
+  width: 46px;
+  height: 100%;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-wc[data-os="win"] .cp-wc-btn:hover {
+    background: rgba(0, 0, 0, 0.06);
+  }
+  .cp-wc[data-os="win"] .cp-wc-btn[data-kind="close"]:hover {
+    background: #c42b1c;
+    color: #fff;
+  }
+}
+.cp-wc[data-os="win"] .cp-wc-btn:active {
+  background: rgba(0, 0, 0, 0.035);
+  color: var(--ink-2);
+}
+.cp-wc[data-os="win"] .cp-wc-btn[data-kind="close"]:active {
+  background: rgba(196, 43, 28, 0.9);
+  color: rgba(255, 255, 255, 0.7);
+}
+/* Linux（GNOME / libadwaita 的标题栏）：24px 的浅灰圆钮，关闭也不变红；图标 16px */
+.cp-wc[data-os="linux"] {
+  gap: 10px;
+  padding-right: 10px;
+}
+.cp-wc[data-os="linux"] .cp-wc-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.8);
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-wc[data-os="linux"] .cp-wc-btn:hover {
+    background: rgba(0, 0, 0, 0.13);
+  }
+}
+.cp-wc[data-os="linux"] .cp-wc-btn:active {
+  background: rgba(0, 0, 0, 0.22);
+}
+/* 窗口不在前台：图标变淡（两个系统都这样），Linux 的圆底也淡一点 */
+:root[data-win-inactive] .cp-wc-btn:not(:hover) {
+  color: var(--ink-4);
+}
+:root[data-win-inactive] .cp-wc[data-os="linux"] .cp-wc-btn:not(:hover) {
+  background: rgba(0, 0, 0, 0.05);
+}
+/* Linux 的无边框窗口系统不画阴影和边，和后面的窗口混在一起：沿窗口边画一圈细线；最大化、贴边时不画。
+ * WebKitGTK 的透明窗口性能和兼容性都不稳（NVIDIA、部分合成器），所以不做透明圆角，用方角 */
+:root[data-os="linux"]:not([data-win-max]) .cp-window {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+/* Linux 的玻璃：WebKitGTK 只在开了硬件合成时才画 backdrop-filter（虚拟机、部分显卡驱动下 WebKit 关掉合成，模糊整个不画），
+ * 这时只剩半透明的底，下面的字会透上来。底色调实一些：画得出模糊时差别不大，画不出时也看得清（和「减少透明度」的做法同一个方向） */
+:root[data-os="linux"] {
+  --glass: rgba(255, 255, 255, 0.86);
+  --glass-main: rgba(247, 247, 247, 0.9);
+  --glass-strong: rgba(255, 255, 255, 0.92);
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-os="linux"] {
+    --glass: #ffffff;
+    --glass-main: #f7f7f7;
+    --glass-strong: #ffffff;
+  }
+}
+@keyframes cp-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-window,
+  .cp-topbar {
+    transition: none;
+  }
+  /* 减少动效：侧栏不滑，只淡入淡出 */
+  .cp-window[data-narrow] .cp-side {
+    transform: none;
+    transition: opacity 150ms ease, visibility 0s;
+  }
+  .cp-window[data-narrow][data-side="off"] .cp-side {
+    transform: none;
+    opacity: 0;
+    transition: opacity 150ms ease, visibility 0s linear 150ms;
+  }
+}
+/* 后台没响应 */
+.cp-offline {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.cp-offline b {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.cp-offline code {
+  max-width: 520px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--well);
+  font: 12px/1.5 var(--mono);
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+/* 列表空着的时候：说明放在列表区中间（输入框上方） */
+.cp-listempty {
+  display: grid;
+  place-items: center;
+  min-height: calc(100% - 64px);
+  padding: 24px 0;
+}
+
+/* ---------------- 下载页：列表行 ---------------- */
+.cp-job {
+  outline: none;
+}
+.cp-job:focus-visible {
+  outline: 2px solid var(--aui-focus);
+  outline-offset: 2px;
+}
+/* 行窄的时候，清晰度选项里的大小先不显示，免得挤出去 */
+.cp-job-body {
+  container-type: inline-size;
+}
+@container (max-width: 470px) {
+  .cp-job .ui-seg__count {
+    display: none;
+  }
+}
+.cp-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.cp-gap {
+  margin-top: 8px;
+}
+.cp-pickfoot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.cp-pickfoot .cp-countdown {
+  margin-top: 0;
+}
+/* 文字按钮：「马上开始」「在访达中显示」 */
+.cp-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12.5px;
+  color: var(--accent-ink);
+  cursor: default;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+.cp-stats .cp-link {
+  margin-left: auto;
+}
+/* 行窄的时候，进度那一行按项换行，不把一项拆成两行 */
+.cp-stats {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+.cp-stats > * {
+  white-space: nowrap;
+}
+.cp-stats .ok {
+  color: var(--ok);
+  font-weight: 560;
+}
+.cp-stats .warn {
+  color: var(--warn);
+}
+.cp-entry .ph {
+  width: 44px;
+  height: 25px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* 空页面上的剪贴板提示：浮在面板底部，不挤动居中的内容 */
+.cp-empty-clip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  display: flex;
+  justify-content: center;
+  padding: 0 24px;
+  pointer-events: none;
+}
+.cp-empty-clip > * {
+  pointer-events: auto;
+}
+
+/* ---------------- 下载页：右侧详情 ---------------- */
+.cp-dcard {
+  position: relative;
+}
+.cp-dclose {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+}
+/* 窄的时候：详情浮在列表右边，点了任务才出来 */
+.cp-detail.float {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  width: min(356px, calc(100% - 24px));
+  padding: 12px;
+}
+.cp-preview.is-empty {
+  display: grid;
+  place-items: center;
+  background: var(--well);
+  color: var(--ink-4);
+}
+.cp-preview.is-empty img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  opacity: 0.28;
+  filter: grayscale(1);
+}
+.cp-dnote {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+.cp-dsec-b > .cp-dnote:first-child {
+  margin: 0 0 10px;
+}
+.cp-qfoot {
+  margin-top: 10px;
+}
+/* M3U8 分段：四个数字 + 一格一段 */
+.cp-hstats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cp-hstats div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.cp-hstats b {
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cp-hstats span {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.cp-segs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7px, 1fr));
+  gap: 2px;
+}
+.cp-segs i,
+.cp-legend span::before {
+  height: 7px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.08);
+}
+.cp-segs i[data-s="1"],
+.cp-legend [data-s="1"]::before {
+  background: rgba(0, 122, 255, 0.4);
+}
+.cp-segs i[data-s="2"],
+.cp-legend [data-s="2"]::before {
+  background: var(--accent);
+}
+.cp-segs i[data-s="3"],
+.cp-legend [data-s="3"]::before {
+  background: var(--warn);
+}
+.cp-segs i[data-s="4"],
+.cp-legend [data-s="4"]::before {
+  background: var(--err);
+}
+.cp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.cp-legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.cp-legend span::before {
+  content: "";
+  width: 7px;
+}
+.cp-segact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+/* 下载记录：最新的在上面 */
+.cp-log {
+  max-height: 220px;
+  overflow: auto;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--well);
+  font-size: 12px;
+  line-height: 1.55;
+  user-select: text;
+}
+.cp-log div {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 8px;
+}
+.cp-log time {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-4);
+}
+.cp-log span {
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.cp-log [data-lv="warn"] span {
+  color: var(--warn);
+}
+.cp-log [data-lv="err"] span {
+  color: var(--err);
+}
+.cp-dlg-p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* ---------------- 设置 ---------------- */
+.cp-set-row .acts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cp-set-fields {
+  display: grid;
+  gap: 10px;
+  padding: 10px 0 14px;
+}
+/* 安装语音识别的进度 */
+.cp-tprog {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(320px, 100%);
+  margin-top: 8px;
+}
+.cp-tprog > :first-child {
+  flex: 1;
+}
+.cp-tprog span {
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.cp-engines [data-bad] {
+  color: var(--err);
+}
+/* 详情里「这个视频在一个播放列表里」 */
+.cp-dplaylist {
+  margin: 6px 4px 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+.cp-dplaylist .cp-link {
+  margin-left: 4px;
+  font-size: 12px;
+}
+/* 减少动效：按压不缩放，只留背景色的变化（配方 1.7）。affectUI 的按钮（Button）在减少动效时只把过渡改成 1ms，
+ * 按下照样一下子缩到 .97；分段控件按住时滑块也缩 .97。这里一起去掉，和我们自己的按钮、affectUI 的 IconButton 一致 */
+@media (prefers-reduced-motion: reduce) {
+  .cp-round:active,
+  .cp-send:active:not(:disabled),
+  .cp-try:active,
+  :root .ui-button:active:not(:disabled):not([data-loading]) {
+    transform: none;
+  }
+  :root .ui-seg[data-pressed]:not([data-variant="underline"]) .ui-seg__pill {
+    scale: none;
+  }
+}
+/* 减少动效：提示条只淡入、不滑（课 04/03：更温和，不是全关）。Sonner 在减少动效时用 !important 把过渡全关了，提示条一下子蹦出来；
+ * 这里只给「刚挂上去」这一下放回透明度的过渡（200ms ease），位置直接到位。收走时照 Sonner 的直接消失：
+ * 收走时它会先把位置往下挪一个身位，要是给收走也加淡出，就成了先跳下去再淡出 */
+@media (prefers-reduced-motion: reduce) {
+  .cp-toast-layer [data-sonner-toast][data-mounted="true"]:not([data-removed="true"]) {
+    transition: opacity 200ms ease !important;
+  }
+}
+/* 减少动效：affectUI 的菜单、右键菜单、小弹层、下拉列表、提示、弹窗在减少动效时把动画改成 1ms（提示直接 none），一下子蹦出来。
+ * 课程 04/03：减少动效是「更温和」，不是全关——位移和缩放去掉，透明度留下，时长照原来的。
+ * affectUI 的样式被 React 提到 <head> 里，先后不固定，前面加 html:root 抬高优先级；下拉列表那条 affectUI 用了 !important，这里也只能用。
+ * 弹窗只补进场：减少动效时 affectUI 在 JS 里马上卸掉弹窗，退场来不及播（和原来一样直接消失） */
+@media (prefers-reduced-motion: reduce) {
+  html:root .ui-dm__panel,
+  html:root .ui-ctx__panel,
+  html:root .ui-pop {
+    animation: cp-fade-in 220ms ease both;
+  }
+  html:root .ui-dm__panel[data-side="right"],
+  html:root .ui-dm__panel[data-side="left"],
+  html:root .ui-ctx__panel[data-side="right"],
+  html:root .ui-ctx__panel[data-side="left"] {
+    animation-duration: 160ms;
+  }
+  html:root .ui-sel__list {
+    animation: cp-fade-in 200ms ease both !important;
+  }
+  html:root .ui-tip:not([data-instant]) {
+    animation: cp-fade-in 160ms ease both;
+  }
+  html:root .ui-dlg:not([data-leaving]) {
+    animation-duration: 180ms;
+  }
+  html:root .ui-dlg:not([data-leaving]) .ui-dlg__panel {
+    animation: cp-fade-in 260ms ease both;
+  }
+}
+/* 提示条那一层（popover，在浏览器顶层里，排在模态弹窗上面）：自己不占地方、不画东西，提示条照旧固定在窗口底部 */
+.cp-toast-layer {
+  position: fixed;
+  inset: auto;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+/* 设置 › 语言：行标题后面的「· Language」（英文以外的语言里才有） */
+.cp-set-en {
+  color: var(--ink-3);
+  font-weight: 400;
+}

@@ -1,0 +1,12 @@
+{
+  "bundle": {
+    "resources": {
+      "binaries/linux/bin/captae": null,
+      "binaries/linux/bin/ffmpeg": null,
+      "binaries/linux/bin/ffprobe": null,
+      "binaries/linux/bin/aria2c": null,
+      "binaries/linux/bin/deno": null,
+      "binaries/linux/yt-dlp/": null
+    }
+  }
+}

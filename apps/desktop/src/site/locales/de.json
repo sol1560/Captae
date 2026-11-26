@@ -1,0 +1,231 @@
+{
+  "meta": {
+    "title": "Captae · Videos aus dem Netz aufs Gerät speichern",
+    "description": "Per Link oder Klick Kurse, Clips und Videos aufs Gerät laden. Qualität wählen, Gesagtes suchen, Untertitel erstellen und schneiden."
+  },
+  "nav": {
+    "features": "Überblick",
+    "extension": "Erweiterung",
+    "ai": "Mit KI",
+    "opensource": "Gratis & Open Source",
+    "download": "Kostenlos laden"
+  },
+  "hero": {
+    "eyebrow": "Videos sammeln auf PC und Smartphone",
+    "title": "Videos sichern, jederzeit parat",
+    "subtitle": "Kurse, Material oder Videos per Link in Wunschqualität speichern, Untertitel erstellen und Szenen finden.",
+    "primary": "Kostenlos laden",
+    "secondary": "Auf GitHub ansehen",
+    "note": "Kostenlos, ohne Konto, lokal auf deinem Gerät"
+  },
+  "stage": {
+    "caption": "Vom Link über die Mediathek zum Untertitel",
+    "replay": "Nochmal"
+  },
+  "sites": {
+    "lead": "Videos von gewohnten Seiten sichern",
+    "more": "Tausende weitere"
+  },
+  "showcase": {
+    "kicker": "Ansichten",
+    "title": "Vier Seiten für deine Videos",
+    "body": "Echte App im Web: Seiten wechseln, Qualität wählen, Status sehen, alles klickbar.",
+    "captions": {
+      "downloads": "Dateigröße je Qualität prüfen, Laufendes und Fertiges im Blick.",
+      "library": "Alle Videos sortiert: nach Text suchen, schneiden und umwandeln.",
+      "agent": "Deine KI per Klick verbinden, jede ausgeführte Aktion im Verlauf.",
+      "extension": "Direkt am Webvideo Qualität wählen und ohne Umweg speichern."
+    },
+    "try": "Klicken & testen"
+  },
+  "tour": {
+    "next": "Weiter",
+    "end": "Weiterlesen"
+  },
+  "pick": {
+    "kicker": "Qualität",
+    "title": "Größe vor dem Laden prüfen",
+    "body": "Nach dem Einfügen siehst du die Größe jeder Stufe. Wähle selbst oder warte kurz, dann startet automatisch die höchste Qualität."
+  },
+  "login": {
+    "kicker": "Anmeldung",
+    "title": "Einmal anmelden reicht völlig",
+    "body": "Manche Kurse, hohe Qualitäten oder Merklisten erfordern ein Login. Einmal in der App anmelden und künftig direkt von dort laden."
+  },
+  "reasons": {
+    "kicker": "Klartext",
+    "title": "Klappt es nicht, siehst du warum",
+    "body": "Keine kryptischen Fehler. Ob Anmeldung fehlt, die Seite prüft oder eine Ländersperre greift: Du siehst den Grund samt passendem Button.",
+    "fixed": "Angemeldet, lädt weiter",
+    "examples": [
+      {
+        "text": "Für dieses Video musst du dich bei Bilibili anmelden",
+        "tone": "warn",
+        "action": "Bei Bilibili anmelden"
+      },
+      {
+        "text": "YouTube verlangt zuerst eine Bestätigung auf der Webseite",
+        "tone": "warn",
+        "action": "Bestätigen"
+      },
+      {
+        "text": "Dieses Video ist in deiner Region nicht verfügbar",
+        "tone": "err",
+        "action": "Erneut versuchen"
+      },
+      {
+        "text": "Dieses Video ist kopiergeschützt (DRM). Captae kann es nicht herunterladen",
+        "tone": "err",
+        "action": ""
+      }
+    ]
+  },
+  "library": {
+    "kicker": "Mediathek",
+    "title": "Gesagtes im Video einfach wiederfinden",
+    "body": "Auch bei vielen Videos findest du alles: Wort suchen, Stelle finden, direkt schneiden, zusammenfügen, untertiteln oder umwandeln.",
+    "chips": [
+      "Textsuche",
+      "Umwandeln",
+      "Schneiden",
+      "Verbinden",
+      "Untertitel",
+      "Nur Audio"
+    ]
+  },
+  "speech": {
+    "kicker": "Untertitel",
+    "title": "Sprache im Video lokal in Text wandeln",
+    "body": "Aus Vorträgen oder Interviews ohne Untertitel entstehen per Klick Zeitmarken und das volle Skript. Alles bleibt lokal auf deinem Gerät.",
+    "none": "Noch keine",
+    "working": "Wird erkannt",
+    "done": "Text bereit"
+  },
+  "live": {
+    "kicker": "Livestream",
+    "title": "Laufende Streams ab sofort aufnehmen",
+    "body": "Streams ohne Aufzeichnung erkennt die App sofort am Link. Starte die Aufnahme ab dem aktuellen Bild, stoppe jederzeit und sichere das Video."
+  },
+  "extension": {
+    "kicker": "Im Browser",
+    "title": "Videos beim Surfen direkt am Bild laden",
+    "body": "Mit der Erweiterung kopierst du keine Links mehr. Am laufenden Webvideo erscheint ein Button, du wählst die Qualität und speicherst es.",
+    "points": [
+      "Button am Video, kein Linkkopieren",
+      "Qualität wählen, Fortschritt im Eck",
+      "Fertig im Archiv und sofort nutzbar"
+    ]
+  },
+  "ai": {
+    "kicker": "KI verbinden",
+    "title": "Lass deine KI Videos laden und Szenen finden",
+    "body": "Verbinde Claude oder Cursor mit einem Klick. Lass sie Videos laden, bestimmte Textstellen im Video suchen oder Untertitel für dich erstellen.",
+    "points": [
+      "Per Klick verbinden, jederzeit aus",
+      "Alle Aktionen übersichtlich notiert",
+      "Arbeitet lokal, Dateien bleiben hier"
+    ],
+    "log": [
+      {
+        "did": "Video geladen",
+        "result": "In der Mediathek"
+      },
+      {
+        "did": "Untertitel für Sintel",
+        "result": "Skript erstellt"
+      },
+      {
+        "did": "Stelle mit „dragon“ suchen",
+        "result": "Szene gefunden"
+      },
+      {
+        "did": "Big Buck Bunny in MP3 wandeln",
+        "result": "Audio exportiert"
+      }
+    ]
+  },
+  "send": {
+    "kicker": "An KI senden",
+    "title": "Lange Videos von der KI zusammenfassen lassen",
+    "body": "Bei langen Vorträgen kopiert „An KI senden“ das Skript samt Schlüsselbildern. Einfach in den Chat einfügen und nach dem Inhalt fragen.",
+    "script": "Skript"
+  },
+  "local": {
+    "kicker": "Bleibt lokal",
+    "title": "Ohne Konto, alles bleibt auf dem Gerät",
+    "body": "Sofort nutzbar, ganz ohne Konto. Videos, Untertitel und Suchverlauf bleiben komplett auf deinem eigenen Gerät.",
+    "points": [
+      "Ohne Konto sofort startklar",
+      "Gängige Formate für jeden Player",
+      "Texterkennung lokal, Audio bleibt da"
+    ]
+  },
+  "opensource": {
+    "kicker": "Kostenlos & Open Source",
+    "title": "Kostenlos, mit Code am Tageslicht",
+    "body": "Alles kostenlos, ohne Werbung oder Limits. Der ganze Code liegt auf GitHub, so wird der Weg breiter und alles sorgenfrei.",
+    "link": "Code auf GitHub ansehen"
+  },
+  "future": {
+    "title": "Blick nach vorn",
+    "points": [
+      "Breiter und einfacher",
+      "Neue Ladefunktionen",
+      "Webversion",
+      "Bessere Vorschau und Schnitt"
+    ]
+  },
+  "final": {
+    "kicker": "Jetzt testen",
+    "title": "Sichere dein nächstes Video lokal",
+    "subtitle": "Ohne Konto sofort startklar. Link einfügen und Videos lokal sichern.",
+    "primary": "Kostenlos laden"
+  },
+  "footer": {
+    "tagline": "Kostenloses Werkzeug zum Laden und Verwalten von Videos für macOS, Windows, Linux, Android und iOS",
+    "legal": "Lade nur Inhalte herunter, die du nutzen darfst, und beachte die Regeln sowie Gesetze.",
+    "credits": "Die Vorschaubilder stammen aus den vier offenen Filmen Big Buck Bunny, Sintel, Tears of Steel und Elephants Dream der Blender Foundation, genutzt unter CC BY 3.0 (Elephants Dream unter CC BY 2.5), © Blender Foundation.",
+    "github": "Auf GitHub"
+  },
+  "a11y": {
+    "nav": "Hauptnavigation",
+    "sites": "Unterstützte Websites",
+    "screens": "Ansichten der Oberfläche",
+    "footer": "Fußzeile",
+    "screenAlt": "Ansicht {page} in Captae",
+    "qualityDemo": "Beispiel zur Qualitätswahl",
+    "lang": "Sprache wählen"
+  },
+  "ui": {
+    "live": "Das ist ein laufender Livestream",
+    "biliGain": "Ermöglicht 1080P und höher sowie Premium-Videos"
+  },
+  "desk": {
+    "scroll": "Runterscrollen und Demo ansehen",
+    "steps": [
+      "Kopiere den Videolink aus der Adressleiste",
+      "Im Fenster wird der Link erkannt, ohne Einfügen",
+      "Klicke „Herunterladen“ für Qualität und Größe",
+      "Wähle 1080p und klicke auf „Jetzt starten“",
+      "Fertige Videos landen direkt in der Mediathek",
+      "In der Mediathek Format ändern, untertiteln, kürzen",
+      "Demo vorbei, klicke jetzt selbst im Fenster"
+    ],
+    "take": "Selbst testen",
+    "replay": "Nochmal"
+  },
+  "stack": {
+    "captions": [
+      "„Herunterladen“, 1080p wählen, „Jetzt starten“",
+      "„Bei YouTube anmelden“, lädt danach selbst weiter",
+      "Fehler einzeln öffnen, Grund und Lösung sehen",
+      "Im Suchfeld Sintel tippen, Video für Details öffnen",
+      "„Untertitel“, „Sprache in Text“, „Untertitel erstellen“",
+      "„Stoppen und speichern“, Stream in „Abgeschlossen“",
+      "Im Plugin „Herunterladen“ klicken, direkt an Captae",
+      "Cursor wählen, „Automatisch hinzufügen“, bestätigen",
+      "„An KI senden“ kopiert Text und Bilder zum Fragen"
+    ],
+    "take": "Selbst testen"
+  }
+}

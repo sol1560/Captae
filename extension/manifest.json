@@ -1,0 +1,80 @@
+{
+  "manifest_version": 3,
+  "name": "Captae",
+  "version": "0.2.0",
+  "description": "__MSG_description__",
+  "default_locale": "en",
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "action": {
+    "default_popup": "popup/index.html",
+    "default_title": "Captae",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "webRequest",
+    "storage",
+    "nativeMessaging",
+    "tabs",
+    "contextMenus",
+    "alarms",
+    "cookies"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "page-hook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "lib/kit.js",
+        "lib/i18n.js",
+        "lib/xcard.js",
+        "lib/article.js",
+        "lib/zip.js",
+        "lib/i18n/*.json",
+        "lib/ui.css",
+        "fonts/*.woff2"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
+    }
+  ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5VNNkYYNCOA53HBqfbi58YI+UqpE0/PTShcfl6XrcprflDeRu1ZG1pq7E/9ZdHtLlIgYlK6vNYHSI1NvIUwxlQtQE7qxj1J2UfRiGewVP4sDFOc4vEvtYuT07FdP5UKQjX2CIke8CgSdbm9wns89hojcjgpw6YWqOPiGE6fGDPPgYMR/qOuEbWQFZ0i2Dp21KItTnwS15nLtPZa06ka8QGVx+/c7B2aCbqZvSQ6WidqJ3TsKUukCR1qUXHvDJhSLMj1dMkU0ZU05CeXl60UfeXC2bzRsR/5OfAPC2hyjfpfOuX+NL4EapwZ/j5sBz9FXM4cbkN6nRwSeBNwhsWTIJQIDAQAB",
+  "minimum_chrome_version": "111"
+}

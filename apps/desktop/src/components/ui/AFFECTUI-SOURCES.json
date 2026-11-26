@@ -1,0 +1,362 @@
+{
+  "button": {
+    "title": "Button",
+    "source": "https://www.affectui.com/r/button.json",
+    "files": [
+      "button.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "icon-button": {
+    "title": "Icon Button",
+    "source": "https://www.affectui.com/r/icon-button.json",
+    "files": [
+      "icon-button.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "card": {
+    "title": "Card",
+    "source": "https://www.affectui.com/r/card.json",
+    "files": [
+      "card.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "badge": {
+    "title": "Badge",
+    "source": "https://www.affectui.com/r/badge.json",
+    "files": [
+      "badge.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "segmented-control": {
+    "title": "Segmented Control",
+    "source": "https://www.affectui.com/r/segmented-control.json",
+    "files": [
+      "segmented-control.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "toggle-group": {
+    "title": "Toggle Group",
+    "source": "https://www.affectui.com/r/toggle-group.json",
+    "files": [
+      "toggle-group.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "text-field": {
+    "title": "Text Field",
+    "source": "https://www.affectui.com/r/text-field.json",
+    "files": [
+      "text-field.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "text-area": {
+    "title": "Text Area",
+    "source": "https://www.affectui.com/r/text-area.json",
+    "files": [
+      "text-area.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "dialog": {
+    "title": "Dialog",
+    "source": "https://www.affectui.com/r/dialog.json",
+    "files": [
+      "dialog.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "dropdown-menu": {
+    "title": "Dropdown Menu",
+    "source": "https://www.affectui.com/r/dropdown-menu.json",
+    "files": [
+      "dropdown-menu.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "context-menu": {
+    "title": "Context Menu",
+    "source": "https://www.affectui.com/r/context-menu.json",
+    "files": [
+      "context-menu.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "tooltip": {
+    "title": "Tooltip",
+    "source": "https://www.affectui.com/r/tooltip.json",
+    "files": [
+      "tooltip.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "popover": {
+    "title": "Popover",
+    "source": "https://www.affectui.com/r/popover.json",
+    "files": [
+      "popover.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "hover-card": {
+    "title": "Hover Card",
+    "source": "https://www.affectui.com/r/hover-card.json",
+    "files": [
+      "hover-card.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "skeleton": {
+    "title": "Skeleton",
+    "source": "https://www.affectui.com/r/skeleton.json",
+    "files": [
+      "skeleton.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "spinner": {
+    "title": "Spinner",
+    "source": "https://www.affectui.com/r/spinner.json",
+    "files": [
+      "spinner.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "empty-state": {
+    "title": "Empty State",
+    "source": "https://www.affectui.com/r/empty-state.json",
+    "files": [
+      "empty-state.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "kbd": {
+    "title": "Kbd",
+    "source": "https://www.affectui.com/r/kbd.json",
+    "files": [
+      "kbd.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "switch": {
+    "title": "Switch",
+    "source": "https://www.affectui.com/r/switch.json",
+    "files": [
+      "switch.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "checkbox": {
+    "title": "Checkbox",
+    "source": "https://www.affectui.com/r/checkbox.json",
+    "files": [
+      "checkbox.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "separator": {
+    "title": "Separator",
+    "source": "https://www.affectui.com/r/separator.json",
+    "files": [
+      "separator.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "scroll-area": {
+    "title": "Scroll Area",
+    "source": "https://www.affectui.com/r/scroll-area.json",
+    "files": [
+      "scroll-area.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "thinking-loader": {
+    "title": "Thinking Loader",
+    "source": "https://www.affectui.com/r/thinking-loader.json",
+    "files": [
+      "thinking-loader.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "shimmer-loader": {
+    "title": "Shimmer Loader",
+    "source": "https://www.affectui.com/r/shimmer-loader.json",
+    "files": [
+      "shimmer-loader.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "number-ticker": {
+    "title": "Number Ticker",
+    "source": "https://www.affectui.com/r/number-ticker.json",
+    "files": [
+      "number-ticker.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "notification-stack": {
+    "title": "Notification Stack",
+    "source": "https://www.affectui.com/r/notification-stack.json",
+    "files": [
+      "notification-stack.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "progress-tracker": {
+    "title": "Progress Tracker",
+    "source": "https://www.affectui.com/r/progress-tracker.json",
+    "files": [
+      "progress-tracker.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "select": {
+    "title": "Select",
+    "source": "https://www.affectui.com/r/select.json",
+    "files": [
+      "select.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "avatar": {
+    "title": "Avatar",
+    "source": "https://www.affectui.com/r/avatar.json",
+    "files": [
+      "avatar.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "form-field": {
+    "title": "Form Field",
+    "source": "https://www.affectui.com/r/form-field.json",
+    "files": [
+      "form-field.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "tag-input": {
+    "title": "Tag Input",
+    "source": "https://www.affectui.com/r/tag-input.json",
+    "files": [
+      "tag-input.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "code-block": {
+    "title": "Code Block",
+    "source": "https://www.affectui.com/r/code-block.json",
+    "files": [
+      "code-block.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "number-input": {
+    "title": "Number Input",
+    "source": "https://www.affectui.com/r/number-input.json",
+    "files": [
+      "number-input.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "tool-call-card": {
+    "title": "Tool Call Card",
+    "source": "https://www.affectui.com/r/tool-call-card.json",
+    "files": [
+      "tool-call-card.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "filter-menu": {
+    "title": "Filter Menu",
+    "source": "https://www.affectui.com/r/filter-menu.json",
+    "files": [
+      "filter-menu.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  },
+  "tree-view": {
+    "title": "Tree View",
+    "source": "https://www.affectui.com/r/tree-view.json",
+    "files": [
+      "tree-view.tsx"
+    ],
+    "npmDependencies": [],
+    "fetchedAt": "2026-11-23",
+    "license": "MIT（affectUI 官网：74 items are free and open source (MIT)）"
+  }
+}

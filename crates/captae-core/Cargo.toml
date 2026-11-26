@@ -1,0 +1,76 @@
+[package]
+name = "captae-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Captae core: download queue, sniffed media, ffmpeg processing, media library and AI assistant tools"
+
+[features]
+default = ["desktop"]
+# 只在桌面端（Tauri、命令行）用的部分：本机控制接口（axum，api.rs）、浏览器插件宿主（native_host.rs）、
+# MCP 服务器（mcp.rs）、剪贴板（clipboard-rs，Android 上编不过）。手机端（crates/captae-mobile）不开它。
+# 直链用 aria2c 还是 engine/direct.rs 不看这个开关，看 tools::Runner 有没有 aria2c（运行时选），见 work/mobile/M1.md
+desktop = ["clipboard", "dep:axum"]
+clipboard = ["dep:clipboard-rs"]
+
+[dependencies]
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+# socks：手动填 socks5 代理。rustls-tls 默认用 webpki-roots 编进程序的根证书（桌面端一直是它）；
+# iOS、Android 上换成系统的证书校验（rustls-platform-verifier，见下面和 net.rs 的 build_with）
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream", "json", "socks"] }
+# 验证 yt-dlp 官方发布的 SHA2-256SUMS.sig（OpenPGP 签名），MIT OR Apache-2.0
+pgp = { version = "0.21", default-features = false }
+sha2 = "0.10"
+rusqlite = { version = "0.37", features = ["bundled"] }
+axum = { version = "0.8", optional = true }
+url = "2"
+regex = "1"
+once_cell = "1"
+directories = "6"
+aes = "0.8"
+cbc = "0.1"
+hex = "0.4"
+base64 = "0.22"
+rand = "0.9"
+futures-util = "0.3"
+tokio-util = "0.7"
+# 读系统的首选语言（界面跟随系统时用哪种语言），MIT OR Apache-2.0
+sys-locale = "0.3"
+time = { version = "0.3", features = ["formatting", "parsing", "local-offset", "macros"] }
+clipboard-rs = { version = "0.3", optional = true }
+
+# 解压 yt-dlp 官方目录版（Windows、Linux 的自动更新；macOS 照旧用 ditto）。只开 deflate（纯 Rust 的 miniz_oxide），MIT
+zip = { version = "4", default-features = false, features = ["deflate"] }
+
+# macos-system-configuration：读不到 scutil 时退回 reqwest 自己读系统代理。只在 macOS 上开（iOS、Android 用不上）
+[target.'cfg(target_os = "macos")'.dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["macos-system-configuration"] }
+
+# 手机上用系统的证书校验（认用户装的证书、企业代理的根证书），MIT OR Apache-2.0。桌面端不编进去，行为不变。
+# rustls 和 reqwest 0.12 用的是同一个 0.23（ring），只为了自己建 ClientConfig 交给 reqwest（use_preconfigured_tls）
+[target.'cfg(any(target_os = "ios", target_os = "android"))'.dependencies]
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+rustls-platform-verifier = "0.7.1"
+
+# Windows：外部工具放进 Job Object、结束进程树、停止并保存（往工具的控制台发 Ctrl-C）、认父进程；
+# 版本和 tokio 用的一样（0.61），MIT OR Apache-2.0。注册表（插件宿主、系统代理）用 winreg（MIT，依赖树里已有 0.55）
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_System_Console",
+  "Win32_System_Diagnostics_ToolHelp",
+  "Win32_System_JobObjects",
+  "Win32_System_Threading",
+] }
+winreg = "0.55"
+
+[dev-dependencies]
+tempfile = "3"
+# 测试里起本机假服务器（subtitle.rs 的翻译接口、engine/direct.rs 的 Range 续传）
+axum = "0.8"

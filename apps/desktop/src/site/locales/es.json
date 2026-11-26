@@ -1,0 +1,231 @@
+{
+  "meta": {
+    "title": "Captae · Guarda vídeos online en tu dispositivo",
+    "description": "Pega un enlace o pulsa en la web y guarda cursos, clips y vídeos en tu equipo. Elige calidad, busca frases, saca subtítulos y edita."
+  },
+  "nav": {
+    "features": "Funciones",
+    "extension": "Extensión",
+    "ai": "Conectar IA",
+    "opensource": "Gratis y abierto",
+    "download": "Descargar"
+  },
+  "hero": {
+    "eyebrow": "Guarda vídeos en ordenador y móvil",
+    "title": "Guarda vídeos en tu dispositivo",
+    "subtitle": "Cursos, clips o tus vídeos: pega el enlace, elige calidad y guárdalos. Crea subtítulos y busca frases.",
+    "primary": "Descargar",
+    "secondary": "Ver en GitHub",
+    "note": "Gratis, sin registro y todo en tu equipo"
+  },
+  "stage": {
+    "caption": "De pegar el enlace a guardar y subtitular",
+    "replay": "Repetir"
+  },
+  "sites": {
+    "lead": "Baja vídeos de tus webs habituales",
+    "more": "Y miles de webs"
+  },
+  "showcase": {
+    "kicker": "Interfaz",
+    "title": "Cuatro vistas, todo en orden",
+    "body": "La app real, aquí: cambia de vista, elige calidad, ve el avance y toca.",
+    "captions": {
+      "downloads": "Mira el tamaño por calidad, lo que está en cola y lo bajado.",
+      "library": "Se archivan solos. Aquí buscas frases, recortas y conviertes.",
+      "agent": "Conecta tu IA con un clic y revisa el historial de cada acción.",
+      "extension": "Botón junto al vídeo web para elegir calidad y bajar sin salir."
+    },
+    "try": "Pulsa y pruébalo"
+  },
+  "tour": {
+    "next": "Avanzar",
+    "end": "Seguir abajo"
+  },
+  "pick": {
+    "kicker": "Calidad",
+    "title": "Ve cuánto pesa cada calidad",
+    "body": "Al pegar el enlace ves cuánto ocupa cada calidad. Elige una tú mismo o espera unos segundos y bajará solo en la máxima calidad."
+  },
+  "login": {
+    "kicker": "Tu cuenta",
+    "title": "Inicia sesión una sola vez",
+    "body": "Ciertos cursos, calidades altas o favoritos piden cuenta. Entra una vez en la app y luego bajarás de ese sitio directamente."
+  },
+  "reasons": {
+    "kicker": "Claridad",
+    "title": "Si no baja, te dice qué paso falta",
+    "body": "Sin errores raros. Si falta sesión, verificación web o acceso en tu región, te dice la causa clara con el botón para resolverlo.",
+    "fixed": "Sesión activa, bajando",
+    "examples": [
+      {
+        "text": "Para ver este vídeo tienes que iniciar sesión en Bilibili",
+        "tone": "warn",
+        "action": "Iniciar sesión en Bilibili"
+      },
+      {
+        "text": "YouTube necesita que confirmes primero en la página web (verificación)",
+        "tone": "warn",
+        "action": "Verificar"
+      },
+      {
+        "text": "Este vídeo no está disponible en tu región",
+        "tone": "err",
+        "action": "Reintentar"
+      },
+      {
+        "text": "Este vídeo está protegido contra copia (DRM). Captae no puede descargarlo",
+        "tone": "err",
+        "action": ""
+      }
+    ]
+  },
+  "library": {
+    "kicker": "Archivo",
+    "title": "Encuentra vídeos por lo que se dijo",
+    "body": "Con muchos vídeos sigue siendo fácil: busca una palabra y halla el clip. Ahí mismo puedes cortar, unir, subtitular o convertir.",
+    "chips": [
+      "Frases",
+      "Formato",
+      "Cortar",
+      "Empalmar",
+      "Rótulos",
+      "A audio"
+    ]
+  },
+  "speech": {
+    "kicker": "Subtítulo",
+    "title": "Pasa a texto vídeos sin subtítulos",
+    "body": "En charlas o entrevistas, crea en un clic subtítulos con tiempos y el texto completo. Todo se procesa en tu equipo y el audio no sale.",
+    "none": "Sin guion",
+    "working": "Procesando",
+    "done": "Texto listo"
+  },
+  "live": {
+    "kicker": "Directos",
+    "title": "Graba directos en curso al instante",
+    "body": "En charlas sin repetición o programas en vivo, pega el enlace y detectará el directo. Graba desde ahora, para cuando quieras y guárdalo."
+  },
+  "extension": {
+    "kicker": "Extensión",
+    "title": "Baja vídeos web con un clic ahí mismo",
+    "body": "Con la extensión no copias enlaces. Sale un botón junto al vídeo web, detecta lo que se reproduce y eliges calidad para bajarlo.",
+    "points": [
+      "Botón junto al vídeo, sin enlaces",
+      "Elige calidad y ve el avance abajo",
+      "Pasa solo a tu archivo, listo ya"
+    ]
+  },
+  "ai": {
+    "kicker": "Conectar IA",
+    "title": "Deja que tu IA baje vídeos y busque clips",
+    "body": "Conéctalo en un clic con Claude o Cursor. Pídele que baje vídeos, busque el clip de una frase o genere subtítulos sin que tengas que hacerlo a mano.",
+    "points": [
+      "Conecta o apaga en un solo clic",
+      "Registro claro de cada acción",
+      "Todo en tu PC, nada sale fuera"
+    ],
+    "log": [
+      {
+        "did": "Bajó un vídeo",
+        "result": "En tu archivo"
+      },
+      {
+        "did": "Subtitular tráiler de Sintel",
+        "result": "Subtítulo listo"
+      },
+      {
+        "did": "Buscar clip que dice dragon",
+        "result": "Clip localizado"
+      },
+      {
+        "did": "Pasar Big Buck Bunny a MP3",
+        "result": "Audio exportado"
+      }
+    ]
+  },
+  "send": {
+    "kicker": "Enviar a IA",
+    "title": "Envía vídeos largos a la IA para ir al grano",
+    "body": "En charlas o tutoriales largos, pulsa «Enviar a IA» y copia el guion con imágenes clave. Pégalo en el chat y pregunta de qué habla el vídeo.",
+    "script": "Guion"
+  },
+  "local": {
+    "kicker": "En tu equipo",
+    "title": "Sin registro, todo queda en tu equipo",
+    "body": "Úsalo al abrir, sin registro. Tus vídeos, subtítulos y búsquedas quedan en tu propio equipo y no salen fuera.",
+    "points": [
+      "Sin registro, abrir y usar",
+      "Formato común para ver y editar",
+      "Texto en local, el audio no sale"
+    ]
+  },
+  "opensource": {
+    "kicker": "Gratis y código abierto",
+    "title": "Todo gratis, con el código al sol",
+    "body": "Todo es gratis, sin anuncios ni topes. El código es público en GitHub: así el camino se abre más y lo usas tranquilo.",
+    "link": "Ver el código en GitHub"
+  },
+  "future": {
+    "title": "Por venir",
+    "points": [
+      "Más amplio y fácil",
+      "Nuevo descargador",
+      "Versión web",
+      "Mejor vista y edición"
+    ]
+  },
+  "final": {
+    "kicker": "Pruébalo",
+    "title": "Guarda tu próximo vídeo en local",
+    "subtitle": "Sin registro, abrir y usar. Pega un enlace y guarda tus vídeos.",
+    "primary": "Descargar"
+  },
+  "footer": {
+    "tagline": "Herramienta gratuita para bajar y organizar vídeos en macOS, Windows, Linux, Android e iOS",
+    "legal": "Descarga solo contenido que puedas usar y respeta las normas web y leyes locales.",
+    "credits": "Las escenas de demostración pertenecen a las cuatro películas abiertas de la Fundación Blender: Big Buck Bunny, Sintel, Tears of Steel y Elephants Dream, usadas bajo CC BY 3.0 (CC BY 2.5 para Elephants Dream), © Blender Foundation.",
+    "github": "Proyecto en GitHub"
+  },
+  "a11y": {
+    "nav": "Navegación",
+    "sites": "Sitios compatibles",
+    "screens": "Vistas de la app",
+    "footer": "Pie de página",
+    "screenAlt": "Vista de {page} en Captae",
+    "qualityDemo": "Ejemplo de calidad",
+    "lang": "Cambiar idioma"
+  },
+  "ui": {
+    "live": "Este es un directo en curso",
+    "biliGain": "Permite descargar en 1080P o más y vídeos Premium"
+  },
+  "desk": {
+    "scroll": "Baja y mira cómo guardar videos",
+    "steps": [
+      "Copia el enlace en la barra del navegador",
+      "Al volver, detecta el enlace sin pegarlo",
+      "Pulsa «Descargar» y ve calidad y tamaño",
+      "Elige 1080p y baja pulsando «Empezar ahora»",
+      "Al terminar, se guarda solo en tu biblioteca",
+      "En tu biblioteca, convierte, subtitula y edita",
+      "Fin de la demo: ahora pruébalo en la ventana"
+    ],
+    "take": "Pruébalo tú",
+    "replay": "Repetir"
+  },
+  "stack": {
+    "captions": [
+      "Pulsa «Descargar», elige 1080p y «Empezar ahora»",
+      "Pulsa «Iniciar sesión en YouTube» y seguirá solo",
+      "Abre cada vídeo fallido y mira causa y solución",
+      "Busca Sintel y abre el vídeo para ver los detalles",
+      "Ve a «Subtítulos», «Voz a texto» y «Crear subtítulos»",
+      "Pulsa «Detener y guardar» y quedará en «Completado»",
+      "Pulsa «Descargar» en la extensión y envíalo a Captae",
+      "Elige Cursor, «Añadir automáticamente» y confirma",
+      "Pulsa «Enviar a la IA» y copia texto y capturas clave"
+    ],
+    "take": "Pruébalo tú"
+  }
+}

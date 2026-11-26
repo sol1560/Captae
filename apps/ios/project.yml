@@ -1,0 +1,207 @@
+# Captae iPhone 版。工程由 XcodeGen 生成（.xcodeproj 不入库）：
+#   scripts/mobile/build-rust-ios.sh   # 先编 Rust 核心（target/mobile/ 下的 xcframework 和 Swift 绑定，生成物不入库）
+#   cd apps/ios && xcodegen generate
+# 计划见 work/mobile/PLAN.md 第 5.6 节；设计稿说明见 work/mobile/design/BRIEF.md；这一轮的记录在 work/mobile/M3-ios.md。
+# 三个目标：
+#   Captae       App 本体（上架版，平台 iosStore）
+#   CaptaeKit    动态框架：UniFFI 生成的 Swift 绑定 + 链接 Rust 静态库，App 和分享扩展共用（只打进 App 一份）
+#   CaptaeShare  分享扩展：在别的 App 里分享链接给 Captae，弹分享卡片（BRIEF 08），待发的任务经 App Group 交给 App
+# 演示数据只在 Debug 编进去，启动参数 `-captaeDemo <编号>-<状态>`（如 `-captaeDemo 01-list`）打开某一页的某个状态截设计稿；
+# 不带这个参数时（包括 Debug）走真数据。
+name: Captae
+options:
+  bundleIdPrefix: app.captae
+  deploymentTarget:
+    iOS: "26.0"
+  developmentLanguage: zh-Hans
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: ZA795Q8H86
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "6.0"
+    # Swift 6.2 起的默认做法：App 模块默认跑在主线程，async 不自己换线程（CaptaeKit 改成 nonisolated，见下）
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    SWIFT_STRICT_CONCURRENCY: complete
+    MARKETING_VERSION: "0.3.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    # 编译时导出字符串字面量（.stringsdata），scripts/sync-strings.sh 用它更新 Localizable.xcstrings
+    SWIFT_EMIT_LOC_STRINGS: YES
+targets:
+  CaptaeKit:
+    type: framework
+    platform: iOS
+    sources:
+      - path: CaptaeKit
+      # UniFFI 生成的绑定（scripts/mobile/build-rust-ios.sh 产出）。缺了 xcodegen 照样生成工程，编译时由下面的检查提示先跑脚本
+      - path: ../../target/mobile/swift/captae_mobile.swift
+        optional: true
+        group: CaptaeKit/Generated
+    dependencies:
+      # 真机和模拟器两份静态库 + C 头文件（模块名 captae_mobileFFI）；静态库链接进这个框架，不单独嵌入
+      - framework: ../../target/mobile/CaptaeCore.xcframework
+        embed: false
+      # rustls-platform-verifier 用系统的证书校验
+      - sdk: Security.framework
+    preBuildScripts:
+      - name: 检查 Rust 核心
+        basedOnDependencyAnalysis: false
+        script: |
+          root="${SRCROOT}/../.."
+          missing=""
+          [ -d "$root/target/mobile/CaptaeCore.xcframework" ] || missing="$missing target/mobile/CaptaeCore.xcframework"
+          [ -f "$root/target/mobile/swift/captae_mobile.swift" ] || missing="$missing target/mobile/swift/captae_mobile.swift"
+          if [ -n "$missing" ]; then
+            echo "error: 缺少 Rust 核心的生成物：$missing。先在仓库根目录运行 scripts/mobile/build-rust-ios.sh，再 cd apps/ios && xcodegen generate"
+            exit 1
+          fi
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.captae.mobile.kit
+        PRODUCT_NAME: CaptaeKit
+        GENERATE_INFOPLIST_FILE: YES
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+        # 分享扩展也要链接它
+        APPLICATION_EXTENSION_API_ONLY: YES
+        # 生成的绑定是给任何线程用的库代码（回调在 Rust 的后台线程上），不默认放到主线程
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+        # 检查脚本要看仓库里 target/ 下的东西在不在
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        SWIFT_EMIT_LOC_STRINGS: NO
+        TARGETED_DEVICE_FAMILY: "1"
+
+  Captae:
+    type: application
+    platform: iOS
+    sources:
+      - path: Captae
+        excludes:
+          - "**/*.md"
+          - "Resources/Fonts/OFL.txt"
+      # 许可证文本随 App 发布（关于 › 开源许可读这几个文件）
+      - path: Captae/Resources/Fonts/OFL.txt
+        buildPhase: resources
+      - path: Captae/Resources/DEMO-CREDITS.md
+        buildPhase: resources
+      - path: Captae/Resources/SITE-ICONS-CREDITS.md
+        buildPhase: resources
+    dependencies:
+      - target: CaptaeKit
+        embed: true
+      - target: CaptaeShare
+        embed: true
+    entitlements:
+      path: Captae/Captae.entitlements
+      properties:
+        # 和分享扩展共用待发任务（计划 5.6）
+        com.apple.security.application-groups: [group.app.captae.mobile]
+    info:
+      path: Captae/Info.plist
+      properties:
+        CFBundleDisplayName: Captae
+        CFBundleName: Captae
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UIApplicationSupportsIndirectInputEvents: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        ITSAppUsesNonExemptEncryption: false
+        # 字体：Geist / Geist Mono（OFL 1.1，Vercel 官方 release v1.9.2 的静态字重）；中文交给系统苹方
+        UIAppFonts:
+          - Geist-Regular.ttf
+          - Geist-Medium.ttf
+          - Geist-SemiBold.ttf
+          - Geist-Bold.ttf
+          - GeistMono-Regular.ttf
+          - GeistMono-Medium.ttf
+          - GeistMono-SemiBold.ttf
+        # 配对：扫电脑上的二维码；同一个 Wi-Fi 里找电脑（计划 5.3「系统权限」）
+        NSCameraUsageDescription: 扫电脑上 Captae「设置 › 手机」里的二维码，和电脑配对。
+        NSLocalNetworkUsageDescription: 在同一个 Wi-Fi 里找到你电脑上的 Captae，把下载交给它、看它的素材库。
+        NSBonjourServices: [_captae._tcp]
+        # 保存（计划 5.4）：视频、图片存进相册只要「添加」权限；声音存「文件」› Captae（App 的 Documents 在「文件」里能看到）
+        NSPhotoLibraryAddUsageDescription: 把下载好的视频和图片存进相册。
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        # 后台：M3U8 和直链任务开始时申请继续运行（iOS 26 的 BGContinuedProcessingTask，系统在灵动岛 / 锁屏显示进度）
+        BGTaskSchedulerPermittedIdentifiers: [app.captae.mobile.download.*]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.captae.mobile
+        PRODUCT_NAME: Captae
+        # 这一轮只做 iPhone；iPad 分栏（计划 4.3）做的时候改成 "1,2"
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        GENERATE_INFOPLIST_FILE: NO
+        # 分享扩展从 App 的 Frameworks 里找 CaptaeKit
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
+      configs:
+        Release:
+          # 演示用的开放电影剧照只在 Debug 里（演示路由也只在 Debug 编进去）
+          EXCLUDED_SOURCE_FILE_NAMES: Demo.xcassets
+
+  CaptaeShare:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: CaptaeShare
+      # 和 App 共用的视图和小工具（同一份源码编进两个目标；分享卡片就是 App 设计稿里的那张）
+      - path: Captae/Design/Typography.swift
+      - path: Captae/Design/Palette.swift
+      - path: Captae/Design/Surfaces.swift
+      - path: Captae/Design/Buttons.swift
+      - path: Captae/Design/Media.swift
+      - path: Captae/Design/StatusRow.swift
+      - path: Captae/Design/Progress.swift
+      - path: Captae/Design/Motion.swift
+      - path: Captae/Design/RemoteImage.swift
+      - path: Captae/Model/Site.swift
+      - path: Captae/Model/Format.swift
+      - path: Captae/Share/ShareCard.swift
+      - path: Captae/Resources/Fonts
+        buildPhase: resources
+      - path: Captae/Resources/Assets.xcassets
+      - path: Captae/Resources/Localizable.xcstrings
+    dependencies:
+      # 读取视频信息用同一个 Rust 核心；框架嵌在 App 里，扩展不再带一份
+      - target: CaptaeKit
+        embed: false
+    entitlements:
+      path: CaptaeShare/CaptaeShare.entitlements
+      properties:
+        com.apple.security.application-groups: [group.app.captae.mobile]
+    info:
+      path: CaptaeShare/Info.plist
+      properties:
+        CFBundleDisplayName: Captae
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UIAppFonts:
+          - Geist-Regular.ttf
+          - Geist-Medium.ttf
+          - Geist-SemiBold.ttf
+          - Geist-Bold.ttf
+          - GeistMono-Regular.ttf
+          - GeistMono-Medium.ttf
+          - GeistMono-SemiBold.ttf
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            # 只接一个网页链接，或者带链接的文字（不少 App 分享的是「标题 + 链接」的一段文字）
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsText: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.captae.mobile.share
+        PRODUCT_NAME: CaptaeShare
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../../Frameworks"
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor

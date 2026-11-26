@@ -1,0 +1,31 @@
+# 版本照 medcxy-v7 apps/android 验证过的组合钉住（backdrop 2.0.1 按 Compose 1.12 编、AAR 写死 minCompileSdk=37）
+[versions]
+agp = "9.3.3"
+kotlin = "2.4.21"
+kotlinx-coroutines = "1.11.0"
+# Compose 1.12.0
+composeBom = "2026.08.00"
+activityCompose = "1.13.0"
+coreKtx = "1.19.1"
+backdrop = "2.0.1"
+shapes = "1.2.1"
+
+[libraries]
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+compose-ui = { group = "androidx.compose.ui", name = "ui" }
+compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+compose-ui-text = { group = "androidx.compose.ui", name = "ui-text" }
+compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
+compose-animation = { group = "androidx.compose.animation", name = "animation" }
+compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+backdrop = { group = "io.github.kyant0", name = "backdrop", version.ref = "backdrop" }
+shapes = { group = "io.github.kyant0", name = "shapes", version.ref = "shapes" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

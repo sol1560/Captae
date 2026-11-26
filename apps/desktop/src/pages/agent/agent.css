@@ -1,0 +1,605 @@
+/* AI 助手页的样式。只用 theme.css 的变量（颜色、圆角、投影、曲线），不新造视觉元素。
+ * 前半是两页共用的页面骨架（插件页也引这个文件）：两列、分节标题、白卡；后半是 AI 助手页自己的。 */
+
+/* ================ 两页共用：页面骨架 ================ */
+
+/* 下载页的 .cp-col 底部留了 150px 给浮着的输入框，这两页没有，留一点就够 */
+.cp-col.cp-page {
+  padding-bottom: 40px;
+}
+/* 顶栏那句状态：窄窗口时省略号，不挤掉标题 */
+.cp-page .cp-topbar .sub {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-page-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+}
+.cp-page-status .cp-live {
+  margin: 0;
+}
+/* 状态点：连上、断开时颜色 150ms 过渡，不脉冲（配方 k1：常驻元素不循环） */
+.cp-page .cp-live {
+  transition: background-color var(--t-hover) ease;
+}
+
+/* 太宽时内容不再拉长（和顶栏标题左对齐，不居中） */
+.cp-page-in {
+  container: cp-page / inline-size;
+  max-width: 1180px;
+  padding-top: 10px;
+}
+.cp-page-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 26px;
+  align-items: start;
+}
+.cp-page-main,
+.cp-page-side {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  min-width: 0;
+}
+/* 内容区 900px 以上分两列（1440 宽的窗口左列约 780px）；窄了一列，右列接在后面 */
+@container cp-page (min-width: 900px) {
+  .cp-page-grid {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}
+
+/* 分节：标题 + 一句说明 + 右边的控件；标题下面是白卡（和设置弹窗同一种分组，只是放在灰面板上所以是白的） */
+.cp-sec {
+  min-width: 0;
+  container-type: inline-size;
+  /* 顶栏 56px 盖在上面，跳到这一节时留出来 */
+  scroll-margin-top: 66px;
+}
+.cp-sec-h {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  min-height: 28px;
+  margin: 0 4px 8px;
+}
+.cp-sec-h h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.cp-sec-h p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cp-sec-h .end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* 说明单独占一行（标题行右边有按钮时） */
+.cp-sec-h p.wide {
+  order: 3;
+  flex-basis: 100%;
+  margin-top: -2px;
+}
+.cp-sec-note {
+  margin: 8px 4px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* 白卡：和下载列表的卡片一样（白、14 圆角、细边投影） */
+.cp-pane {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-card);
+  min-width: 0;
+}
+/* 设置弹窗的分组行（.cp-set-row、.cp-set-sw）放进白卡 */
+.cp-group.cp-pane {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  padding: 0 14px;
+}
+.cp-pane-empty {
+  padding: 26px 16px;
+}
+/* 状态行补一个「成功」：只有小图标上色 */
+.cp-page .cp-note[data-tone="ok"] > svg,
+.cp-note[data-tone="ok"] > svg {
+  color: var(--ok);
+}
+
+/* 代码块（affectUI Code Block）：语法颜色收成灰阶，照第二版「颜色克制」；结构和复制都用它自己的 */
+.cp-page .ui-code,
+.cp-plan .ui-code {
+  --ui-code-key: var(--ink);
+  --ui-code-str: var(--ink-2);
+  --ui-code-num: var(--ink-2);
+  --ui-code-lit: var(--ink-2);
+  --ui-code-kw: var(--ink);
+  --ui-code-fn: var(--ink);
+  --ui-code-var: var(--ink);
+  --ui-code-com: var(--ink-3);
+}
+
+/* 箭头：纯旋转用 ease-in-out 200ms（配方 k2，课 02/02），减少动效时直接转到位 */
+.cp-page .chev {
+  color: var(--ink-4);
+  flex: none;
+  transition: transform 200ms var(--ease-in-out-cubic);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-page .chev {
+    transition: none;
+  }
+}
+
+/* 「再看 30 条」这类文字按钮 */
+.cp-more {
+  display: block;
+  margin: 8px auto 0;
+  padding: 4px 10px;
+  border: 0;
+  background: none;
+  font-size: 12.5px;
+  color: var(--accent-ink);
+  cursor: default;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-more:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+/* ================ AI 助手页 ================ */
+
+/* 连上来的 AI 助手：状态点 + 名字 + 一句近况 */
+.cp-client .who {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  min-width: 0;
+}
+.cp-client .cp-live {
+  margin: 6px 2px 0;
+}
+.cp-client .st {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.cp-client .st.on {
+  color: var(--ok);
+}
+
+/* 连接你的 AI 助手 */
+.cp-connect {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px;
+}
+.cp-connect > .ui-seg {
+  align-self: flex-start;
+  max-width: 100%;
+}
+.cp-connect-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.cp-connect-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 0 2px 0 4px;
+}
+.cp-connect-foot p {
+  flex: 1 1 240px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.cp-connect-foot code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--well);
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.cp-connect-foot .acts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* 一键写入前的确认 */
+.cp-plan {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.cp-plan .k {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cp-plan .k:first-child {
+  margin-top: 0;
+}
+.cp-plan .v {
+  font-size: 12px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.cp-plan-notes {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* 调用记录：一张白卡里的行，行间细线；整行可以点开 */
+.cp-calls {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+}
+.cp-call {
+  position: relative;
+}
+.cp-call + .cp-call::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 0.5px;
+  background: var(--line-2);
+}
+.cp-call-h {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto 14px;
+  align-items: center;
+  column-gap: 12px;
+  width: 100%;
+  padding: 9px 10px 9px 8px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  text-align: left;
+  cursor: default;
+}
+/* 列表行的悬停：即时，不过渡（高频高亮，配方 1.9） */
+@media (hover: hover) and (pointer: fine) {
+  .cp-call-h:hover {
+    background: var(--hover);
+  }
+}
+.cp-call-h:focus-visible {
+  outline: 2px solid var(--aui-focus);
+  outline-offset: -2px;
+}
+.cp-call-h .ico {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--well);
+  color: var(--ink-2);
+}
+/* 失败的：只有小图标上红 */
+.cp-call[data-st="err"] .cp-call-h .ico {
+  color: var(--err);
+}
+.cp-call-h .main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.cp-call-h .t {
+  font-size: 13.5px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cp-call-h .t b {
+  font-weight: 580;
+  margin-right: 6px;
+}
+.cp-call-h .s {
+  margin-top: 1px;
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cp-call-h .s.err {
+  color: var(--ink-2);
+}
+.cp-call-h .meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.cp-call-h .meta time {
+  color: var(--ink-4);
+}
+.cp-call-h .run,
+.cp-call-h .bad {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cp-call-h .bad {
+  color: var(--err);
+}
+.cp-call[data-open] > .cp-call-h .chev {
+  transform: rotate(180deg);
+}
+.cp-call-b {
+  padding: 2px 12px 12px 48px;
+}
+.cp-call-res {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.cp-call-args {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.cp-call-args .mono {
+  color: var(--ink-2);
+}
+.cp-call-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin-top: 8px;
+}
+.cp-call-acts:first-child {
+  margin-top: 0;
+}
+.cp-rawbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  color: var(--ink-3);
+  cursor: default;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-rawbtn:hover {
+    color: var(--ink-2);
+  }
+}
+.cp-rawbtn[aria-expanded="true"] .chev {
+  transform: rotate(180deg);
+}
+.cp-raw {
+  margin: 6px 0 0;
+  max-height: 200px;
+  overflow: auto;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--well);
+  font: 11.5px/1.55 var(--mono);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+/* AI 可以用的功能：开关行，宽的时候两列 */
+.cp-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: 28px;
+  padding: 0 14px;
+}
+.cp-tool {
+  min-width: 0;
+  padding: 10px 0;
+  border-top: 0.5px solid var(--line-2);
+}
+.cp-tool:first-child {
+  border-top: 0;
+}
+.cp-tool .mono {
+  font-size: 11.5px;
+}
+@container (min-width: 600px) {
+  .cp-tools {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .cp-tool:nth-child(2) {
+    border-top: 0;
+  }
+}
+
+/* 高级模式：开关 + 打开后 AI 还能做什么 */
+.cp-unlock {
+  list-style: none;
+  margin: 0;
+  padding: 11px 0 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cp-unlock li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.cp-unlock svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--ink-3);
+}
+
+/* 预设：一个预设一张卡片，卡片之间 8px（和下载列表一样） */
+.cp-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cp-preset {
+  padding: 8px 12px 0 14px;
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-card);
+}
+.cp-preset-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+.cp-preset-h h3 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 580;
+  letter-spacing: -0.005em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-psteps {
+  margin: 6px 2px 12px 0;
+}
+.cp-psteps .cp-step .ico {
+  display: grid;
+  place-items: center;
+}
+.cp-psteps .cp-step[data-s="idle"] .ico {
+  color: var(--ink-3);
+}
+.cp-psteps .cp-step[data-s="idle"] .label {
+  color: var(--ink);
+}
+.cp-psteps .cp-step[data-s="skip"] .ico {
+  color: var(--ink-4);
+}
+.cp-psteps .cp-step .sub.warn,
+.cp-psteps .cp-step[data-bad] .ico {
+  color: var(--warn);
+}
+.cp-psteps .cp-step .sub {
+  overflow-wrap: anywhere;
+}
+.cp-psteps .cp-link {
+  font-size: 12px;
+}
+.cp-trialnote {
+  margin: 0 0 12px;
+}
+.cp-trialnote .cp-note {
+  font-size: 12.5px;
+}
+.cp-preset-f {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 -12px 0 -14px;
+  padding: 8px 10px 8px 14px;
+  border-top: 0.5px solid var(--line-2);
+}
+.cp-preset-f .ui-sw__label,
+.cp-preset-f label {
+  font-size: 12.5px;
+}
+
+/* 新建 / 编辑预设、试运行选素材 */
+.cp-editor {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.cp-editor-steps .lbl {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.cp-editor-steps ol {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.cp-editor-steps li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+.cp-editor-steps li > .ui-sel {
+  flex: 1;
+  min-width: 0;
+}
+.cp-editor-steps .n {
+  width: 18px;
+  flex: none;
+  font-size: 12px;
+  color: var(--ink-3);
+  text-align: right;
+}
+.cp-editor-steps .note {
+  flex-basis: 100%;
+  margin: -2px 0 2px 26px;
+  font-size: 12px;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.cp-editor-steps .note[data-tone="warn"] {
+  color: var(--warn);
+}
+.cp-editor-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}

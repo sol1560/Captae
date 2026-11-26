@@ -1,0 +1,23 @@
+{
+  "bundle": {
+    "externalBin": [
+      "binaries/captae",
+      "binaries/ffmpeg",
+      "binaries/ffprobe",
+      "binaries/aria2c",
+      "binaries/deno"
+    ],
+    "resources": {
+      "../../../LICENSE": "LICENSE",
+      "../../../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md",
+      "../../../extension/": "extension/",
+      "binaries/aria2-libs/": "aria2-libs/",
+      "../../../licenses/": "licenses/",
+      "binaries/yt-dlp/": "yt-dlp/"
+    },
+    "macOS": {
+      "signingIdentity": "-",
+      "hardenedRuntime": false
+    }
+  }
+}

@@ -1,0 +1,605 @@
+/* 上手引导和侧栏上手清单。卡片外壳、标题、要点、页码点的基础样式在 theme.css「弹窗遮罩、上手引导」一段（.cp-ob*、.cp-dots、.cp-frag），
+ * 这里补：遮罩层、四页叠放和翻页、每页那一行操作、头图里的界面片段、窄窗口和矮窗口、侧栏清单。
+ * 动效数值的出处写在各段注释里（「配方 x」= docs/MOTION.md 第 3 节对应的小节，「m2 A」= docs/MOTION.md 里写的参考应用逐帧实测值）。 */
+
+/* ---------------- 遮罩层和卡片 ---------------- */
+.cp-ob-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+/* 退场时不再接点击（连点「跳过」不会关两次） */
+.cp-ob-layer[data-leaving] {
+  pointer-events: none;
+}
+/* 遮罩：中灰洗白（BRIEF-v2：#f7f7f7 压到约 #c1c1c1），不是压黑；只淡入淡出，不做模糊 */
+/* 进场动画不留填充（fill none）：动完以后透明度和变换交回给元素自己，退场时 Motion 写的值才生效 */
+.cp-ob-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
+  animation: cp-ob-fade 200ms var(--ease-out-quint);
+}
+.cp-ob-layer > .cp-ob {
+  width: min(560px, 100%);
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  /* 卡片进场：opacity + scale .98→1，200ms ease-out-quint，从中心出现（配方 g1；大元素从 .98 起，课 07/02） */
+  animation: cp-ob-in 200ms var(--ease-out-quint);
+}
+/* 打开时焦点在卡片本身（tabIndex -1），不画焦点环 */
+.cp-ob:focus {
+  outline: none;
+}
+@keyframes cp-ob-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+@keyframes cp-ob-fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-ob-layer > .cp-ob {
+    animation-name: cp-ob-fade;
+  }
+}
+/* 只给读屏看的字 */
+.cp-ob-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------- 头图：剧照 + 界面片段 ---------------- */
+.cp-ob-art {
+  flex: none;
+}
+/* 剧照：新的盖在旧的上面淡入 430ms ease（m2 A：插画区约 430ms，比文字慢）；旧的等新的盖满了再藏起来，中间不会发白 */
+.cp-ob-art > img {
+  opacity: 0;
+  z-index: 0;
+  transition: opacity 0s linear;
+  transition-delay: 430ms;
+  user-select: none;
+}
+.cp-ob-art > img[data-on] {
+  opacity: 1;
+  z-index: 1;
+  transition: opacity 430ms ease;
+  transition-delay: 0s;
+}
+/* 界面片段：旧的先走（200ms），新的晚 120ms 再来（300ms），m2 A：前景小物件先走后到。
+   片段带毛玻璃，只动透明度，不给它们加模糊或位移（毛玻璃底下的内容一动就要重算模糊，WKWebView 里容易卡，课 04/02） */
+.cp-ob-art > .cp-ob-scene {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 200ms ease,
+    visibility 0s linear;
+  transition-delay: 0s, 200ms;
+}
+.cp-ob-art > .cp-ob-scene[data-on] {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 300ms ease,
+    visibility 0s;
+  transition-delay: 120ms, 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* 减少动效：不再错开，和文字一起淡入 */
+  .cp-ob-art > .cp-ob-scene[data-on] {
+    transition-delay: 0s;
+  }
+}
+/* 「跳过」：玻璃胶囊（theme.css），补上悬停和按下（按下 scale .97，160ms，配方 1.9） */
+.cp-ob-skip {
+  transition: transform var(--t-press) var(--ease-out-quad), background-color var(--t-hover) ease;
+}
+.cp-ob-skip:active {
+  transform: scale(0.97);
+}
+.cp-ob-skip:focus-visible {
+  outline: 2px solid rgba(0, 122, 255, 0.55);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-ob-skip:hover {
+    background: rgba(255, 255, 255, 0.84);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-ob-skip:active {
+    transform: none;
+  }
+}
+
+/* 第 1 页：输入框 + 正在下载的一行 */
+.cp-ob-f-input {
+  left: 64px;
+  top: 46px;
+  width: 300px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 10px 14px;
+}
+.cp-ob-f-input .mono {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ink-2);
+}
+.cp-ob-f-input .send {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: #fff;
+  background: var(--ink);
+}
+.cp-ob-f-job {
+  left: 196px;
+  top: 106px;
+  width: 300px;
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+}
+.cp-ob-f-job img {
+  width: 64px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  display: block;
+}
+.cp-ob-f-job b,
+.cp-ob-f-task b {
+  font-weight: 600;
+}
+.cp-ob-f-job .cp-progress {
+  margin-top: 8px;
+}
+
+/* 第 2 页：插件放在视频右上角的按钮组和清晰度菜单（照插件注入网页的部件：浅色毛玻璃胶囊、16px 圆角菜单）。
+   往下让开「跳过」，不叠在一起 */
+.cp-ob-f-xbar {
+  position: absolute;
+  right: 26px;
+  top: 54px;
+  display: flex;
+  gap: 6px;
+}
+.cp-ob-f-xbtn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 11px 0 6px;
+  border-radius: 99px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 580;
+  background: rgba(255, 255, 255, 0.7);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), 0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 6px 18px -6px rgba(0, 0, 0, 0.35);
+}
+.cp-ob-f-xbtn.plain {
+  padding-left: 11px;
+}
+.cp-ob-f-xmenu {
+  right: 26px;
+  top: 94px;
+  width: 222px;
+  padding: 5px;
+  border-radius: 16px;
+}
+.cp-ob-f-xmenu .item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: 13.5px;
+}
+.cp-ob-f-xmenu .item.hl {
+  background: rgba(0, 0, 0, 0.06);
+}
+.cp-ob-f-xmenu small {
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cp-ob-f-xmenu .size {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 第 3 页：转文字的进度 + 两句字幕。两张都放在左边暗的帘子上，中间两个人的脸露出来 */
+.cp-ob-f-task {
+  left: 34px;
+  top: 40px;
+  width: 232px;
+  padding: 11px 14px 13px;
+}
+.cp-ob-f-task .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.cp-ob-f-task .row b {
+  flex: 1;
+}
+.cp-ob-f-task .num {
+  color: var(--ink-3);
+}
+.cp-ob-f-lines {
+  left: 62px;
+  top: 110px;
+  width: 226px;
+  display: grid;
+  gap: 5px;
+  padding: 11px 14px;
+  font-size: 13px;
+}
+.cp-ob-f-lines .mono {
+  display: inline-block;
+  width: 46px;
+  color: var(--ink-3);
+}
+
+/* 第 4 页：整理好的结果（居中） */
+.cp-ob-f-ready {
+  left: 50%;
+  top: 44px;
+  width: 300px;
+  padding: 12px 14px;
+  transform: translateX(-50%);
+}
+.cp-ob-f-ready .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.cp-ob-f-ready .sub {
+  margin-top: 6px;
+  color: var(--ink-3);
+}
+
+/* 系统打开「减少透明度」：头图里的玻璃片段和「跳过」换成不透明白（BRIEF-v2） */
+@media (prefers-reduced-transparency: reduce) {
+  .cp-ob .cp-frag,
+  .cp-ob-f-xbtn,
+  .cp-ob-skip {
+    background: #ffffff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ---------------- 四页叠在同一个格子里，高度取最高那页 ---------------- */
+.cp-ob-body {
+  display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* 翻页：交叉淡化 + 方向 8px + 模糊 4px，300ms ease（m2 A 实测 300ms ease、模糊 4–7pt；配方 i1 加方向位移、模糊收到 4px）。
+   新旧同时动；离开的页面等动完再藏起来（visibility 延后），进来的立刻可见。前进时旧页往左、新页从右来，返回相反（课 03/05） */
+.cp-ob-page {
+  grid-area: 1 / 1;
+  min-width: 0;
+  transition: 300ms ease;
+  transition-property: opacity, transform, filter, visibility;
+}
+/* 离开的页：visibility 等 300ms 动完再变成 hidden（visibility 是离散的，过渡里只在结尾跳一次） */
+.cp-ob-page[data-at] {
+  opacity: 0;
+  visibility: hidden;
+  filter: blur(4px);
+}
+.cp-ob-page[data-at="before"] {
+  transform: translateX(-8px);
+}
+.cp-ob-page[data-at="after"] {
+  transform: translateX(8px);
+}
+@media (prefers-reduced-motion: reduce) {
+  /* 减少动效：不位移、不模糊，只留透明度（课 04/03） */
+  .cp-ob-page[data-at] {
+    transform: none;
+    filter: none;
+  }
+}
+
+/* 要点：右边可以带一个开关（第 4 页「你说了算」） */
+.cp-ob-item[data-end] {
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+}
+
+/* ---------------- 每页那一行操作 ---------------- */
+/* 浅灰凹面里的一行（参考录屏「下载本地模型」那一行）。左右各往外让 10px，里面的图标和上面要点的图标对齐。
+   各种状态（没装、等它连上、安装进度两行字）都放得下，高度固定，状态变了卡片不会变高 */
+.cp-ob-do {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 14px;
+  /* 标题一行 + 说明最多两行正好放下；说明只有一行时上下居中 */
+  height: 76px;
+  margin: 18px -10px 0;
+  padding: 9px 12px 9px 10px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.04);
+}
+.cp-ob-do > .tile {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  background: var(--card);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.cp-ob-do .txt {
+  display: block;
+  min-width: 0;
+}
+.cp-ob-do label.txt {
+  cursor: default;
+}
+.cp-ob-do .txt > b {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+.cp-ob-do .sub {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin-top: 1px;
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--ink-3);
+}
+.cp-ob-do .sub > svg {
+  flex: none;
+  margin-top: 1.5px;
+}
+/* 说明最多两行（完整的放在悬停提示里） */
+.cp-ob-do .sub .line {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+/* 安装进度：一行字 + 一行进度条（和设置里的进度条同一个部件） */
+.cp-ob-do .sub .rich {
+  flex: 1;
+  min-width: 0;
+}
+.cp-ob-do .sub .rich .cp-progress {
+  margin-top: 7px;
+}
+/* 状态色只上在小图标上（BRIEF-v2） */
+.cp-ob-do .sub[data-tone="ok"] > svg {
+  color: var(--ok);
+}
+.cp-ob-do .sub[data-tone="warn"] > svg {
+  color: var(--warn);
+}
+.cp-ob-do .sub[data-tone="warn"] {
+  color: var(--ink-2);
+}
+.cp-ob-do .end {
+  justify-self: end;
+}
+.cp-ob-do .acts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cp-ob-browser {
+  width: 96px;
+}
+
+/* 注脚：外部工具缺了时换成提醒，警示色只上小图标 */
+.cp-ob-note {
+  margin-top: 14px;
+}
+.cp-ob-note[data-tone="warn"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--ink-2);
+}
+.cp-ob-note[data-tone="warn"] > svg {
+  flex: none;
+  margin-top: 1.5px;
+  color: var(--warn);
+}
+
+/* ---------------- 底栏 ---------------- */
+.cp-ob-foot {
+  flex: none;
+}
+/* 「返回」：第一页没有；第二页带模糊淡入（m2 A：返回按钮带模糊淡入，约 290ms 的不回弹弹簧，属于 ease-out），
+   这里 200ms ease-out-quint 进、150ms 出。动外面这层，不碰按钮自己的按下动效 */
+.cp-ob-back {
+  justify-self: start;
+  transition: 200ms var(--ease-out-quint);
+  transition-property: opacity, filter, visibility;
+}
+.cp-ob-back[data-off] {
+  opacity: 0;
+  filter: blur(4px);
+  visibility: hidden;
+  transition-duration: 150ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-ob-back[data-off] {
+    filter: none;
+  }
+}
+/* 「继续」和「开始用」一样宽，最后一页换字时按钮不变宽 */
+.cp-ob-next {
+  min-width: 96px;
+}
+
+/* ---------------- 窄窗口、矮窗口 ---------------- */
+/* 窗口最小 640×560（tauri.conf.json）：先压头图，再让内容在卡片里滚动，底栏一直看得见 */
+@media (max-height: 780px) {
+  .cp-ob-art {
+    height: 168px;
+  }
+}
+@media (max-height: 680px) {
+  .cp-ob-art {
+    height: 128px;
+  }
+  /* 头图矮了，界面片段跟着缩小，从上沿对齐，不被裁掉 */
+  .cp-ob-scene {
+    transform: scale(0.72);
+    transform-origin: 50% 0;
+  }
+  .cp-ob-list {
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .cp-ob-foot {
+    padding-top: 14px;
+    padding-bottom: 16px;
+  }
+}
+@media (max-width: 600px) {
+  .cp-ob-body {
+    padding: 0 24px;
+  }
+}
+
+/* ---------------- 侧栏上手清单 ---------------- */
+/* 浅白小卡：和侧栏的灰底分开，看得出是一块可以关掉的东西；里面的行和侧栏其他行对齐（左边 9px） */
+.cp-ck {
+  margin: 8px 0 2px;
+  padding: 2px 4px 6px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.52);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+/* 进度环 14px 放在 16px 的图标列正中（卡片 4px + 这里 5px + 环 1px 外边距 = 10px） */
+.cp-ck-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 0 0 5px;
+}
+.cp-ck-head b {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.cp-ck-head .num {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.cp-ck-head .ui-icon-button {
+  color: var(--ink-3);
+}
+/* 进度环：完成一项时沿着圆走过去（已经在屏幕上的东西变化，ease-in-out，配方 1.1） */
+.cp-ck-ring {
+  flex: none;
+  margin: 0 1px;
+  transform: rotate(-90deg);
+}
+.cp-ck-ring circle:last-child {
+  transition:
+    stroke-dasharray 400ms var(--ease-in-out-cubic),
+    opacity 150ms ease;
+}
+.cp-ck ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.cp-ck-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 28px;
+  padding: 0 5px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font-size: 13px;
+  color: var(--ink);
+  text-align: left;
+  cursor: default;
+}
+.cp-ck-row .glyph {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--ink-4);
+}
+.cp-ck-row .t {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-ck-row[data-done] .glyph {
+  color: var(--ink);
+}
+.cp-ck-row[data-done] .t {
+  color: var(--ink-3);
+  transition: color 150ms ease;
+}
+/* 悬停和侧栏其他行一样即时，不过渡（侧栏是高频操作，配方 a） */
+@media (hover: hover) and (pointer: fine) {
+  .cp-ck-row:hover {
+    background: var(--hover);
+  }
+}
+.cp-ck-row:focus-visible {
+  outline: 2px solid rgba(0, 122, 255, 0.55);
+  outline-offset: -2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-ck-ring circle:last-child {
+    transition: opacity 150ms ease;
+  }
+}

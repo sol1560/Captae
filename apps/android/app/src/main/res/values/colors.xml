@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- 同桌面端的 main 变量（主区底色） -->
+  <color name="main">#FFF7F7F7</color>
+</resources>

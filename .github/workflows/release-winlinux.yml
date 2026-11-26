@@ -1,0 +1,74 @@
+# 打 Windows（NSIS 安装程序）和 Linux（deb、AppImage）安装包。手动运行：
+#   填上版本标签（比如 v0.2.0）并勾上「上传」时，打好、检查通过的安装包会挂到那个标签的 Release 上（Release 要先建好）。
+# 打包和检查都在仓库里的脚本里做（scripts/build-release-windows.ps1、scripts/build-release-linux.sh，最后各自跑检查脚本），这里只准备环境。
+name: Release (Windows / Linux)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 版本标签（比如 v0.2.0），留空就只打包、不上传
+        required: false
+        default: ''
+      upload:
+        description: 打好以后挂到这个标签的 Release 上
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 打包并检查
+        shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File scripts\build-release-windows.ps1 -InstallTauriCli
+      - uses: actions/upload-artifact@v4
+        with:
+          name: captae-windows
+          path: target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+      - name: 挂到 Release
+        if: inputs.upload && inputs.tag != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ inputs.tag }}" target/release/bundle/nsis/*.exe --clobber
+
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 打包并检查
+        run: scripts/build-release-linux.sh --install-deps
+      - uses: actions/upload-artifact@v4
+        with:
+          name: captae-linux
+          path: |
+            target/release/bundle/deb/*.deb
+            target/release/bundle/appimage/*.AppImage
+          if-no-files-found: error
+      - name: 挂到 Release
+        if: inputs.upload && inputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ inputs.tag }}" target/release/bundle/deb/*.deb target/release/bundle/appimage/*.AppImage --clobber

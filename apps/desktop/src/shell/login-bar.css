@@ -1,0 +1,42 @@
+/* 登录窗口（真窗口）里 Captae 那一层：铺满窗口，上面 58px 放工具条、下面 52px 放说明，中间盖着网站那块 webview
+   （和 src-tauri/src/login.rs 的 TOP / BOTTOM 一致，改一边要改另一边）。
+   工具条和说明沿用 theme.css「登录窗口」一段的 .cp-loginbar / .cp-loginfoot，这里只改真窗口里的位置、高度和底色。
+   没有动画：窗口的出现和消失交给系统（配方 g）。 */
+.cp-loginpage {
+  position: fixed;
+  inset: 0;
+  background: #f6f6f6;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* 工具条：白色圆角条，浮在窗口底色上（网站那块在它下面，不重叠，所以不用毛玻璃） */
+.cp-loginpage .cp-loginbar {
+  top: 9px;
+  left: 10px;
+  right: 10px;
+  height: 40px;
+  background: #fff;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+/* 网页没加密：主机名那块换成提醒色 */
+.cp-loginpage .cp-loginbar .site[data-insecure] {
+  background: rgba(214, 92, 0, 0.1);
+  color: #9a4a00;
+}
+.cp-loginpage .cp-loginbar .site[data-insecure] svg {
+  color: currentColor;
+}
+.cp-loginpage .cp-loginfoot {
+  height: 52px;
+  padding: 0 16px;
+  background: #f6f6f6;
+}
+/* 窄窗口时说明折成两行，最多两行（52px 放得下） */
+.cp-loginpage .cp-loginfoot span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+}

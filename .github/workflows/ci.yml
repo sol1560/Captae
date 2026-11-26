@@ -1,0 +1,44 @@
+# 每次推送和 PR 跑的检查：核心库和命令行的测试（macOS，和发版的主平台一样）、界面类型检查、多语言词表、插件面板构建产物是不是最新的。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # 端到端测试真的调用这几个程序（下载、转换、剪辑、拼接、嵌字幕）
+      - run: brew install ffmpeg aria2 yt-dlp
+      - run: cargo test -p captae-core -p captae-cli
+
+  ui:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: apps/desktop
+      - run: npx tsc --noEmit -p .
+        working-directory: apps/desktop
+      - run: python3 scripts/i18n.py check
+      # 插件的工具栏面板是构建产物、提交在仓库里：重新构建一次，和仓库里的不一样就说明忘了 npm run build:popup
+      - run: npm run build:popup
+        working-directory: apps/desktop
+      - run: git diff --exit-code -- extension/popup

@@ -1,0 +1,992 @@
+/* 素材库页的样式。网格卡片、波形、播放按钮、信息表、转换框的底子在 theme.css 的「素材库」一段（.cp-grid、.cp-tile……），
+ * 这里补页面自己的：卡片上的多选圈和进度、文件不在了、详情的预览和播放、标签、处理面板、多选工具条、拼接弹窗。
+ * 动效数值来自课程（配方 j、e、f、g、m），只动 transform、opacity、clip-path；减少动效的写在每段后面。 */
+
+/* ---------------- 页面 ---------------- */
+/* 右键菜单、小弹层的磨砂玻璃在 theme.css（全应用一样） */
+.cp-lib .cp-listwrap {
+  container: libcol / inline-size;
+}
+.lib-col {
+  padding-bottom: 36px;
+}
+/* 多选工具条浮在底部时，网格底下多留出它的高度，最后一行不会被挡住 */
+.lib-col[data-batch] {
+  padding-bottom: 96px;
+}
+.lib-grid {
+  outline: none;
+}
+.lib-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 0 4px;
+  /* 文字等 300ms 才出现（配方 m）：先把一行的高度留着，出现时列表不跳 */
+  min-height: calc(24px + 1.45em);
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+/* 顶栏：标题、数量、分段控件不缩；右边一组可以缩，先缩搜索框（最窄 110px） */
+.cp-lib .cp-topbar h1,
+.cp-lib .cp-topbar .sub,
+.cp-lib .cp-topbar .mid {
+  flex: none;
+  white-space: nowrap;
+}
+.cp-lib .cp-topbar .end {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
+}
+.lib-search {
+  flex: 0 1 250px;
+  min-width: 110px;
+}
+.lib-filter {
+  flex: none;
+  max-width: 220px;
+}
+.lib-multi {
+  flex: none;
+}
+.lib-filter .ui-button__label,
+.lib-filter > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 筛了东西：字变实，一眼看得出现在不是全部 */
+.lib-filter[data-on] {
+  color: var(--ink);
+  font-weight: 580;
+}
+.lib-multi[aria-pressed="true"] {
+  background: var(--ink);
+  color: #fff;
+}
+@media (hover: hover) and (pointer: fine) {
+  .lib-multi[aria-pressed="true"]:hover {
+    background: #2c2c2e;
+    color: #fff;
+  }
+}
+/* 再窄：藏起数量（侧栏收起时顶栏左边还要给红绿灯让出 116px，所以早一点藏） */
+@container libcol (max-width: 780px) {
+  .cp-window[data-side="off"] .cp-lib .cp-topbar .sub {
+    display: none;
+  }
+}
+@container libcol (max-width: 660px) {
+  .cp-lib .cp-topbar .sub {
+    display: none;
+  }
+}
+
+/* ---------------- 卡片 ---------------- */
+.lib-tile {
+  user-select: none;
+  -webkit-user-select: none;
+  outline: none;
+}
+.lib-tile:focus-visible {
+  outline: 2px solid var(--aui-focus);
+  outline-offset: 2px;
+}
+/* 第二行放不下时先截站点名，时间和格式保持完整 */
+.lib-tile .cp-meta > :not(.u) {
+  flex: none;
+}
+/* 缩略图读到以后淡入（0.3s ease-out，配方 j3）；网格里图多，只做透明度，不加模糊 */
+.cp-tile-media img {
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out-quint);
+}
+.cp-tile-media img[data-on],
+.cp-preview img[data-on] {
+  opacity: 1;
+}
+.lib-preview img {
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out-quint);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-tile-media img,
+  .lib-preview img {
+    transition: none;
+  }
+}
+/* 字幕、其他文件：没有封面，放一张纸张图标 */
+.lib-cover-file {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--well);
+}
+/* 文件不在了：封面变淡，第二行写原因（状态色只上小字） */
+.lib-tile[data-gone] .cp-tile-media > :not(.dur):not(.lib-pick) {
+  opacity: 0.35;
+}
+.lib-tile[data-gone] .cp-tile-title {
+  color: var(--ink-3);
+}
+.lib-gone {
+  color: var(--err);
+}
+
+/* 多选的圈：悬停、键盘聚焦、在多选状态时出现（150ms ease，配方 j1：悬停里的东西键盘也要看得到） */
+.lib-pick {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transition: opacity var(--t-hover) ease, background-color var(--t-hover) ease;
+}
+.lib-pick::before {
+  /* 点的范围比看到的圈大（配方 1.9：热区 44px，用 ::before 扩，不改版面） */
+  content: "";
+  position: absolute;
+  inset: -11px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .lib-tile:hover .lib-pick {
+    opacity: 1;
+  }
+}
+.lib-tile:focus-visible .lib-pick,
+.lib-grid[data-selecting] .lib-pick,
+.lib-pick[data-on] {
+  opacity: 1;
+}
+/* 选上了：系统蓝底白勾（和「选中的单选点」同一个用法） */
+.lib-pick[data-on] {
+  background: var(--accent);
+  box-shadow: 0 0 0 1.5px #fff, 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+/* 勾和数字从 .5 放大到 1 + 淡入，120ms（配方 j1：不从 0 开始） */
+.lib-pick > * {
+  animation: lib-pop 120ms var(--ease-out-quint);
+}
+.lib-pick b {
+  font: 650 11px/1 var(--font);
+}
+@keyframes lib-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+.lib-tile[data-picked] {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.16), 0 8px 24px -12px rgba(0, 0, 0, 0.18);
+}
+/* 键盘选上的（空格、⌘A、Shift+方向键）：勾和底色直接到位，不做动画（配方 1.10：键盘触发的动作不动画） */
+.lib-grid[data-kbd] .lib-pick[data-on],
+.lib-grid[data-kbd] .lib-pick > * {
+  animation: none;
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lib-pick > * {
+    animation-name: cp-fade-in;
+  }
+}
+
+/* 在跑的处理：封面底边一条细进度（clip-path、linear，过渡时长 = 后端发进度的间隔，配方 c5） */
+.lib-tprog {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 -0.5px 0 rgba(0, 0, 0, 0.12);
+}
+.lib-tprog > i {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transition: clip-path 250ms linear;
+}
+/* 排队等着：只有底，没有填充 */
+.lib-tprog[data-queued] > i {
+  clip-path: inset(0 100% 0 0) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lib-tprog > i {
+    transition: none;
+  }
+}
+
+/* ---------------- 波形（真实的声音峰值） ---------------- */
+/* 每根条子满高，用 scaleY 画高低：只动 transform；第一次拿到峰值时长到真实高度 300ms ease-out-quint（配方 j3），
+ * 拿过的直接画终态，不重播 */
+.lib-wave {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 10%;
+  background: #262628;
+}
+.lib-wave i {
+  flex: 0 1 3px;
+  min-width: 2px;
+  height: 62%;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.82);
+  transform-origin: center;
+  transition: transform 300ms var(--ease-out-quint);
+}
+.lib-wave:not([data-ready]) i {
+  background: rgba(255, 255, 255, 0.35);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lib-wave i {
+    transition: none;
+  }
+}
+
+/* ---------------- 骨架屏（affectUI 的 Skeleton） ---------------- */
+.lib-skel {
+  --ui-skl-delay: 300ms;
+}
+.lib-skel .ui-skl {
+  --ui-skl-fill: #ececec;
+  --ui-skl-ease: linear;
+  --ui-skl-speed: 1.8s;
+}
+.lib-skel .lib-skel-media {
+  aspect-ratio: 16 / 10;
+  height: auto !important;
+}
+.lib-skel .lib-skel-t {
+  margin: 8px 4px 0;
+}
+.lib-skel .lib-skel-m {
+  margin: 0 4px;
+}
+
+/* ---------------- 详情：预览 ---------------- */
+.lib-preview[data-kind="audio"] {
+  background: #262628;
+}
+.lib-preview[data-gone] > :not(.dur) {
+  opacity: 0.4;
+}
+.lib-preview video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+.lib-preview .lib-wave {
+  padding: 0 8% 14px;
+}
+.lib-audio {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  width: calc(100% - 16px);
+  height: 34px;
+}
+/* 播放按钮（原型的 .cp-play）：按下 scale(.95)，160ms（配方 a 的按压） */
+.lib-play {
+  border: 0;
+  padding: 0;
+  cursor: default;
+  transition: transform var(--t-press) var(--ease-out-quad), background-color var(--t-hover) ease;
+}
+.lib-play:active {
+  transform: scale(0.95);
+}
+@media (hover: hover) and (pointer: fine) {
+  .lib-play:hover {
+    background: rgba(255, 255, 255, 0.9);
+  }
+}
+.lib-play:focus-visible {
+  outline: 2px solid var(--aui-focus);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lib-play:active {
+    transform: none;
+  }
+}
+.lib-unplayable {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(20, 20, 22, 0.72);
+  color: #fff;
+  font-size: 12.5px;
+  animation: cp-fade-in 150ms ease;
+}
+
+.lib-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  user-select: text;
+}
+.lib-dtitle {
+  user-select: text;
+}
+.lib-missing {
+  margin: 10px 2px 0;
+}
+/* 操作行：放不下时右边那个按钮（移到废纸篓、从素材库移除）换到下一行，不挤扁左边的按钮。
+ * 中文一行放得下，不会换行；英文、德文的按钮长（Remove from Library） */
+.lib-dcard .cp-dactions {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+.lib-missing .grow {
+  font-weight: 560;
+}
+.lib-missing .grow small {
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------- 详情：信息 ---------------- */
+/* 左列（来源、格式、分辨率……）theme.css 里固定 52px，只够中文；别的语言（Dimensions、Downloaded）按最长的那个撑开。
+ * 中文最长三个字，还是 52px，版面不变 */
+.lib-kv {
+  grid-template-columns: minmax(52px, max-content) minmax(0, 1fr);
+}
+.lib-kv dd {
+  display: flex;
+  min-width: 0;
+}
+.lib-src,
+.lib-place {
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+.lib-src {
+  color: var(--accent-ink);
+  font: 400 12px/1.5 var(--mono);
+}
+.lib-place {
+  font: inherit;
+  color: var(--ink);
+}
+@media (hover: hover) and (pointer: fine) {
+  .lib-src:hover,
+  .lib-place:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--ink-4);
+  }
+}
+.lib-src:focus-visible,
+.lib-place:focus-visible {
+  outline: 2px solid var(--aui-focus);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+.lib-muted {
+  color: var(--ink-3);
+}
+
+/* 标签：灰色小胶囊 + 去掉的 ×；「+ 标签」点开变成输入框 */
+.lib-tags {
+  margin-top: 14px;
+  min-height: 32px;
+}
+.lib-tag {
+  padding-right: 3px !important;
+}
+.lib-tag .ui-bdg__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+.lib-tag .x::before {
+  /* 小 × 的热区扩到 28px */
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+.lib-tag .x {
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 1px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink-3);
+  cursor: default;
+  transition: background-color var(--t-hover) ease, color var(--t-hover) ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .lib-tag .x:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--ink);
+  }
+}
+.lib-tag .x:focus-visible {
+  outline: 2px solid var(--aui-focus);
+  outline-offset: 0;
+}
+.lib-tagin {
+  width: 160px;
+}
+/* 用拉丁字母的语言，提示字（Tag name, press Return to add）比中文长，输入框放宽；中文、日文、韩文不变 */
+:root:not(:lang(zh)):not(:lang(ja)):not(:lang(ko)) .lib-tagin {
+  width: 220px;
+}
+.lib-tagadd {
+  color: var(--ink-3);
+}
+/* 还没有标签时，「+ 标签」的加号和上面的字对齐 */
+.lib-tags > .lib-tagadd:first-child {
+  margin-left: -10px;
+}
+
+/* ---------------- 详情：处理 ---------------- */
+.lib-tools {
+  margin-bottom: 12px;
+}
+.lib-tool {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.lib-tool > .cp-convert {
+  margin: 0;
+}
+.lib-two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+.lib-out {
+  margin: -2px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.lib-out .mono {
+  color: var(--ink-2);
+}
+.lib-run {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.lib-run .note {
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.lib-err {
+  color: var(--err);
+}
+
+/* 转换：两张纸中间的线。平时是箭头，转换时换成进度条（透明度交叉 150ms ease）；进度 clip-path、linear */
+.lib-xfer {
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+.lib-xline {
+  position: relative;
+  width: 44px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+}
+.lib-xline .arrow,
+.lib-xline .bar {
+  grid-area: 1 / 1;
+  transition: opacity var(--t-hover) ease;
+}
+.lib-xline .bar {
+  position: relative;
+  width: 44px;
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  opacity: 0;
+}
+.lib-xline .bar > i {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: clip-path 250ms linear;
+}
+.lib-xfer:is([data-st="run"], [data-st="queued"], [data-st="ok"]) .lib-xline .arrow {
+  opacity: 0;
+}
+.lib-xfer:is([data-st="run"], [data-st="queued"], [data-st="ok"]) .lib-xline .bar {
+  opacity: 1;
+}
+.lib-cap {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 0 12px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+.lib-cap b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.lib-cap .cp-link {
+  margin-left: 8px;
+  font-size: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lib-xline .bar > i {
+    transition: none;
+  }
+}
+
+/* 处理面板里的小说明、等待、空状态、自写字段的标题（和 affectUI 字段标题同一个字号、字重） */
+.lib-hint {
+  margin: -4px 2px 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+.lib-wait {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0;
+  padding: 18px 4px;
+  /* 文字等 300ms 才出现（配方 m）：高度先留着 */
+  min-height: calc(36px + 1.45em);
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.lib-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 14px;
+  border-radius: var(--r-md);
+  background: var(--well);
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.lib-empty b {
+  font-size: 13px;
+  font-weight: 580;
+  color: var(--ink);
+}
+.lib-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.lib-flabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.lib-switches {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 2px 0;
+}
+.lib-steps {
+  padding: 2px 2px 0;
+}
+/* 拼接的进度（第一段详情「处理」最上面）：一行说法 + 「取消」，下面一条进度 */
+.lib-catop {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 12px;
+}
+.lib-catop-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.lib-oprog {
+  width: 100%;
+  margin-top: 0;
+}
+/* 字幕的前几句：和下载记录同一个样式 */
+.lib-srt {
+  max-height: 180px;
+}
+.lib-srt .more {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  color: var(--ink-4);
+}
+/* 语音识别还没装：灰底一块，说明 + 安装按钮 / 进度 */
+.lib-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: var(--well);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+.lib-setup b {
+  font-size: 13px;
+  font-weight: 580;
+  color: var(--ink);
+}
+.lib-setup .acts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+.lib-setup .cp-tprog {
+  width: 100%;
+}
+
+/* 剪辑：胶片条 / 波形 + 两个把手 */
+.lib-strip {
+  position: relative;
+  height: 56px;
+  margin: 0 7px;
+  border-radius: 8px;
+  background: #1c1c1e;
+}
+.lib-strip-in {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+.lib-strip-cover {
+  position: absolute;
+  inset: 0;
+  background-size: auto 100%;
+  background-repeat: repeat-x;
+  opacity: 0.55;
+}
+.lib-frames {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+/* 帧刚取到时从封面淡入 300ms（只动透明度，减少动效时也保留）；这条素材淡入过一次以后不再重播（Trim.tsx 的 Strip） */
+.lib-frames[data-fade] {
+  animation: cp-fade-in 300ms var(--ease-out-quint);
+}
+.lib-frames img {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lib-strip-wave {
+  background: transparent;
+  padding: 0 6px;
+  gap: 2px;
+}
+.lib-strip-wave i {
+  flex-basis: 2px;
+  height: 76%;
+}
+/* 选区外的盖板：满宽，用 scaleX 缩到选区边上（只动 transform） */
+.lib-dim {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.58);
+  pointer-events: none;
+}
+.lib-dim.l {
+  left: 0;
+  transform-origin: left center;
+  border-radius: 8px 0 0 8px;
+}
+.lib-dim.r {
+  right: 0;
+  transform-origin: right center;
+  border-radius: 0 8px 8px 0;
+}
+.lib-sel {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  border: 2px solid #fff;
+  border-radius: 7px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+/* 两个原生滑块叠在胶片条上：轨道透明、不接鼠标，只有把手能拖；左右各伸出半个把手宽，把手中心正好对准时间 */
+.lib-handle {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: -7px;
+  width: calc(100% + 14px);
+  height: auto;
+  margin: 0;
+  background: none;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+}
+.lib-handle::-webkit-slider-runnable-track {
+  height: 100%;
+  background: none;
+}
+.lib-handle::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 14px;
+  height: 64px;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.3);
+  cursor: ew-resize;
+}
+.lib-handle::-moz-range-thumb {
+  pointer-events: auto;
+  width: 14px;
+  height: 64px;
+  border: 0;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.3);
+  cursor: ew-resize;
+}
+.lib-handle::-moz-range-track {
+  background: none;
+}
+.lib-handle:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px var(--accent), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.lib-handle:disabled::-webkit-slider-thumb {
+  cursor: default;
+  background: #e5e5e5;
+}
+.lib-times {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.lib-times > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lib-tbox {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: var(--aui-radius);
+  background: var(--well);
+  font: 500 13px/1 var(--mono);
+  color: var(--ink);
+}
+
+/* ---------------- 多选工具条（磨砂玻璃，浮在网格底部） ---------------- */
+.lib-batch-wrap {
+  position: absolute;
+  left: 22px;
+  right: 18px;
+  bottom: 16px;
+  z-index: 6;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+/* 外框不接鼠标（让网格能点到），工具条和它带的弹窗、弹层要接：顶层（top layer）里的元素也会继承 pointer-events */
+.lib-batch-wrap dialog,
+.lib-batch-wrap [popover] {
+  pointer-events: auto;
+}
+.lib-batch {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 6px 6px 6px 14px;
+  border-radius: var(--r-xl);
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), var(--glass-shadow);
+  white-space: nowrap;
+}
+.lib-batch .n {
+  margin-right: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.lib-batch .n b {
+  color: var(--ink);
+  font-weight: 620;
+}
+.lib-batch .sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 6px;
+  background: var(--line-2);
+}
+.lib-anchor {
+  position: relative;
+  display: inline-flex;
+}
+@container libcol (max-width: 600px) {
+  .lib-batch .ui-button__icon,
+  .lib-batch .n {
+    display: none;
+  }
+}
+
+/* 给几项加标签的小弹层 */
+.lib-tagpop .lib-sugg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.lib-chip {
+  height: 24px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 99px;
+  background: var(--well);
+  font-size: 12px;
+  color: var(--ink-2);
+  cursor: default;
+  transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out-quad);
+}
+@media (hover: hover) and (pointer: fine) {
+  .lib-chip:hover {
+    background: #e9e9e9;
+    color: var(--ink);
+  }
+}
+.lib-chip:active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lib-chip:active {
+    transform: none;
+    background: #e4e4e4;
+  }
+}
+.lib-chip:focus-visible {
+  outline: 2px solid var(--aui-focus);
+  outline-offset: 1px;
+}
+
+/* ---------------- 拼接弹窗 ---------------- */
+.lib-cat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border-radius: var(--r-md);
+  background: var(--well);
+}
+.lib-cat li {
+  display: grid;
+  grid-template-columns: 18px 48px minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 8px;
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  font-size: 13px;
+}
+.lib-cat .k {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.lib-cat .th {
+  width: 48px;
+  height: 27px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #e6e6e6;
+}
+.lib-cat .th img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lib-cat .t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lib-cat .d {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.lib-catnote {
+  margin-top: 12px;
+}
+
+/* 移到废纸篓的确认：写出文件在哪 */
+.lib-dlg-path {
+  display: block;
+  margin-top: 8px;
+  font: 12px/1.5 var(--mono);
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,293 @@
+/* 浏览器插件页自己的样式。页面骨架（两列、分节、白卡、状态点）和 AI 助手页共用，在 ../agent/agent.css。
+ * 只用 theme.css 的变量，不新造视觉元素。 */
+
+.cp-pane-pad {
+  padding: 10px;
+}
+
+/* 连接状态卡片：左边一个小图标块（设置里「已登录的网站」那种白底细边方块），标题、说明，右边「测试连接」 */
+.cp-extcard-h {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 14px 14px;
+}
+.cp-extcard-h .tile {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: var(--well);
+  color: var(--ink-3);
+  transition: color var(--t-hover) ease;
+}
+.cp-extcard[data-on] .cp-extcard-h .tile {
+  color: var(--ink);
+}
+.cp-extcard-h .txt {
+  flex: 1;
+  min-width: 0;
+}
+.cp-extcard-h .txt b {
+  display: block;
+  font-size: 14px;
+  font-weight: 580;
+}
+.cp-extcard-h .txt small {
+  display: block;
+  margin-top: 1px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cp-extcard-b {
+  margin: 0 14px;
+  padding: 12px 0 14px;
+  border-top: 0.5px solid var(--line-2);
+}
+.cp-extcard-b .cp-step > .ui-button {
+  align-self: center;
+}
+
+/* 各家浏览器：设置式的行，单行的矮一点 */
+.cp-browser {
+  min-height: 40px;
+}
+.cp-browser .st,
+.cp-browsers .st {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-4);
+}
+.cp-browser .st.on {
+  color: var(--ok);
+}
+.cp-browser .st.warn {
+  color: var(--warn);
+}
+.cp-browsers-more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  text-align: left;
+  cursor: default;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cp-browsers-more:hover {
+    color: var(--ink-2);
+  }
+}
+.cp-browsers-more[aria-expanded="true"] .chev {
+  transform: rotate(180deg);
+}
+/* 没装的浏览器：一段文字，不占一排排的行 */
+.cp-browsers-rest {
+  margin: 0;
+  padding: 10px 0 2px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+.cp-browsers-rest small {
+  font-size: 11.5px;
+  color: var(--ok);
+}
+.cp-browsers-note {
+  margin: 0;
+  padding: 0 0 12px;
+  font-size: 12px;
+  color: var(--ink-4);
+}
+
+/* 安装插件 */
+.cp-brsel {
+  width: 168px;
+}
+.cp-install-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: var(--r-lg);
+  background: none;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  text-align: left;
+  cursor: default;
+}
+.cp-install-toggle .r {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  color: var(--accent-ink);
+}
+.cp-install-toggle[aria-expanded="true"] .chev {
+  transform: rotate(180deg);
+}
+.cp-install-toggle[aria-expanded="true"] + * .cp-how {
+  border-top: 0.5px solid var(--line-2);
+  margin-top: 0;
+}
+.cp-how {
+  list-style: none;
+  margin: 0 14px;
+  padding: 14px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cp-how li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 12px;
+}
+/* 步骤号：灰底小圆，和详情里的计数小胶囊同一种 */
+.cp-how .n {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--well);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.cp-how b {
+  display: block;
+  margin-top: 1px;
+  font-size: 13.5px;
+  font-weight: 520;
+}
+.cp-how p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cp-how code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--well);
+  color: var(--ink);
+}
+.cp-how .acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.cp-path {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 10px;
+  padding: 4px 4px 4px 12px;
+  border-radius: var(--r-md);
+  background: var(--well);
+}
+.cp-path .mono {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 浏览器里发现的：一张白卡里的行（和调用记录同一种） */
+.cp-found {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+}
+.cp-found-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 9px 6px 9px 8px;
+}
+.cp-found-row + .cp-found-row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 0.5px;
+  background: var(--line-2);
+}
+.cp-found-row .ico {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--well);
+  color: var(--ink-2);
+}
+.cp-found-row .main {
+  min-width: 0;
+}
+.cp-found-row .t {
+  font-size: 13.5px;
+  font-weight: 520;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cp-found-row .s {
+  margin-top: 1px;
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cp-found-row .acts {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* 插件能做什么 */
+.cp-feats {
+  list-style: none;
+  margin: 0;
+}
+.cp-feats li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 11px 0;
+}
+.cp-feats svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--ink-3);
+}
+.cp-feats b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 520;
+}
+.cp-feats small {
+  display: block;
+  margin-top: 1px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}

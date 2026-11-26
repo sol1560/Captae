@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Name={{name}}
+GenericName=Video Downloader
+GenericName[zh_CN]=视频下载器
+{{#if comment}}
+Comment={{comment}}
+{{/if}}
+Comment[zh_CN]=在自己的电脑上下载和整理视频、音频
+Keywords=download;video;audio;youtube;yt-dlp;m3u8;subtitle;
+Keywords[zh_CN]=下载;视频;音频;字幕;素材;
+Categories={{categories}}
+Exec={{exec}}
+StartupWMClass={{exec}}
+Icon={{icon}}
+Terminal=false
+StartupNotify=true

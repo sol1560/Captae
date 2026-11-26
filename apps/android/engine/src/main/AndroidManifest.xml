@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 下载引擎要联网（yt-dlp、ffmpeg 自己发请求）。extractNativeLibs 不写在这里，由用它的 App 在 Gradle 里设
+     packaging.jniLibs.useLegacyPackaging = true（AGP 不许在清单里写）。 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

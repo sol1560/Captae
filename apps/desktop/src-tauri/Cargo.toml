@@ -1,0 +1,69 @@
+[package]
+name = "captae-desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Captae desktop app"
+
+[[bin]]
+name = "captae-desktop"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+# 读词表，生成 Info.plist 的各语言说明（build.rs）
+serde_json.workspace = true
+
+[dependencies]
+captae-core = { path = "../../../crates/captae-core" }
+# 让手机连接这台电脑：局域网服务、配对（只要电脑端，不要手机端的客户端）
+captae-remote = { path = "../../../crates/captae-remote", default-features = false, features = ["server"] }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+# unstable：登录窗口要在一个窗口里放两块 webview（Window::add_child）
+tauri = { version = "2", features = ["protocol-asset", "unstable"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-single-instance = "2"
+clipboard-rs = "0.3"
+trash = "5"
+# Linux 上素材库播放用的本机小服务（src/media_server.rs）：都是核心库已经在用的包和版本（axum 0.8、tokio-util 0.7、rand 0.9），MIT / MIT OR Apache-2.0
+axum = "0.8"
+tokio-util = { version = "0.7", features = ["io"] }
+rand = "0.9"
+
+# 登录存储：直接读写 WKWebsiteDataStore 的 cookie（Tauri 的 cookie 接口删不掉 .youtube.com 这种带点的 cookie，见 docs/DESIGN.md 第 5.1 节「登录存储」）。
+# 这几个包 wry 本来就在用，版本和特性跟着它
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+block2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "objc2-core-foundation", "NSArray", "NSDate", "NSGeometry", "NSHTTPCookie", "NSString", "NSUUID", "NSProcessInfo"] }
+objc2-web-kit = { version = "0.3", default-features = false, features = ["std", "block2", "WKWebsiteDataStore", "WKHTTPCookieStore"] }
+# 剪贴板提示只看系统剪贴板的变更次数（NSPasteboard.changeCount），不读内容（见 src/clip_ask.rs）。clipboard-rs 本来就在用这个包
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSPasteboard"] }
+
+# Windows：剪贴板提示看剪贴板的序号（GetClipboardSequenceNumber，见 src/clip_ask.rs）；打开浏览器的扩展程序页面时从注册表的 App Paths 找浏览器（winreg）。
+# 版本和核心库、tokio 用的一样（windows-sys 0.61、winreg 0.55），MIT OR Apache-2.0 / MIT
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_DataExchange", "Win32_UI_WindowsAndMessaging"] }
+winreg = "0.55"
+# 登录存储（子任务 D，src/login_win.rs）：直接调 WebView2 的 CookieManager 读删 cookie、摘掉网站那块的协议过滤器。
+# wry 本来就在用这两个包，版本跟着它（webview2-com 0.38、windows-core 0.61），都是 MIT / MIT OR Apache-2.0
+webview2-com = "0.38"
+windows-core = "0.61"
+
+# Linux：剪贴板提示用 X11 的 XFixes 事件数剪贴板换了几次主人（见 src/clip_ask.rs）。clipboard-rs 本来就在用这个包和这个特性，MIT OR Apache-2.0
+[target.'cfg(target_os = "linux")'.dependencies]
+x11rb = { version = "0.13", features = ["xfixes"] }
+# 登录存储（子任务 D，src/login_linux.rs）：直接调 WebKitGTK 的 CookieManager 读删 cookie、UserContentFilterStore 挂拦截规则。
+# wry 本来就在用这两个包，版本和特性跟着它（webkit2gtk 2.0 的 v2_38、soup3 0.5），MIT
+webkit2gtk = { version = "2.0", features = ["v2_38"] }
+soup3 = "0.5"
+
+[dev-dependencies]
+tempfile = "3"
+reqwest = { version = "0.12", default-features = false }

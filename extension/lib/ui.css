@@ -1,0 +1,1113 @@
+/* Captae 插件注入网页的部件（全部在 Shadow DOM 里，不受网页样式影响，也不影响网页）：
+ * 视频右上角的按钮组、清晰度菜单、右下角的卡片（进度、下载过了、复制了链接、发给 AI、要打开 Captae……）、第一次的说明。
+ *
+ * 外观照第二版界面规范（轻玻璃，docs/design/README.md）：变量的数值和桌面端 apps/desktop/src/theme.css 同一套，
+ * 插件不经过构建，所以手写在这里。改颜色、圆角时两边一起改。
+ *
+ * 动效（docs/MOTION.md 第 3 节 l 插件、f 菜单、h 提示）：
+ * - 只动 transform 和 opacity；进度条按配方 c5 用 clip-path 填充（不影响布局，可以走合成）
+ * - 进场强 ease-out，不用 ease-in，一律不回弹；退场比进场短
+ * - 菜单、按钮组从触发点（右上角）长出来；卡片从屏幕下边滑进来
+ * - 减少动效时去掉位移和缩放，只留透明度；循环动画停在代表帧 */
+
+:host {
+  /* 表面和文字（同桌面端） */
+  --card: #ffffff;
+  --well: rgba(0, 0, 0, 0.045);
+  --line-2: rgba(0, 0, 0, 0.12);
+  --ink: #171717;
+  --ink-2: #525252;
+  --ink-3: #8b8b8b;
+  --ink-4: #b4b4b4;
+  /* 唯一的强调色：进度、焦点环、链接 */
+  --accent: #007aff;
+  --accent-ink: #0066d6;
+  /* 状态色只上在小图标和小字上 */
+  --ok: #1f8f50;
+  --warn: #c2660a;
+  --err: #d6382a;
+
+  /* 轻玻璃：插件的部件浮在视频和任意网页上，比桌面端顶栏（.68）厚一点，设计稿的 .7–.76 */
+  --glass: rgba(255, 255, 255, 0.76);
+  --glass-pill: rgba(255, 255, 255, 0.7);
+  --glass-pill-hover: rgba(255, 255, 255, 0.86);
+  --glass-blur: blur(24px) saturate(1.8);
+  --glass-edge: inset 0 0.5px 0 rgba(255, 255, 255, 0.95), inset 0 0 0 0.5px rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04), 0 12px 32px -10px rgba(0, 0, 0, 0.16);
+  /* 按钮组浮在视频画面上，投影更实一点才分得开 */
+  --pill-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 6px 18px -6px rgba(0, 0, 0, 0.35);
+
+  --font: "Captae Geist", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", system-ui, sans-serif;
+  --mono: "Captae Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* 缓动：只用课程出现过的曲线（课 09/05） */
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out-quart: cubic-bezier(0.165, 0.84, 0.44, 1);
+  --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-cubic: cubic-bezier(0.645, 0.045, 0.355, 1);
+
+  /* 时长档位（配方 1.2） */
+  --t-press: 160ms;
+  --t-hover: 120ms; /* 和桌面端、工具栏面板同一个值（docs/MOTION.md 1.2；课程 100–150ms，参考实测 92–108ms） */
+  --t-show: 150ms; /* 按钮组出现：鼠标每次移到视频上都会出现，取下限（配方 l1） */
+  --t-hide: 100ms;
+  --t-pop-in: 200ms;
+  --t-pop-out: 150ms;
+  --t-panel: 200ms;
+
+  /* 减少动效：位移和缩放归零，只留透明度（配方 1.7） */
+  --enter-shift: 8px;
+  --enter-scale: 0.95;
+  --swap-scale: 0.9;
+
+  color-scheme: light;
+}
+
+/* 界面语言（content.js 写在 <captae-ui lang> 上，不跟网页自己的 lang）：汉字、假名、韩文用对应地区的字体 */
+:host(:lang(zh-TW)) {
+  --font: "Captae Geist", "PingFang TC", "Hiragino Sans CNS", "Noto Sans TC", system-ui, sans-serif;
+}
+:host(:lang(ja)) {
+  --font: "Captae Geist", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
+}
+:host(:lang(ko)) {
+  --font: "Captae Geist", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+}
+@media (prefers-reduced-motion: reduce) {
+  :host {
+    --enter-shift: 0px;
+    --enter-scale: 1;
+    --swap-scale: 1;
+  }
+}
+/* 系统开了「减少透明度」：玻璃换成不透明白 */
+@media (prefers-reduced-transparency: reduce) {
+  :host {
+    --glass: #ffffff;
+    --glass-pill: #ffffff;
+    --glass-pill-hover: #f3f3f3;
+  }
+}
+
+/* ---------------- 基础 ---------------- */
+.cx {
+  /* 宽度按设计稿算到边框（卡片 352、菜单 276），内边距不往外撑 */
+  box-sizing: border-box;
+  font: 13.5px/1.45 var(--font);
+  color: var(--ink);
+  text-align: left;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+/* 基础重置用 :where() 包起来，优先级是 0，不会压过下面各个部件自己的外边距、颜色 */
+:where(.cx) *,
+:where(.cx) *::before,
+:where(.cx) *::after {
+  box-sizing: border-box;
+}
+:where(.cx) button {
+  font: inherit;
+  color: inherit;
+  margin: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+:where(.cx) button:disabled {
+  cursor: default;
+}
+:where(.cx) svg {
+  flex: none;
+  display: block;
+}
+.cx :focus-visible {
+  outline: 2px solid rgba(0, 122, 255, 0.55);
+  outline-offset: 2px;
+}
+/* hidden 属性一律不显示（不然会被各个部件自己的 display: flex / grid 压过去） */
+.cx [hidden],
+.cx[hidden] {
+  display: none !important;
+}
+.cx-glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), var(--glass-shadow);
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- 视频右上角的按钮组（配方 l1） ----------------
+ * 位置用 translate 属性（每次滚动都会改，不做动画）；显隐动 opacity + transform（scale .95→1），原点在右上角。
+ * 出现 150ms、消失 100ms，ease-out-quint；不可见时不接收点击，一出现立刻能点。 */
+.cx-inj {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  gap: 6px;
+  transform-origin: top right;
+  opacity: 0;
+  transform: scale(var(--enter-scale));
+  pointer-events: none;
+  transition:
+    opacity var(--t-hide) var(--ease-out-quint),
+    transform var(--t-hide) var(--ease-out-quint);
+}
+.cx-inj[data-show] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition-duration: var(--t-show);
+}
+.cx-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 11px 0 6px;
+  border: 0;
+  border-radius: 99px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 580;
+  white-space: nowrap;
+  background: var(--glass-pill);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), var(--pill-shadow);
+  /* 悬停只换底色 150ms ease；按下 scale(.97) 160ms（课 01/09、02/02） */
+  transition:
+    background-color var(--t-hover) ease,
+    transform var(--t-press) var(--ease-out-quad);
+}
+.cx-pill.plain {
+  padding-left: 11px;
+}
+.cx-pill .chev {
+  margin-left: -3px;
+  color: var(--ink-2);
+}
+.cx-pill:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .cx-pill:hover {
+    background: var(--glass-pill-hover);
+  }
+}
+
+/* ---------------- 清晰度菜单（配方 f1 / l2） ----------------
+ * 从按钮所在的右上角长出来：opacity + scale .95→1，进 200ms / 退 150ms，ease-out-quint；
+ * 退场的 keyframes 只写终点，从当前值出发；动画结束后再藏起来。键盘打开的不做动画（data-instant）。
+ * 菜单项一起出现，不错峰；悬停高亮即时，不渐变。 */
+.cx-menu {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 276px;
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 16px;
+  transform-origin: top right;
+  pointer-events: auto;
+  overscroll-behavior: contain;
+}
+.cx-menu[data-state="open"] {
+  animation: cx-pop-in var(--t-pop-in) var(--ease-out-quint);
+}
+.cx-menu[data-state="closed"] {
+  animation: cx-pop-out var(--t-pop-out) var(--ease-out-quint);
+  animation-fill-mode: forwards;
+  pointer-events: none;
+}
+.cx-menu[data-instant] {
+  animation: none;
+}
+.cx-menu:focus {
+  outline: none;
+}
+@keyframes cx-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(var(--enter-scale));
+  }
+}
+@keyframes cx-pop-out {
+  to {
+    opacity: 0;
+    transform: scale(var(--enter-scale));
+  }
+}
+.cx-menu .h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cx-menu .h .t {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cx-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 13.5px;
+  line-height: 1.3;
+  text-align: left;
+}
+.cx-item:hover,
+.cx-item:focus {
+  background: rgba(0, 0, 0, 0.06);
+  outline: none;
+}
+.cx-item:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(0, 122, 255, 0.45);
+}
+.cx-item .l {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  white-space: nowrap;
+}
+.cx-item .l > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cx-item small {
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cx-item .rec {
+  margin-left: 6px;
+  font-size: 11.5px;
+  color: var(--accent-ink);
+}
+.cx-item .size {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cx-item .sub {
+  display: block;
+  margin-top: 1px;
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: normal;
+}
+.cx-item.got .l {
+  align-items: center;
+  gap: 7px;
+}
+.cx-item.got svg {
+  color: var(--ok);
+}
+.cx-sep {
+  height: 0.5px;
+  margin: 5px 10px;
+  background: var(--line-2);
+}
+/* 读取清晰度的时候：灰字 + 小转圈（超过 300ms 才出现，免得一闪而过像出错） */
+.cx-wait {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  opacity: 0;
+  animation: cx-fade 150ms ease;
+  animation-delay: 300ms;
+  animation-fill-mode: forwards;
+}
+@keyframes cx-fade {
+  to {
+    opacity: 1;
+  }
+}
+
+/* 转圈：8 条，只动 opacity（课 03/02 的写法，配方 m5），减少动效时也保留 */
+.cx-spin {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--ink-3);
+}
+.cx-spin i {
+  position: absolute;
+  left: 6.25px;
+  top: 0.5px;
+  width: 1.5px;
+  height: 4px;
+  border-radius: 1px;
+  background: currentColor;
+  transform-origin: 0.75px 6.5px;
+  animation: cx-spin-bar 0.8s linear infinite;
+}
+.cx-spin i:nth-child(1) { transform: rotate(0deg); animation-delay: -0.8s; }
+.cx-spin i:nth-child(2) { transform: rotate(45deg); animation-delay: -0.7s; }
+.cx-spin i:nth-child(3) { transform: rotate(90deg); animation-delay: -0.6s; }
+.cx-spin i:nth-child(4) { transform: rotate(135deg); animation-delay: -0.5s; }
+.cx-spin i:nth-child(5) { transform: rotate(180deg); animation-delay: -0.4s; }
+.cx-spin i:nth-child(6) { transform: rotate(225deg); animation-delay: -0.3s; }
+.cx-spin i:nth-child(7) { transform: rotate(270deg); animation-delay: -0.2s; }
+.cx-spin i:nth-child(8) { transform: rotate(315deg); animation-delay: -0.1s; }
+@keyframes cx-spin-bar {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.15;
+  }
+}
+
+/* ---------------- 右下角的卡片（配方 l3 / h1 / h2） ----------------
+ * 一张张叠在右下角，最新的在最下面；每张的位置由脚本量好高度后写进它自己的 --y（只在增删、内容变高时改，不逐帧改）。
+ * 进场：从屏幕下边 translateY(calc(100% + 20px)) 滑上来 + 淡入，200ms ease-out-quart；
+ * 其他卡片让位用同一条曲线（transition，可打断：连着来几张也不会跳）；
+ * 退场：淡出 + 向下 8px + 缩到 .95，150ms，立刻不占位置，其余卡片同时合拢。 */
+.cx-dock {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  width: 352px;
+  height: 0;
+}
+.cx-card,
+.cx-cap {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  pointer-events: auto;
+  transform: translateY(var(--y, 0px));
+  transition:
+    transform var(--t-panel) var(--ease-out-quart),
+    opacity var(--t-panel) var(--ease-out-quart);
+}
+@starting-style {
+  .cx-card,
+  .cx-cap {
+    opacity: 0;
+    transform: translateY(calc(100% + 20px));
+  }
+}
+/* 收起、展开时的互换：新的从右下角放大出来（scale .9→1），旧的往右下角缩小淡出；只动 transform 和 opacity（配方 l3 第一档） */
+@starting-style {
+  .cx-card[data-swap],
+  .cx-cap[data-swap] {
+    opacity: 0;
+    transform: translateY(var(--y, 0px)) scale(var(--swap-scale));
+  }
+}
+.cx-card[data-out],
+.cx-cap[data-out] {
+  opacity: 0;
+  transform: translateY(calc(var(--y, 0px) + var(--enter-shift))) scale(var(--enter-scale));
+  transition-duration: var(--t-pop-out);
+  transition-timing-function: var(--ease-out-quint);
+  pointer-events: none;
+}
+.cx-card[data-out="swap"],
+.cx-cap[data-out="swap"] {
+  transform: translateY(var(--y, 0px)) scale(var(--swap-scale));
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-inj {
+    transition-property: opacity;
+  }
+  /* 只留透明度：进场原地淡入，让位直接到位 */
+  @starting-style {
+    .cx-card,
+    .cx-cap {
+      opacity: 0;
+      transform: translateY(var(--y, 0px));
+    }
+  }
+  .cx-card,
+  .cx-cap {
+    transition-property: opacity;
+  }
+}
+
+.cx-card {
+  width: 352px;
+  padding: 12px;
+  border-radius: 18px;
+  transform-origin: bottom right;
+}
+.cx-card .top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.cx-card .top .t {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cx-card .top .st {
+  display: grid;
+  place-items: center;
+}
+.cx-card .top .st[data-tone="ok"] {
+  color: var(--ok);
+}
+.cx-card .top .st[data-tone="warn"] {
+  color: var(--warn);
+}
+.cx-card .top .st[data-tone="err"] {
+  color: var(--err);
+}
+.cx-x {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: -2px -4px -2px auto;
+  border: 0;
+  border-radius: 99px;
+  background: transparent;
+  color: var(--ink-3);
+  transition:
+    background-color var(--t-hover) ease,
+    color var(--t-hover) ease,
+    transform var(--t-press) var(--ease-out-quad);
+}
+/* 小按钮的点击区补到 36px（课 01/09 的 ::before 热区；网页上的鼠标点击为主，不到 44px） */
+.cx-x::before,
+.cx-stop::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+.cx-x:active,
+.cx-stop:active {
+  transform: scale(0.95);
+}
+@media (hover: hover) and (pointer: fine) {
+  .cx-x:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--ink);
+  }
+}
+/* 又复制了新链接：卡片原地换内容，新内容 150ms 淡入，不重播进场（配方 h2） */
+.cx-card > .fresh {
+  animation: cx-fade-in 150ms ease;
+}
+.cx-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  margin-top: 10px;
+}
+.cx-th {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 41px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--ink-4);
+}
+.cx-th img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* 读到封面：opacity + 3px 模糊淡入 0.3s（配方 j3） */
+  animation: cx-img-in 300ms var(--ease-out-quint);
+}
+@keyframes cx-img-in {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+.cx-row .nm {
+  display: block;
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cx-row .m {
+  display: block;
+  margin-top: 1px;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 进度条：clip-path 填充，linear，过渡时长 = 刷新间隔（配方 c5），不动 width */
+.cx-prog {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* 和停止按钮一样高（22px 减去上下各 -4px 的外边距）：按钮去掉时这一行不变矮 */
+  min-height: 14px;
+  margin-top: 12px;
+}
+.cx-bar {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.07);
+}
+.cx-bar > i {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  clip-path: inset(0 100% 0 0 round 99px);
+  transition: clip-path var(--tick, 900ms) linear;
+}
+.cx-bar[data-tone="paused"] > i {
+  background: var(--ink-4);
+}
+/* 还不知道进度（读取信息、排队、合成文件）：流光 1.1s 移动 + 0.4s 停顿（配方 c5 / m6） */
+.cx-bar[data-busy] > i {
+  clip-path: none;
+  background: linear-gradient(90deg, transparent, rgba(0, 122, 255, 0.5), transparent);
+  transform: translateX(-100%);
+  animation: cx-sheen 1.5s linear infinite;
+}
+@keyframes cx-sheen {
+  0% {
+    transform: translateX(-100%);
+  }
+  73%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+.cx-stop {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: -4px -2px -4px 0;
+  border: 0;
+  border-radius: 99px;
+  background: transparent;
+  color: var(--ink-3);
+  transition:
+    background-color var(--t-hover) ease,
+    color var(--t-hover) ease,
+    transform var(--t-press) var(--ease-out-quad);
+}
+@media (hover: hover) and (pointer: fine) {
+  .cx-stop:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--ink);
+  }
+}
+
+/* 状态行：不铺彩色底，只有小图标上色，底是浅灰（同桌面端 .cp-note） */
+.cx-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--well);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.cx-note > svg {
+  margin-top: 1px;
+  color: var(--ink-3);
+}
+.cx-note[data-tone="ok"] > svg {
+  color: var(--ok);
+}
+.cx-note[data-tone="warn"] > svg {
+  color: var(--warn);
+}
+.cx-note[data-tone="err"] > svg {
+  color: var(--err);
+}
+.cx-note .grow {
+  flex: 1;
+  min-width: 0;
+}
+.cx-note small {
+  display: block;
+  margin-top: 1px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cx-note ol {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: var(--ink-2);
+}
+.cx-note kbd {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.07);
+  font: 500 11.5px/1.6 var(--mono);
+}
+.cx-raw {
+  display: block;
+  max-height: 72px;
+  margin-top: 6px;
+  overflow: auto;
+  font: 11px/1.45 var(--mono);
+  color: var(--ink-3);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* 底部按钮：灰字胶囊 + 近黑主按钮（同设计稿）。
+ * 一行放不下时换到下一行、照样靠右（行距也是 6px）：英文、德文比中文长，录直播时的三个按钮（「继续录」「停止并保存」「取消录制」）
+ * 会超出卡片；中文都放得下，不会换行 */
+.cx-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 12px;
+}
+.cx-foot .lead {
+  margin-right: auto;
+}
+.cx-b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 99px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 560;
+  white-space: nowrap;
+  transition:
+    background-color var(--t-hover) ease,
+    transform var(--t-press) var(--ease-out-quad);
+}
+.cx-b.primary {
+  background: var(--ink);
+  color: #fff;
+}
+.cx-b:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.cx-b:disabled {
+  opacity: 0.6;
+}
+/* 会删掉东西的确认按钮（取消录制）：红字浅红底，同 affectUI 按钮的 destructive；过渡和别的按钮一样，不加新动效 */
+.cx-b.danger {
+  background: #ffe9e6;
+  color: var(--err);
+}
+@media (hover: hover) and (pointer: fine) {
+  .cx-b:not(.primary):not(.danger):not(:disabled):hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--ink);
+  }
+  .cx-b.primary:not(:disabled):hover {
+    background: #2c2c2e;
+  }
+  .cx-b.danger:not(:disabled):hover {
+    background: #ffd9d3;
+  }
+}
+
+/* 录直播中的红点：静止（常驻界面不放循环动画，同桌面端 .cp-rec-dot），占的宽度和标一样，标题不跳 */
+.cx-rec-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  margin: 0 6px;
+  border-radius: 99px;
+  background: var(--err);
+}
+.cx-cap .cx-rec-dot {
+  flex: none;
+  margin: 0 4px;
+}
+.cx-b .cx-spin {
+  color: currentColor;
+}
+
+/* 收起后的小胶囊：进度环 + 百分比，点一下展开 */
+.cx-cap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 13px 0 10px;
+  border: 0;
+  border-radius: 99px;
+  font-size: 12.5px;
+  font-weight: 580;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transform-origin: bottom right;
+}
+/* 百分比留够两位数的宽度：9% → 10% 时胶囊不变宽，左边缘不跳 */
+.cx-cap .num {
+  min-width: 3ch;
+  text-align: right;
+}
+.cx-cap .t {
+  max-width: 150px;
+  overflow: hidden;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-overflow: ellipsis;
+}
+.cx-cap:active {
+  transform: translateY(var(--y, 0px)) scale(0.97);
+}
+.cx-cap .ok {
+  color: var(--ok);
+}
+.cx-cap .bad {
+  color: var(--err);
+}
+.cx-ring[data-busy] .fg {
+  display: none;
+}
+.cx-ring:not([data-busy]) .dot {
+  display: none;
+}
+.cx-ring .dot {
+  animation: cx-pulse 1s var(--ease-in-out-cubic) infinite alternate;
+}
+
+/* 完成的勾：画圈 250ms + 打勾 200ms，勾在圈画完前 100ms 开始（配方 m1 / e3） */
+.cx-done circle,
+.cx-done .tk {
+  stroke-dasharray: 100 110;
+  stroke-dashoffset: 0;
+}
+.cx-done.go circle {
+  stroke-dashoffset: 105;
+  animation: cx-draw 250ms var(--ease-in-out-cubic);
+  animation-fill-mode: forwards;
+}
+.cx-done.go .tk {
+  stroke-dashoffset: 105;
+  animation: cx-draw 200ms var(--ease-in-out-cubic);
+  animation-delay: 150ms;
+  animation-fill-mode: forwards;
+}
+@keyframes cx-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+/* 进行中：opacity 往返脉冲（配方 k1 / m4） */
+@keyframes cx-pulse {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------------- 发给 AI：步骤（同桌面端的步骤时间线） ---------------- */
+.cx-steps {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.cx-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  column-gap: 10px;
+  padding-bottom: 10px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.cx-step:last-child {
+  padding-bottom: 0;
+}
+.cx-step::before {
+  content: "";
+  position: absolute;
+  left: 8.5px;
+  top: 21px;
+  bottom: 3px;
+  width: 1px;
+  background: var(--line-2);
+}
+.cx-step:last-child::before {
+  display: none;
+}
+.cx-step .ico {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--ink-4);
+}
+.cx-step[data-s="done"] .ico {
+  color: var(--ink);
+}
+.cx-step[data-s="now"] .ico {
+  color: var(--accent);
+}
+.cx-step[data-s="done"],
+.cx-step[data-s="now"] {
+  color: var(--ink);
+}
+.cx-step[data-s="now"] .lb {
+  font-weight: 560;
+}
+.cx-step .d {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-3);
+  font-weight: 400;
+}
+.cx-step .pct {
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.cx-step .pulse {
+  animation: cx-pulse 1s var(--ease-in-out-cubic) infinite alternate;
+}
+/* 「会粘贴这些内容」预览 */
+.cx-paste {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  font-size: 12.5px;
+}
+.cx-paste .ph {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.cx-paste .pt {
+  margin-top: 6px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cx-paste .pm {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cx-paste .tr {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 8px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.cx-paste .tr s {
+  text-decoration: none;
+  color: var(--ink-3);
+  font: 500 11px/1.6 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.cx-paste .tr span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cx-paste .frames {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  margin-top: 8px;
+}
+.cx-paste .frames img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+}
+.cx-paste .inc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.cx-paste .inc span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---------------- 第一次看到按钮时的说明：贴在按钮组下方，从右上角长出来（配方 f1） ---------------- */
+.cx-tip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 268px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  pointer-events: auto;
+  transform-origin: top right;
+  animation: cx-pop-in var(--t-pop-in) var(--ease-out-quint);
+}
+.cx-tip b {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.cx-tip .cx-foot {
+  margin-top: 10px;
+}
+
+/* ---------------- X 帖子做成图片、文章存成 Markdown ----------------
+ * 帖子上的「做成图片」、文章上的「存成 Markdown」用视频按钮组同一个 .cx-inj 和 .cx-pill（显隐、悬停、按下都一样，不加新动效）。
+ * 卡片排版时先放在窗口外量尺寸（.cx-measure），出图以后马上移掉。 */
+.cx-measure {
+  position: fixed;
+  left: -20000px;
+  top: 0;
+  pointer-events: none;
+}
+.cx-shot-prev {
+  margin-top: 10px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--well);
+  box-shadow: inset 0 0 0 0.5px var(--line-2);
+}
+.cx-shot-prev img {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+}
+/* 浅色 / 深色：两个按钮的单选组。选中块直接换位置，不滑动（和桌面端分段控件用键盘时一样即时）；悬停只换字色 120ms */
+.cx-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 99px;
+  background: var(--well);
+}
+.cx-seg button {
+  height: 26px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 99px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 560;
+  white-space: nowrap;
+  transition: color var(--t-hover) ease;
+}
+.cx-seg button[aria-checked="true"] {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+@media (hover: hover) and (pointer: fine) {
+  .cx-seg button[aria-checked="false"]:hover {
+    color: var(--ink);
+  }
+}
+
+/* ---------------- 读屏用：只给辅助技术的文字 ---------------- */
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cx-pill:active,
+  .cx-b:active:not(:disabled),
+  .cx-x:active,
+  .cx-stop:active {
+    transform: none;
+  }
+  .cx-cap:active {
+    transform: translateY(var(--y, 0px));
+  }
+  .cx-bar > i {
+    transition: none;
+  }
+  .cx-bar[data-busy] > i {
+    animation: none;
+    transform: none;
+    opacity: 0.35;
+  }
+  .cx-done.go circle,
+  .cx-done.go .tk {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .cx-th img {
+    animation-name: cx-fade-in;
+  }
+  .cx-ring .dot,
+  .cx-step .pulse {
+    animation-play-state: paused;
+    animation-delay: -0.4s;
+  }
+}
+@keyframes cx-fade-in {
+  from {
+    opacity: 0;
+  }
+}

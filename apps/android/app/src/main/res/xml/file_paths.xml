@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FileProvider 能给出去的目录：Android 8–9 存下来的文件（App 的外部目录）、还没存进系统的下载 -->
+<paths>
+  <external-files-path name="saved" path="." />
+  <files-path name="downloads" path="downloads/" />
+</paths>

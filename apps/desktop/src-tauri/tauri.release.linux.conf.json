@@ -1,0 +1,40 @@
+{
+  "bundle": {
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "linux/256x256.png",
+      "icons/icon-512.png"
+    ],
+    "resources": {
+      "binaries/linux/bin/captae": "captae",
+      "binaries/linux/bin/ffmpeg": "ffmpeg",
+      "binaries/linux/bin/ffprobe": "ffprobe",
+      "binaries/linux/bin/aria2c": "aria2c",
+      "binaries/linux/bin/deno": "deno",
+      "binaries/linux/yt-dlp/": "yt-dlp/",
+      "../../../extension/": "extension/",
+      "../../../licenses/": "licenses/",
+      "../../../LICENSE": "LICENSE",
+      "../../../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md"
+    },
+    "longDescription": "Paste a link, or click Download next to a video in your browser: Captae picks the quality, downloads it and files it into a local library you can search by title, tag and subtitle text. Everything stays on your own computer.",
+    "linux": {
+      "deb": {
+        "depends": ["xdg-utils", "ca-certificates", "gstreamer1.0-plugins-good", "gstreamer1.0-libav"],
+        "section": "video",
+        "priority": "optional",
+        "desktopTemplate": "linux/captae.desktop",
+        "files": {
+          "/usr/share/metainfo/app.captae.desktop.metainfo.xml": "linux/app.captae.desktop.metainfo.xml"
+        }
+      },
+      "appimage": {
+        "bundleMediaFramework": true,
+        "files": {
+          "/usr/share/metainfo/app.captae.desktop.metainfo.xml": "linux/app.captae.desktop.metainfo.xml"
+        }
+      }
+    }
+  }
+}

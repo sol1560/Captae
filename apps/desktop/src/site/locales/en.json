@@ -1,0 +1,231 @@
+{
+  "meta": {
+    "title": "Captae · Save online videos to your device",
+    "description": "Paste a link or click on a page to save courses, clips, and videos to your device. Pick quality, search speech, get subtitles, and edit."
+  },
+  "nav": {
+    "features": "Features",
+    "extension": "Extension",
+    "ai": "Ask AI",
+    "opensource": "Free & Open Source",
+    "download": "Download"
+  },
+  "hero": {
+    "eyebrow": "Video saver for desktop and mobile",
+    "title": "Save good videos to your device",
+    "subtitle": "Paste a link to save courses, clips, or favorite videos in any quality, get subtitles, and search by line.",
+    "primary": "Download",
+    "secondary": "View on GitHub",
+    "note": "Free, no sign up, videos stay on your device"
+  },
+  "stage": {
+    "caption": "From pasting a link to saving and subtitles",
+    "replay": "Replay"
+  },
+  "sites": {
+    "lead": "Save from the video sites you visit",
+    "more": "Thousands more"
+  },
+  "showcase": {
+    "kicker": "Overview",
+    "title": "Four pages to manage videos",
+    "body": "Here's the real app. Switch views, pick quality, see progress, click any button.",
+    "captions": {
+      "downloads": "See file sizes for each quality and track queued or done items.",
+      "library": "Saved videos stay organized. Search lines, trim, and convert.",
+      "agent": "Connect your AI tools in one click and see a log of every action.",
+      "extension": "Adds a download button to web videos so you can pick quality."
+    },
+    "try": "Click to try it"
+  },
+  "tour": {
+    "next": "Next",
+    "end": "Read on"
+  },
+  "pick": {
+    "kicker": "Quality",
+    "title": "See the size of each quality",
+    "body": "Paste a link to see how much space each quality takes. Pick one yourself, or wait a few seconds and it starts in the highest quality."
+  },
+  "login": {
+    "kicker": "Sign in",
+    "title": "Sign in once for member videos",
+    "body": "Some courses, higher qualities, or saved videos need a site login. Sign in once inside the app and future downloads work right away."
+  },
+  "reasons": {
+    "kicker": "Guidance",
+    "title": "See which step is needed next",
+    "body": "No cryptic errors. Whether you need to sign in, verify on the page, or check region access, you get a plain answer and a next button.",
+    "fixed": "Signed in, resuming now",
+    "examples": [
+      {
+        "text": "You need to sign in to Bilibili to watch this video",
+        "tone": "warn",
+        "action": "Sign in to Bilibili"
+      },
+      {
+        "text": "YouTube needs you to confirm on the web page first (verification)",
+        "tone": "warn",
+        "action": "Verify"
+      },
+      {
+        "text": "This video isn't available in your region",
+        "tone": "err",
+        "action": "Retry"
+      },
+      {
+        "text": "This video is copy-protected (DRM). Captae can't download it",
+        "tone": "err",
+        "action": ""
+      }
+    ]
+  },
+  "library": {
+    "kicker": "Library",
+    "title": "Find any video by a line you remember",
+    "body": "Even a big library is easy to search. Type a word to find that spoken clip, then trim, merge, add subtitles, or convert formats.",
+    "chips": [
+      "Lines",
+      "Convert",
+      "Trim",
+      "Merge",
+      "Caption",
+      "Get audio"
+    ]
+  },
+  "speech": {
+    "kicker": "Subtitles",
+    "title": "Turn speech into text on your device",
+    "body": "For talks or interviews without captions, one click creates timed subtitles and a transcript on your device. Audio never leaves.",
+    "none": "No subtitles",
+    "working": "Transcribing",
+    "done": "Generated"
+  },
+  "live": {
+    "kicker": "Live",
+    "title": "Record live streams as they happen",
+    "body": "For live talks or shows with no replay, paste the link to detect the stream. Start recording from now, stop anytime, and save the video."
+  },
+  "extension": {
+    "kicker": "Extension",
+    "title": "Click beside any web video to save it",
+    "body": "With the extension, skip copying links. A button appears next to playing web videos so you can pick a quality and save right there.",
+    "points": [
+      "Button by the video, no copying",
+      "Pick quality and see live progress",
+      "Saved straight to your library"
+    ]
+  },
+  "ai": {
+    "kicker": "Connect AI",
+    "title": "Let your AI tools save and find video clips",
+    "body": "Connect Claude or Cursor in one click. Ask it to download videos, find clips with a specific spoken line, or create subtitles hands free.",
+    "points": [
+      "One click to connect or turn off",
+      "Clear history of every action taken",
+      "Runs locally, files never leave"
+    ],
+    "log": [
+      {
+        "did": "Downloaded video",
+        "result": "In library"
+      },
+      {
+        "did": "Subtitled Sintel trailer",
+        "result": "Subtitles ready"
+      },
+      {
+        "did": "Find clips saying dragon",
+        "result": "Matched clip found"
+      },
+      {
+        "did": "Convert Big Buck Bunny to MP3",
+        "result": "Audio exported"
+      }
+    ]
+  },
+  "send": {
+    "kicker": "Send to AI",
+    "title": "Skip long watches and let AI summarize",
+    "body": "For a long talk or tutorial, click Send to AI to copy the transcript and key frames. Paste them into a chat and ask what the video covers.",
+    "script": "Script"
+  },
+  "local": {
+    "kicker": "On Device",
+    "title": "No account needed, videos stay with you",
+    "body": "Open and use with no sign up. Your saved videos, subtitles, and search history stay on your device.",
+    "points": [
+      "No sign up, ready on launch",
+      "Common formats for play and edit",
+      "On device speech to text, private"
+    ]
+  },
+  "opensource": {
+    "kicker": "Free & Open Source",
+    "title": "Totally free, code out in the sun",
+    "body": "All features are free with no ads or limits. The full code is open on GitHub so the road grows wider and you never worry.",
+    "link": "View code on GitHub"
+  },
+  "future": {
+    "title": "Up Ahead",
+    "points": [
+      "Broader and easier",
+      "All new downloader",
+      "Web version",
+      "Better preview and edit"
+    ]
+  },
+  "final": {
+    "kicker": "Try Now",
+    "title": "Save your next favorite video",
+    "subtitle": "No sign up needed. Paste a link and keep the videos you care about.",
+    "primary": "Download"
+  },
+  "footer": {
+    "tagline": "Free video downloader and media library for macOS, Windows, Linux, Android, and iOS",
+    "legal": "Only download content you have rights to use and follow site terms and local laws.",
+    "credits": "Demo footage from four Blender Foundation open movies: Big Buck Bunny, Sintel, Tears of Steel, and Elephants Dream, used under CC BY 3.0 (CC BY 2.5 for Elephants Dream), © Blender Foundation.",
+    "github": "GitHub Repository"
+  },
+  "a11y": {
+    "nav": "Main navigation",
+    "sites": "Supported sites",
+    "screens": "App screenshots",
+    "footer": "Footer",
+    "screenAlt": "Captae {page} page",
+    "qualityDemo": "Quality picker demo",
+    "lang": "Language"
+  },
+  "ui": {
+    "live": "This is a live stream in progress",
+    "biliGain": "Download 1080P and above, and Premium videos"
+  },
+  "desk": {
+    "scroll": "Scroll to see how to save videos",
+    "steps": [
+      "Copy any video link from the address bar",
+      "Switch back and it grabs your link, no pasting",
+      "Click “Download” to see resolutions and sizes",
+      "Pick 1080p and click “Start Now” to download",
+      "Saved straight to your library when finished",
+      "Open a video to convert formats, caption, or trim",
+      "End of demo. Give it a try right in the window"
+    ],
+    "take": "Try it out",
+    "replay": "Replay"
+  },
+  "stack": {
+    "captions": [
+      "Click \"Download\", pick 1080p, click \"Start now\"",
+      "Click \"Sign in to YouTube\" to sign in and resume",
+      "Click failed videos to see why and next steps",
+      "Type Sintel in search and click the video for details",
+      "Click \"Subtitles\", \"Speech to text\", \"Create subtitles\"",
+      "Click \"Stop and save\" to save streams to \"Completed\"",
+      "Click \"Download\" in the extension to send it to Captae",
+      "Pick Cursor, click \"Add automatically\", and confirm",
+      "Click \"Send to AI\" to copy transcript and key frames"
+    ],
+    "take": "Give it a try"
+  }
+}

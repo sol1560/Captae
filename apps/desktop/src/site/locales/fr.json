@@ -1,0 +1,231 @@
+{
+  "meta": {
+    "title": "Captae · Gardez les vidéos du web sur l’appareil",
+    "description": "Collez un lien ou cliquez pour sauver cours, rushs et vidéos sur l’appareil. Qualité, recherche de paroles, sous-titres et montage."
+  },
+  "nav": {
+    "features": "Fonctions",
+    "extension": "Extension",
+    "ai": "Avec l’IA",
+    "opensource": "Gratuit et libre",
+    "download": "Obtenir"
+  },
+  "hero": {
+    "eyebrow": "L’outil vidéo pour ordi et mobile",
+    "title": "Gardez vos vidéos sous la main",
+    "subtitle": "Cours, rushs ou vidéos : collez un lien pour garder la qualité voulue, sous-titrer et chercher par parole.",
+    "primary": "Obtenir",
+    "secondary": "Voir sur GitHub",
+    "note": "Gratuit, sans compte, stocké sur l’appareil"
+  },
+  "stage": {
+    "caption": "Du lien à la médiathèque et aux sous-titres",
+    "replay": "Revoir"
+  },
+  "sites": {
+    "lead": "Fonctionne sur vos sites habituels",
+    "more": "Et mille autres"
+  },
+  "showcase": {
+    "kicker": "Aperçu",
+    "title": "Quatre pages pour tout gérer",
+    "body": "La vraie interface : changez de vue, de qualité, suivez le progrès, tout répond.",
+    "captions": {
+      "downloads": "Comparez le poids des qualités et suivez les vidéos en cours.",
+      "library": "Archive auto, recherche par parole, découpe et conversion ici.",
+      "agent": "Reliez vos outils IA en un clic et gardez trace de chaque action.",
+      "extension": "Un bouton sur la vidéo web : choisissez la qualité sur place."
+    },
+    "try": "Cliquez, testez"
+  },
+  "tour": {
+    "next": "Suivant",
+    "end": "Continuer"
+  },
+  "pick": {
+    "kicker": "Qualité",
+    "title": "Le poids de chaque qualité",
+    "body": "Collez un lien pour voir la taille de chaque qualité. Choisissez-en une, ou patientez quelques secondes pour lancer la meilleure."
+  },
+  "login": {
+    "kicker": "Connexion",
+    "title": "Connectez-vous une seule fois",
+    "body": "Cours, favoris ou haute qualité exigent parfois un compte. Connectez-vous une fois dans l’app pour télécharger ensuite sur ce site."
+  },
+  "reasons": {
+    "kicker": "Clarté",
+    "title": "Sachez pourquoi un fichier bloque",
+    "body": "Fini les erreurs obscures. Connexion requise, vérification web ou limite régionale : la raison s’affiche avec le bouton pour agir.",
+    "fixed": "Connecté, reprise",
+    "examples": [
+      {
+        "text": "Vous devez vous connecter à Bilibili pour regarder cette vidéo",
+        "tone": "warn",
+        "action": "Se connecter à Bilibili"
+      },
+      {
+        "text": "YouTube vous demande d’abord de confirmer sur la page web (vérification)",
+        "tone": "warn",
+        "action": "Vérifier"
+      },
+      {
+        "text": "Cette vidéo n’est pas disponible dans votre région",
+        "tone": "err",
+        "action": "Réessayer"
+      },
+      {
+        "text": "Cette vidéo est protégée contre la copie (DRM). Captae ne peut pas la télécharger",
+        "tone": "err",
+        "action": ""
+      }
+    ]
+  },
+  "library": {
+    "kicker": "Médias",
+    "title": "Retrouvez une vidéo par une réplique",
+    "body": "Cherchez un mot pour retrouver le passage exact parmi vos vidéos. Coupez, fusionnez, sous-titrez ou changez de format ici.",
+    "chips": [
+      "Paroles",
+      "Format",
+      "Découpe",
+      "Fusion",
+      "Titres",
+      "Audio"
+    ]
+  },
+  "speech": {
+    "kicker": "Transcrit",
+    "title": "Transcrivez les vidéos sur l’appareil",
+    "body": "Pour un cours ou entretien sans sous-titres, générez en un clic sous-titres minutés et texte complet. Tout reste sur votre appareil.",
+    "none": "Aucun texte",
+    "working": "En cours...",
+    "done": "Texte prêt"
+  },
+  "live": {
+    "kicker": "En direct",
+    "title": "Captez un direct en cours de route",
+    "body": "Un partage en ligne sans rediffusion ? Collez le lien, le direct est reconnu. Enregistrez dès maintenant et coupez quand vous voulez."
+  },
+  "extension": {
+    "kicker": "Extension",
+    "title": "Téléchargez d’un clic sur la page web",
+    "body": "Avec l’extension, plus besoin de copier les liens. Un bouton s’affiche sur la vidéo : choisissez la qualité et gardez-la sur l’ordi.",
+    "points": [
+      "Bouton sur la vidéo, sans copier",
+      "Choix de qualité et suivi en bas",
+      "Rangé d’office dans vos médias"
+    ]
+  },
+  "ai": {
+    "kicker": "Relier l’IA",
+    "title": "Votre IA télécharge et cherche vos extraits",
+    "body": "Reliez Claude ou Cursor en un clic. Demandez-lui de télécharger une vidéo, de trouver une réplique précise ou de générer les sous-titres pour vous.",
+    "points": [
+      "Activé ou coupé en un seul clic",
+      "Historique clair de chaque action",
+      "Agit en local, rien ne sort"
+    ],
+    "log": [
+      {
+        "did": "Vidéo récupérée",
+        "result": "Dans Médias"
+      },
+      {
+        "did": "Sous-titrer l’extrait Sintel",
+        "result": "Texte complet"
+      },
+      {
+        "did": "Chercher le mot « dragon »",
+        "result": "Passage localisé"
+      },
+      {
+        "did": "Convertir Big Buck Bunny en MP3",
+        "result": "Audio exporté"
+      }
+    ]
+  },
+  "send": {
+    "kicker": "Vers l’IA",
+    "title": "Résumez les longues vidéos avec votre IA",
+    "body": "Pour un long cours, cliquez sur « Vers l’IA » : texte et images clés sont copiés ensemble. Collez-les dans le chat pour demander un résumé.",
+    "script": "Texte"
+  },
+  "local": {
+    "kicker": "En local",
+    "title": "Sans compte, tout reste sur l’appareil",
+    "body": "Prêt sans inscription. Vos vidéos, sous-titres et recherches restent sur votre appareil et ne sortent jamais.",
+    "points": [
+      "Sans compte, prêt d’emblée",
+      "Formats courants prêts à monter",
+      "Transcrit sur place, audio privé"
+    ]
+  },
+  "opensource": {
+    "kicker": "Gratuit et open source",
+    "title": "Gratuit, code ouvert au grand jour",
+    "body": "Tout est gratuit, sans pub ni limite. Le code est public sur GitHub : la voie s’élargit et on l’utilise le cœur léger.",
+    "link": "Voir le code sur GitHub"
+  },
+  "future": {
+    "title": "À venir",
+    "points": [
+      "Plus large et simple",
+      "Téléchargeur inédit",
+      "Version web",
+      "Aperçu et édition revus"
+    ]
+  },
+  "final": {
+    "kicker": "Essayer",
+    "title": "Gardez votre prochaine vidéo ici",
+    "subtitle": "Sans compte, prêt d’emblée. Collez un lien et gardez vos vidéos.",
+    "primary": "Obtenir"
+  },
+  "footer": {
+    "tagline": "Outil gratuit de téléchargement et gestion vidéo pour macOS, Windows, Linux, Android et iOS",
+    "legal": "Téléchargez uniquement les contenus autorisés selon les règles des sites et la loi.",
+    "credits": "Images de démo issues des quatre films ouverts de la Blender Foundation : Big Buck Bunny, Sintel, Tears of Steel et Elephants Dream, utilisés sous CC BY 3.0 (CC BY 2.5 pour Elephants Dream), © Blender Foundation.",
+    "github": "Dépôt GitHub"
+  },
+  "a11y": {
+    "nav": "Navigation principale",
+    "sites": "Sites pris en charge",
+    "screens": "Captures d’écran",
+    "footer": "Pied de page",
+    "screenAlt": "Page {page} de Captae",
+    "qualityDemo": "Choix de la qualité",
+    "lang": "Choisir la langue"
+  },
+  "ui": {
+    "live": "C’est un direct en cours",
+    "biliGain": "Permet de télécharger en 1080P et plus, ainsi que les vidéos Premium"
+  },
+  "desk": {
+    "scroll": "Faites défiler pour voir la démo",
+    "steps": [
+      "Copiez le lien vidéo dans votre navigateur",
+      "Passez à la fenêtre, le lien est déjà détecté",
+      "Cliquez « Télécharger », voyez qualité et poids",
+      "Choisissez 1080p et cliquez sur « Démarrer »",
+      "La vidéo finie se range dans la médiathèque",
+      "Ouvrez la vidéo pour convertir, titrer et monter",
+      "C'est fini, à vous d'essayer dans la fenêtre"
+    ],
+    "take": "À votre tour",
+    "replay": "Revoir"
+  },
+  "stack": {
+    "captions": [
+      "«Télécharger», prenez 1080p, «Démarrer maintenant»",
+      "«Se connecter à YouTube», ça reprend tout seul",
+      "Ouvrez chaque échec pour voir cause et solution",
+      "Tapez Sintel et ouvrez la vidéo pour voir les détails",
+      "«Sous-titres», «Transcription», «Créer des sous-titres»",
+      "«Arrêter et enregistrer», live sauvé dans «Terminé»",
+      "Dans l’extension, «Télécharger» l’envoie à Captae",
+      "Prenez Cursor, «Ajouter automatiquement» et validez",
+      "«Envoyer à l’IA» pour copier texte et images clés"
+    ],
+    "take": "À votre tour"
+  }
+}

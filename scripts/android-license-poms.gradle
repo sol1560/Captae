@@ -1,0 +1,36 @@
+// scripts/gen-licenses.py 用的 Gradle init 脚本：列出 Android App 打进 APK 的 Maven 依赖，和它们的 POM（连同父 POM）在本机的位置。
+// Gradle 解析依赖时多半只下 .module 元数据，POM 不一定在缓存里，这里用 ArtifactResolutionQuery 专门要 POM（只下 POM 文件，公开仓库，免费）。
+// 用法（gen-licenses.py 自己调）：cd apps/android && ./gradlew -q --no-configuration-cache --init-script ../../scripts/android-license-poms.gradle :app:captaeLicensePoms
+// 输出每行：CAPTAE-DEP <group>:<name>:<version>（打进 APK 的依赖）、CAPTAE-POM <group>:<name>:<version>|<POM 文件路径>
+allprojects {
+  if (path == ':app') {
+    tasks.register('captaeLicensePoms') {
+      doLast {
+        def cfg = configurations.getByName('releaseRuntimeClasspath')
+        def ids = cfg.incoming.resolutionResult.allComponents.collect { it.id }.findAll { it instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier }
+        ids.each { println "CAPTAE-DEP ${it.group}:${it.module}:${it.version}" }
+        def seen = [] as Set
+        def queue = ids.collect { [it.group, it.module, it.version] }
+        while (!queue.isEmpty()) {
+          def batch = queue.findAll { seen.add(it.join(':')) }
+          queue = []
+          if (batch.isEmpty()) break
+          def q = dependencies.createArtifactResolutionQuery()
+          batch.each { q.forModule(it[0], it[1], it[2]) }
+          def result = q.withArtifacts(org.gradle.maven.MavenModule, org.gradle.maven.MavenPomArtifact).execute()
+          result.resolvedComponents.each { c ->
+            c.getArtifacts(org.gradle.maven.MavenPomArtifact).each { a ->
+              if (a instanceof org.gradle.api.artifacts.result.ResolvedArtifactResult) {
+                println "CAPTAE-POM ${c.id.group}:${c.id.module}:${c.id.version}|${a.file}"
+                // 父 POM：许可证、项目地址常写在那里
+                def xml = new groovy.xml.XmlSlurper().parse(a.file)
+                def p = xml.parent
+                if (p.groupId.text()) queue << [p.groupId.text(), p.artifactId.text(), p.version.text()]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

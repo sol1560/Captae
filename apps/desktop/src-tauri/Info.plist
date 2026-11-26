@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Tauri 打包时把这份合并进 Captae.app 的 Info.plist。
+     CFBundleLocalizations：声明界面有哪几种语言。系统据此给 Captae 自己画的那部分（文件选择窗口、文本框的右键菜单、菜单栏里系统加的项）用对的语言，
+     「系统设置 › 通用 › 语言与地区 › 应用程序」里也能单独给 Captae 选语言（Captae 设置里的「语言」选「跟随系统」时跟着它）。
+     这里的语言要和 crates/captae-core/src/i18n.rs、apps/desktop/src/i18n 支持的一致。 -->
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>zh-Hans</string>
+		<string>zh-Hant</string>
+		<string>ja</string>
+		<string>ko</string>
+		<string>es</string>
+		<string>fr</string>
+		<string>de</string>
+	</array>
+	<key>CFBundleAllowMixedLocalizations</key>
+	<true/>
+	<!-- 设置 › 手机（crates/captae-remote）：Bonjour 广播交给系统的 mDNSResponder，一般不会问「本地网络」权限；万一问了，说明在这里。
+	     这里写英文（开发语言是 en），其他语言由 build.rs 按词表生成 <语言>.lproj/InfoPlist.strings 打进安装包；
+	     原文是 remote_cmds.rs 的 LOCAL_NETWORK_USAGE，改说法两处一起改（cargo test -p captae-desktop 会核对） -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Lets phones you paired on the same Wi-Fi find this computer</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_captae._tcp</string>
+	</array>
+</dict>
+</plist>
