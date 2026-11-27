@@ -10,6 +10,7 @@
 - 测试数据目录的 `data/settings.json` 写 `"autoUpdate": false`；测「发给 AI」时设 `CAPTAE_TEST_NO_CLIPBOARD=1`，不要动系统剪贴板。
 - 改了界面跑 `npx tsc --noEmit -p .` 和演示构建；改了插件工具栏面板要 `npm run build:popup`（产物 `extension/popup/` 提交进仓库）。
 - 改了给人看的文字跑 `python3 scripts/i18n.py check`（英文词表必须齐）；发版前跑 `python3 scripts/i18n.py check --strict`（8 种语言都要齐）。
+- README 有中文 `README.md` 和英文 `README.en.md` 两份，改一份就同步改另一份（界面上的名字照 `docs/I18N.md` 第 8 节的术语表）。
 - Windows / Linux（`docs/DESIGN.md` 第 14 节）：改了 Rust 要过 `cargo check --target x86_64-pc-windows-gnu -p captae-core -p captae-cli -p captae-desktop --tests`（只查编译）和 Docker 里 Ubuntu 22.04 的 `cargo test`；
   真窗口、安装包、插件宿主这些只在真系统上看得出的，在 Devin 的 Windows / Linux 虚拟机上测，不在这台 Mac 上起测试版。打包：`scripts/build-release-windows.ps1`（Windows 上）、`scripts/build-release-linux.sh`（Ubuntu 22.04 上）。
 - 依赖变了跑 `python3 scripts/gen-licenses.py` 更新 `licenses/`；打包用 `scripts/build-release.sh`（编译时去掉本机路径，最后自动运行 `scripts/check-bundle.sh`）。
