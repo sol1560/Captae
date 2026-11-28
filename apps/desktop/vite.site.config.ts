@@ -4,12 +4,15 @@
 // - 多语言：根地址和每种语言（/zh-cn/、/en/……）各出一个页面，标题、摘要、<html lang> 各用各的，互相标出其他语言的地址，方便搜索引擎收录；
 //   页面内容一样，打开以后按网址里的语言画（src/site/i18n.ts）。
 // - 演示版：「界面一览」嵌的是 App 的演示版（npm run build:mock 的产物 dist-mock/index.html），发布在 /demo/；本地看时开发服务器也在 /demo/ 给它。
+// 另外，构建和起开发服务器时先问一次 GitHub 最新一版的安装包，写进页面（__CAPTAE_RELEASE__，页尾的下载列表用，见 src/site/download.tsx）。
+// 环境变量里有 GITHUB_TOKEN 就带上（不登录每个 IP 每小时只能问 60 次）；没问到只提醒，不中断构建，页面打开后浏览器里还会再问。
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { zhCN } from "./src/site/copy";
+import { fetchLatestRelease, installersOf, LATEST_API } from "./src/site/release";
 
 const src = fileURLToPath(new URL("./src", import.meta.url));
 const out = fileURLToPath(new URL("./dist-site", import.meta.url));
@@ -70,10 +73,20 @@ function demo(): Plugin {
   };
 }
 
-export default defineConfig({
+/** 构建时问一次最新一版；没问到返回 null，并在终端里说一声 */
+async function latestRelease() {
+  const token = process.env.GITHUB_TOKEN;
+  const r = await fetchLatestRelease({ headers: token ? { Authorization: `Bearer ${token}` } : {}, signal: AbortSignal.timeout(15_000) });
+  if (r) console.log(`[captae-site] 下载列表用 ${r.tag}：${installersOf(r).map((x) => x.name).join("、")}`);
+  else console.warn(`[captae-site] 没问到 GitHub 最新一版（${LATEST_API}），页面里的下载列表要等浏览器自己问到`);
+  return r;
+}
+
+export default defineConfig(async () => ({
   root: fileURLToPath(new URL("./src/site", import.meta.url)),
   base: "/",
   plugins: [react(), localized(), demo()],
+  define: { __CAPTAE_RELEASE__: JSON.stringify(await latestRelease()) },
   resolve: { alias: { "@": src } },
   clearScreen: false,
   // 本机装依赖时 fsevents 的安装脚本被跳过了，开发服务器收不到文件改动的通知（改了代码页面还是旧的）：改成每 0.3 秒查一次
@@ -84,4 +97,4 @@ export default defineConfig({
     target: "es2022",
     chunkSizeWarningLimit: 1000,
   },
-});
+}));

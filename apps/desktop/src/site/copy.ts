@@ -4,8 +4,9 @@
 // 维护者 2026-11-24 亲自改的（原样用）：「免费公开」都改成「免费开源」；免费开源那张卡片的正文；「安心使用」那张换成「未来可期」和四条计划。
 // 不算文案、照桌面端真实界面写的：演示画面里的按钮、状态和失败说法（reasons.examples 来自 crates/captae-core/src/errors.rs）。
 
-export const GITHUB = "https://github.com/sol1560/Captae";
-export const RELEASES = "https://github.com/sol1560/Captae/releases/latest";
+export const GITHUB_REPO = "sol1560/Captae";
+export const GITHUB = `https://github.com/${GITHUB_REPO}`;
+export const RELEASES = `${GITHUB}/releases/latest`;
 
 const written = {
   "meta": {

@@ -1388,7 +1388,9 @@ h3 {
 }
 .site-final-strip {
   position: relative;
-  height: 420px;
+  /* 玻璃里放了下载列表，比原来高；问不到版本时只有一个按钮，还是原来的 420px */
+  min-height: 420px;
+  padding: 44px 0;
   border-radius: 28px;
   overflow: hidden;
   background: var(--side);
@@ -1415,6 +1417,63 @@ h3 {
 }
 .site-final-glass .site-body {
   margin-bottom: 22px;
+}
+
+/* 下载列表（download.tsx）：玻璃里一张不透明的白卡，一个安装包一行，行间细线；下面一行版本、日期和去 GitHub 的链接 */
+.site-dl {
+  text-align: left;
+}
+.site-dl-list {
+  margin: 0;
+  padding: 2px 14px;
+  list-style: none;
+  border-radius: var(--r-lg);
+  background: var(--card);
+  box-shadow: var(--sh-card);
+}
+.site-dl-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 0;
+}
+.site-dl-row + .site-dl-row {
+  border-top: 0.5px solid var(--line);
+}
+.site-dl-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.site-dl-os {
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.site-dl-meta {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.site-dl-row .site-btn {
+  flex: none;
+}
+.site-dl-foot {
+  margin: 14px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px 14px;
+  font-size: 13px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.site-dl-foot .site-arrow-link {
+  margin-top: 0;
+  font-size: 13px;
 }
 
 /* ---------------- 页脚 ---------------- */
@@ -1495,5 +1554,10 @@ h3 {
   }
   .site-foot-top nav {
     margin-left: 0;
+  }
+  /* 手机上玻璃两边收一点，给下载列表多留宽度 */
+  .site-final-glass {
+    width: calc(100% - 24px);
+    padding: 28px 16px 20px;
   }
 }

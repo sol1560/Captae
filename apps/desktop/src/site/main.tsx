@@ -2,8 +2,9 @@
 // - 底下一层是「素材」：开放电影剧照排成的素材墙、真实界面截图；上面浮着和桌面端同一套的轻玻璃界面片段（输入框、任务卡、插件按钮、进度卡片）。
 //   玻璃只给浮在内容上的东西，正文、卡片不透明；没有渐变大头图、没有衬线字、标题不配装饰图标。
 // - 首屏是标题和下载按钮（desk.tsx）；下面一串 Captae 真实窗口（stack.tsx），往下滚鼠标跟着走、在每个窗口里真点一遍；首屏文字一次性错峰进场（课 04/01 Orchestration）；整页用 Lenis 平滑滚动（smooth.ts）；素材墙的慢速平移在离开视口、切到后台、系统「减少动态效果」时停下。
+// - 页尾（#get）是下载的地方：按系统列出 GitHub 最新一版的安装包，点了直接下（download.tsx）；导航和首屏的「免费下载」都滑到这里。
 // 组件：affectUI 免费组件（Button、DropdownMenu、SegmentedControl）、parts（CaptaeLogo、ProgressBar、Swap、Icon、SiteIcon）、Hugeicons Free。
-import { StrictMode, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { StrictMode, useEffect, useRef, useState, type CSSProperties } from "react";
 import { createRoot } from "react-dom/client";
 import { MotionConfig, useInView, useReducedMotion } from "motion/react";
 import {
@@ -15,14 +16,15 @@ import {
 import "@/theme.css";
 import "./site.css";
 import { Button } from "@/components/ui/button";
-import { CaptaeLogo, Icon, SiteIcon, type HugeIcon } from "@/parts";
+import { CaptaeLogo, Icon, SiteIcon } from "@/parts";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { t } from "@/i18n";
 import { applyLang, LANGS, lang, langFromPath, pickLang, urlOf, type Lang } from "./i18n";
-import { copy, GITHUB, RELEASES } from "./copy";
+import { copy, GITHUB } from "./copy";
 import { Stack } from "./stack";
 import { Desk } from "./desk";
-import { Wave, type Tile } from "./bits";
+import { Downloads } from "./download";
+import { LinkButton, Wave, type Tile } from "./bits";
 import { startSmoothScroll } from "./smooth";
 import bbb from "@/dev/img/bbb-frank.jpg";
 import edEmo from "@/dev/img/ed-emo-proog.jpg";
@@ -33,21 +35,6 @@ import tos1 from "@/dev/img/tos-01.jpg";
 import tos5 from "@/dev/img/tos-05.jpg";
 
 /* ---------------- 小部件 ---------------- */
-
-/** 链接样式的按钮：落地页的「下载」「GitHub」要能中键、新标签打开，所以是 <a>。
- *  样式借 affectUI Button 的 .ui-button（它按 class 和 data-* 选中）；那份样式由 App 里一个不显示的 <Button> 注入到 <head>。 */
-function LinkButton({ href, variant = "primary", size = "lg", icon, children, external }: { href: string; variant?: "primary" | "secondary" | "ghost"; size?: "sm" | "md" | "lg"; icon?: HugeIcon; children: ReactNode; external?: boolean }) {
-  return (
-    <a className="ui-button cp-pill site-btn" data-variant={variant} data-size={size} data-ready href={href} {...(external ? { target: "_blank", rel: "noreferrer" } : {})}>
-      {icon && (
-        <span className="ui-button__icon" aria-hidden="true">
-          <Icon icon={icon} size={size === "sm" ? 15 : 17} />
-        </span>
-      )}
-      <span className="ui-button__label">{children}</span>
-    </a>
-  );
-}
 
 /** 进入视口时只触发一次（滚动进场只播一次，提早一点触发） */
 function useOnce<T extends Element>(margin = "0px 0px -12% 0px") {
@@ -154,7 +141,7 @@ function Nav({ onLang }: { onLang: (l: Lang) => void }) {
         <a className="site-icon-link" href={GITHUB} target="_blank" rel="noreferrer" aria-label="GitHub">
           <Icon icon={GithubIcon} size={18} />
         </a>
-        <LinkButton href={RELEASES} size="sm">
+        <LinkButton href="#get" size="sm">
           {copy.nav.download}
         </LinkButton>
       </div>
@@ -240,7 +227,7 @@ function Trust() {
   );
 }
 
-/* ---------------- 结尾：一条胶片从玻璃后面经过（和安装包窗口的背景同一个画法） ---------------- */
+/* ---------------- 结尾：一条胶片从玻璃后面经过（和安装包窗口的背景同一个画法），玻璃里是下载列表 ---------------- */
 
 const STRIP: Tile[][] = [
   [
@@ -266,7 +253,7 @@ function Final() {
           <p className="site-kicker">{f.kicker}</p>
           <h2 id="final-title">{f.title}</h2>
           <p className="site-body">{f.subtitle}</p>
-          <LinkButton href={RELEASES}>{f.primary}</LinkButton>
+          <Downloads />
         </div>
       </div>
     </section>

@@ -3,23 +3,9 @@
 // （2026-11-25 之前这里是一张钉住的「电脑桌面」，维护者画了示意图以后改成 stack.tsx 那种竖着排的窗口。）
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { GithubIcon } from "@hugeicons/core-free-icons";
-import { Icon, type HugeIcon } from "@/parts";
-import { copy, GITHUB, RELEASES } from "./copy";
+import { LinkButton } from "./bits";
+import { copy, GITHUB } from "./copy";
 import { shotOf } from "./shots";
-
-/** 链接样式的按钮（借 affectUI Button 的 .ui-button 样式，和 main.tsx 的 LinkButton 一样） */
-function LinkButton({ href, variant = "primary", icon, children, external }: { href: string; variant?: "primary" | "secondary"; icon?: HugeIcon; children: ReactNode; external?: boolean }) {
-  return (
-    <a className="ui-button cp-pill site-btn" data-variant={variant} data-size="lg" data-ready href={href} {...(external ? { target: "_blank", rel: "noreferrer" } : {})}>
-      {icon && (
-        <span className="ui-button__icon" aria-hidden="true">
-          <Icon icon={icon} size={17} />
-        </span>
-      )}
-      <span className="ui-button__label">{children}</span>
-    </a>
-  );
-}
 
 function Hello() {
   const h = copy.hero;
@@ -35,7 +21,8 @@ function Hello() {
         {h.subtitle}
       </p>
       <div className="site-cta site-in" style={{ "--d": "250ms" } as CSSProperties}>
-        <LinkButton href={RELEASES}>{h.primary}</LinkButton>
+        {/* 滑到页尾「下载」那块（main.tsx 的 Final，#get）：那里按系统列出 GitHub 最新一版的安装包 */}
+        <LinkButton href="#get">{h.primary}</LinkButton>
         <LinkButton href={GITHUB} variant="secondary" icon={GithubIcon} external>
           {h.secondary}
         </LinkButton>
