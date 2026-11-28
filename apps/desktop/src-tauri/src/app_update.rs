@@ -884,6 +884,87 @@ mod deb {
             t.chars().take(400).collect()
         }
     }
+
+    /// 用假的 pkexec / zenity / kdialog / sudo（放在一个临时目录里、PATH 只指向它）走一遍几种情况，核对取消就不装、不退回不问密码的 sudo。
+    /// 真机上 pkexec 的认证窗口要有 polkit 认证代理和登录会话，Devin 的虚拟机上起不来（D4b 做不了），这里按 pkexec 的退出码约定（126 关了认证窗口、127 没能认证）来测
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use std::os::unix::fs::PermissionsExt;
+        use std::path::Path;
+
+        /// 假程序：把自己的名字、参数（和 stdin，给 sudo 的密码）记进 calls.log，再按 `body` 退出
+        fn fake(dir: &Path, name: &str, body: &str) {
+            let p = dir.join(name);
+            let log = dir.join("calls.log");
+            // 正文里用 $L 指 calls.log
+            std::fs::write(&p, format!("#!/bin/sh\nL='{}'\nprintf '%s %s\\n' {name} \"$*\" >> \"$L\"\n{body}\n", log.display())).unwrap();
+            std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+
+        /// PATH 是整个进程共用的：几个测试同时跑时一个一个来
+        static PATH_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+        fn run(progs: &[(&str, &str)]) -> (Result<(), InstallError>, String) {
+            let _g = PATH_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+            let dir = tempfile::tempdir().unwrap();
+            for (n, b) in progs {
+                fake(dir.path(), n, b);
+            }
+            let old = std::env::var_os("PATH");
+            std::env::set_var("PATH", dir.path());
+            let r = install(b"!<arch>\ndebian-binary");
+            match old {
+                Some(p) => std::env::set_var("PATH", p),
+                None => std::env::remove_var("PATH"),
+            }
+            (r, std::fs::read_to_string(dir.path().join("calls.log")).unwrap_or_default())
+        }
+
+        #[test]
+        fn cancel_never_installs() {
+            // 系统认证窗口点了取消（126）：不再弹别的框，不装
+            let (r, calls) = run(&[("pkexec", "exit 126"), ("kdialog", "echo pw"), ("sudo", "exit 0")]);
+            assert!(matches!(r, Err(InstallError::Cancelled)), "{r:?}");
+            assert!(calls.starts_with("pkexec dpkg -i ") && !calls.contains("kdialog") && !calls.contains("sudo"), "{calls}");
+
+            // 没能认证（127，没有认证代理）→ kdialog 点取消（1）：不装，不碰 sudo（原来插件会接着 `sudo dpkg -i`，sudo 不要密码时照样装上）
+            let (r, calls) = run(&[("pkexec", "echo 'Error creating textual authentication agent' >&2; exit 127"), ("kdialog", "exit 1"), ("sudo", "exit 0")]);
+            assert!(matches!(r, Err(InstallError::Cancelled)), "{r:?}");
+            assert!(calls.contains("kdialog") && !calls.contains("sudo"), "{calls}");
+
+            // 没有 pkexec，zenity 点取消
+            let (r, calls) = run(&[("zenity", "exit 1"), ("kdialog", "echo pw"), ("sudo", "exit 0")]);
+            assert!(matches!(r, Err(InstallError::Cancelled)), "{r:?}");
+            assert!(calls.contains("zenity") && !calls.contains("kdialog") && !calls.contains("sudo"), "{calls}");
+
+            // 127 以后一个密码框都弹不出来：算失败，也不退回 sudo
+            let (r, calls) = run(&[("pkexec", "echo 'No session for pid' >&2; exit 127"), ("sudo", "exit 0")]);
+            assert!(matches!(&r, Err(InstallError::Failed(e)) if e.contains("No session")), "{r:?}");
+            assert!(!calls.contains("sudo"), "{calls}");
+        }
+
+        #[test]
+        fn installs_with_password() {
+            // pkexec 认证过了、装好了
+            let (r, calls) = run(&[("pkexec", "exit 0"), ("kdialog", "echo pw")]);
+            assert!(r.is_ok(), "{r:?}");
+            assert!(!calls.contains("kdialog"), "{calls}");
+
+            // 认证过了、dpkg 自己出错：失败，带上 dpkg 的话
+            let (r, _) = run(&[("pkexec", "echo 'dpkg: error processing archive' >&2; exit 1")]);
+            assert!(matches!(&r, Err(InstallError::Failed(e)) if e.contains("dpkg: error")), "{r:?}");
+
+            // 127 → kdialog 输了密码 → sudo -S 从 stdin 读密码
+            let (r, calls) = run(&[("pkexec", "exit 127"), ("kdialog", "echo 'p w'"), ("sudo", "read pw; printf 'stdin %s\\n' \"$pw\" >> \"$L\"")]);
+            assert!(r.is_ok(), "{r:?}");
+            assert!(calls.contains("sudo -S -p  dpkg -i ") && calls.contains("stdin p w"), "{calls}");
+
+            // 密码不对（sudo 失败）：失败
+            let (r, _) = run(&[("pkexec", "exit 127"), ("zenity", "echo bad"), ("sudo", "echo 'Sorry, try again.' >&2; exit 1")]);
+            assert!(matches!(&r, Err(InstallError::Failed(e)) if e.contains("Sorry")), "{r:?}");
+        }
+    }
 }
 
 /// 正常退出时（`RunEvent::Exit`，已经收拾完）：有下好的新版、自动更新开着、不用输密码、不是关机，就装上（装完不打开）
