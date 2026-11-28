@@ -27,7 +27,9 @@ jobs:
           path-to-signatures: signatures/cla.json
           path-to-document: https://github.com/sol1560/Captae/blob/main/CONTRIBUTING.md
           branch: cla-signatures
-          allowlist: sol1560,dependabot[bot],github-actions[bot]
+          # claude：提交末尾的「Co-Authored-By: Claude …」那一行，GitHub 认成 claude 这个账号、算作提交的作者之一。
+          # 免它签不影响别人：提 PR 的人、提交的人照样要自己签
+          allowlist: sol1560,dependabot[bot],github-actions[bot],claude
           custom-notsigned-prcomment: |
             感谢你的贡献！合并之前要请你先同意 Captae 的[贡献者协议（CLA）](https://github.com/sol1560/Captae/blob/main/CONTRIBUTING.md)：它允许 Captae 以后改用更宽松的开源许可证（MIT、Unlicense）发布你的代码，但不能改成闭源；你的版权还是你的。同意的话，在这个 PR 里回复下面这句英文（原样复制）。
 
