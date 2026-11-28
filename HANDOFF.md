@@ -120,7 +120,7 @@ CAPTAE_HOME=<测试目录> target/debug/captae-desktop
 ## 打包
 
 ```
-cargo install tauri-cli --version "^2" --locked   # 只需一次
+cargo install tauri-cli --version "^2.12" --locked   # 只需一次；要 2.12 以上（应用内更新的签名，DESIGN 第 15 节）
 scripts/build-release.sh                      # fetch-sidecars.sh → cargo tauri build（.app）→ 有证书时 sign-macos.sh 重签、交给 Apple 公证 → dmgbuild 做 dmg（有证书时也签名、公证）→ check-bundle.sh，编译时去掉本机路径
 scripts/render-dmg-background.sh              # 改了安装包窗口的背景页或 layout.json 以后重新截背景图
 ```

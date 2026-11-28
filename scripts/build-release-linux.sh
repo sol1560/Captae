@@ -16,8 +16,8 @@
 #    再解开这个 AppImage，把附带程序放进 usr/lib/Captae/（和 deb 同一个位置），用它原来的 runtime 和压缩方式重新打包。
 #
 # 用法：scripts/build-release-linux.sh [--install-deps]
-#   --install-deps  先用 apt-get 装编译要的系统包（要 root 或 sudo；Ubuntu / Debian），没有 tauri-cli 时用 cargo install 装 2.11.5
-# 需要：Rust（rustup，1.93 以上）、Node 20.19 / 22.12 以上、tauri-cli 2.11.5（cargo install tauri-cli --version 2.11.5 --locked），
+#   --install-deps  先用 apt-get 装编译要的系统包（要 root 或 sudo；Ubuntu / Debian），没有 tauri-cli、或者版本低于 2.12 时用 cargo install 装 2.12.6
+# 需要：Rust（rustup，1.93 以上）、Node 20.19 / 22.12 以上、tauri-cli 2.12 以上（cargo install tauri-cli --version 2.12.6 --locked；tauri 是 2.12，应用内更新的签名要 signer sign --app-version），
 #       Tauri 的系统依赖（libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev libxdo-dev），
 #       附带程序要的（build-essential curl unzip xz-utils gnupg perl pkg-config python3 file），
 #       AppImage 要的 xdg-utils（Tauri 把 /usr/bin/xdg-open 拷进 AppImage）、squashfs-tools（重新打包），
@@ -37,6 +37,10 @@ if [[ "$(uname -s)" != Linux ]]; then
   exit 2
 fi
 
+# tauri-cli 要 2.12 以上（见开头的「需要」）。GitHub 的机器上 rust-cache 可能留着旧的，所以不光看装没装，还看版本
+TAURI_CLI=2.12.6
+tauri_cli_ok() { cargo tauri --version 2>/dev/null | grep -qE 'tauri-cli 2\.(1[2-9]|[2-9][0-9])\.'; }
+
 if [[ "${1:-}" == "--install-deps" ]]; then
   sudo=()
   [[ "$(id -u)" != 0 ]] && sudo=(sudo)
@@ -46,16 +50,17 @@ if [[ "${1:-}" == "--install-deps" ]]; then
     libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev libxdo-dev \
     desktop-file-utils appstream \
     gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav
-  if ! cargo tauri --version >/dev/null 2>&1; then
-    cargo install tauri-cli --version 2.11.5 --locked
+  if ! tauri_cli_ok; then
+    cargo install tauri-cli --version "$TAURI_CLI" --locked --force
   fi
 fi
 
 for c in cargo node npm xdg-open mksquashfs unsquashfs; do
   command -v "$c" >/dev/null || { echo "缺少 ${c}（见开头的「需要」）" >&2; exit 2; }
 done
-if ! tv="$(cargo tauri --version 2>/dev/null)"; then
-  echo "缺少 tauri-cli：cargo install tauri-cli --version 2.11.5 --locked（或加 --install-deps）" >&2
+tv="$(cargo tauri --version 2>/dev/null)"
+if ! tauri_cli_ok; then
+  echo "要 tauri-cli 2.12 以上（现在是 ${tv:-没装}）：cargo install tauri-cli --version ${TAURI_CLI} --locked（或加 --install-deps）" >&2
   exit 2
 fi
 echo "$tv；$(rustc --version)；node $(node --version)"

@@ -12,7 +12,8 @@
 #   cc 编的 C 代码用 cl 的 /d1trimfile 去掉主目录前缀。check-bundle-windows.ps1 检查程序里还有没有主目录的路径。
 #
 # 用法：powershell -ExecutionPolicy Bypass -File scripts\build-release-windows.ps1 [-InstallTauriCli]
-#   -InstallTauriCli  没有 tauri-cli 时用 cargo install 装 2.11.5（和 Mac 上一样的版本，编一次十来分钟）
+#   -InstallTauriCli  没有 tauri-cli、或者版本低于 2.12 时用 cargo install 装 2.12.6（和 Mac 上一样的版本，编一次十来分钟）。
+#                     要 2.12 以上：tauri 是 2.12；应用内更新的签名要写进版本号（signer sign --app-version，docs/DESIGN.md 第 15 节）
 # 需要：Windows 10 / 11 / Server 2019 以上 x64；Rust 1.93 以上的 MSVC 工具链（rustup，stable-x86_64-pc-windows-msvc）；
 #       Visual Studio 2022 生成工具（「使用 C++ 的桌面开发」：MSVC 和 Windows SDK）；Node 20.19 / 22.12 以上；Git for Windows（gpg）。
 #       NSIS 不用自己装：tauri-cli 第一次打包时自己下载。
@@ -40,10 +41,12 @@ foreach ($c in 'cargo', 'rustc', 'node', 'npm') {
 }
 $host_ = (Capture rustc @('-vV')) | Where-Object { $_ -like 'host:*' }
 if ($host_ -notmatch 'x86_64-pc-windows-msvc') { throw "Rust 的默认工具链不是 x86_64-pc-windows-msvc（现在是 $host_）：rustup default stable-x86_64-pc-windows-msvc" }
+$TauriCli = '2.12.6'
 $tv = (Capture cargo @('tauri', '--version')) -join ' '
-if ($LASTEXITCODE -ne 0) {
-  if (-not $InstallTauriCli) { throw '缺少 tauri-cli：cargo install tauri-cli --version 2.11.5 --locked（或加 -InstallTauriCli）' }
-  Exec cargo @('install', 'tauri-cli', '--version', '2.11.5', '--locked')
+# 没装，或者是 2.12 以前的（GitHub 的机器上 rust-cache 可能留着旧的）
+if ($LASTEXITCODE -ne 0 -or $tv -notmatch 'tauri-cli 2\.(1[2-9]|[2-9]\d)\.') {
+  if (-not $InstallTauriCli) { throw "要 tauri-cli 2.12 以上（现在是 $tv）：cargo install tauri-cli --version $TauriCli --locked（或加 -InstallTauriCli）" }
+  Exec cargo @('install', 'tauri-cli', '--version', $TauriCli, '--locked', '--force')
   if ($LASTEXITCODE -ne 0) { throw 'tauri-cli 安装失败' }
   $tv = (Capture cargo @('tauri', '--version')) -join ' '
 }

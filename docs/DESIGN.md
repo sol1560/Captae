@@ -530,6 +530,7 @@ Linux 的附带程序不放 `/usr/bin`：会和系统的 ffmpeg、aria2c 冲突�
 - 用 Tauri 官方的更新插件 tauri-plugin-updater（2.14）：minisign 验签、macOS 原子地换掉整个 .app（失败时放回旧版）、没有写权限时弹系统的管理员密码框、
   Windows 运行 NSIS 安装程序、AppImage 换文件、deb 用 `pkexec dpkg -i`。它要 tauri 2.12 以上，2026-11-28 跟着把 tauri 从 2.11 升到 2.12（wry 0.57；
   Windows 上直接调 WebView2 的 `webview2-com` 跟着到 0.39、`windows-core` 到 0.62，前端 `@tauri-apps/api` 到 2.12）。
+  打包要 tauri-cli 2.12 以上（给更新包签名的 `signer sign --app-version` 是 2.12 才有）：Windows、Linux 的打包脚本装 2.12.6，已经装了旧版也会换掉（GitHub 的机器上 rust-cache 可能留着旧的）。
 - 插件只在 Rust 里用，页面不直接调它（没给 `updater:*` 权限）：页面调 `app_update_status` / `_check` / `_download` / `_restart` 四个命令，状态变了收 `{type: "app_update"}` 事件。
 - 更新地址只有一个：`https://github.com/sol1560/Captae/releases/latest/download/latest.json`。草稿和预发布不算 latest，Release 点「发布」那一刻用户才查得到。
 - 走 Captae 的代理设置（`net::effective`），连「不走代理的主机」一起：插件自己的 `.proxy()` 用 `Proxy::all`、不认例外，所以先 `no_proxy()` 清空，
