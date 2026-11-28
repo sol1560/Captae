@@ -21,8 +21,13 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_updater::{Update, UpdaterExt};
 
-/// 正式的更新地址（tauri.conf.json 的 plugins.updater.endpoints 也是它）。用测试数据目录跑的程序不查这个地址，免得把正式版装到测试版头上
-const PROD_ENDPOINT: &str = "https://github.com/sol1560/Captae/releases/latest/download/latest.json";
+/// 更新地址是不是 GitHub 上的正式地址（tauri.conf.json 的 plugins.updater.endpoints；测试包换成本机的 http 地址）。
+/// 用测试数据目录跑的程序不查正式地址，免得把正式版装到测试版头上。
+/// 这里只看开头，不把完整的正式地址写进程序：三个平台的打包检查在程序里搜这串地址，确认编进去的更新地址是正式的；
+/// 原来这里有一个写着完整地址的常量，测试包里也搜得到，检查就跟着说「是正式地址」（Devin 的 Windows B1 / B2）
+fn official_endpoint(u: &str) -> bool {
+    u.starts_with("https://github.com/")
+}
 const DAY_MS: i64 = 24 * 3600 * 1000;
 /// 同一个版本连着失败这么多次，就不再自动下载、退出时也不再自动装
 const MAX_FAILS: u32 = 3;
@@ -176,7 +181,7 @@ fn app_bundle(exe: &Path) -> Option<PathBuf> {
 /// 装不了的原因，和装的时候要不要输管理员密码
 fn blocked_reason(app: &AppHandle, kind: &'static str) -> (Option<&'static str>, bool) {
     // 测试数据目录 + 正式地址：不查（测试版的标识不同，装上去就把测试版换成了正式版）。测试用的程序在编译配置里换成本机的地址
-    if std::env::var_os("CAPTAE_HOME").is_some() && endpoints(app).iter().any(|u| u == PROD_ENDPOINT) {
+    if std::env::var_os("CAPTAE_HOME").is_some() && endpoints(app).iter().any(|u| official_endpoint(u)) {
         return (Some("test"), false);
     }
     let Ok(exe) = std::env::current_exe() else { return (Some("unsupported"), false) };
