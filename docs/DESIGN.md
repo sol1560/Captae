@@ -573,6 +573,7 @@ Linux 的附带程序不放 `/usr/bin`：会和系统的 ffmpeg、aria2c 冲突�
 - 失败：记在 `state.json` 的 `error`（查 / 下载 / 装哪一步出的错）和 `fails`（每个版本连着失败几次），继续用现在的版本；同一个版本失败 3 次后不再自动下载、退出时不再自动装，等用户自己点。
   下载的包验签不对就删掉，下次重新下。
 - 更新后第一次打开：`state.json` 里记的上一次运行的版本比现在的旧，界面提示一次「已更新到 x.y.z」，带「看看改了什么」（这一版的 Release 页）；失败记录清掉。
+  主窗口拿到前面（`main.rs` setup 的最后，带 `--background` 的不动）：macOS 上 Tauri 的 restart 用 `open -n -g`（不到前台），旧窗口一关、新窗口却在别的窗口后面。
 - 装不了（`blocked`）：`dmg`（在只读的磁盘映像里打开的）、`translocated`（从下载文件夹直接打开、被系统转移运行的）、`readonly`（AppImage 所在的文件夹不能写）、
   `no_pkexec`（deb 版没有 pkexec / zenity / kdialog）、`unsupported`、`test`（设了 `CAPTAE_HOME` 又用正式地址：测试版的标识不同，装上去就把测试版换成了正式版）。
   这些情况不下载，设置里说原因、给「去下载页」。

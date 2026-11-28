@@ -691,6 +691,11 @@ fn main() {
                     let _ = w.show();
                 }
             }
+            // 刚更新完的第一次打开：把主窗口拿到前面。macOS 上 Tauri 的 restart 经 LaunchServices 用 `open -n -g` 打开（-g：不到前台），
+            // 旧窗口一关、新窗口出来却在别的窗口后面；Windows 是安装程序把它打开的，也不一定在前面。带 --background 启动的不动
+            if !background && app.try_state::<app_update::AppUpdate>().is_some_and(|u| u.just_updated()) {
+                show_main(app.handle());
+            }
             Ok(())
         })
         .on_window_event(|w, ev| {

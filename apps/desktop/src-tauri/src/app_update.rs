@@ -242,6 +242,11 @@ impl AppUpdate {
         }
     }
 
+    /// 这次是刚更新完的第一次打开（上次运行的版本比这次旧）
+    pub fn just_updated(&self) -> bool {
+        self.inner.lock().unwrap().updated_from.is_some()
+    }
+
     fn auto(&self) -> bool {
         captae_core::Settings::load(&self.data.join("settings.json")).app_auto_update
     }
