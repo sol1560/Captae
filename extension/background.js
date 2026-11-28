@@ -332,12 +332,14 @@ function newerVersion(a, b) {
  * Captae 换成新版以后文件夹里已经是新文件，但浏览器里跑的还是旧代码。Captae 比插件新时从文件夹重新加载一次；
  * 同一个版本只试一次：重新加载以后还是旧的（从别的文件夹装的），记下 stale，工具栏面板里说明怎么更新 */
 async function followApp(appVersion) {
+  const { reloadedFor } = await chrome.storage.local.get('reloadedFor');
+  // 已经换到这一版（或更新的）了：记号不要了。不然装回旧版的 Captae 再更新一次，碰上同一个版本号就不再重新加载
+  if (reloadedFor && !newerVersion(reloadedFor, VERSION)) await chrome.storage.local.remove('reloadedFor');
   if (!appVersion || !newerVersion(appVersion, VERSION)) {
     await chrome.storage.local.remove('stale');
     return;
   }
   const self = chrome.management && chrome.management.getSelf ? await chrome.management.getSelf().catch(() => null) : null;
-  const { reloadedFor } = await chrome.storage.local.get('reloadedFor');
   if (self && self.installType === 'development' && reloadedFor !== appVersion) {
     await chrome.storage.local.set({ reloadedFor: appVersion });
     chrome.runtime.reload();
