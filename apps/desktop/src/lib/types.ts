@@ -103,9 +103,19 @@ export type Settings = {
   toolsOff: string[];
   pickSeconds: number;
   whisperModel: string;
+  /** 「AI 模型」（OpenAI 兼容接口，字幕翻译和素材库分类共用，core llm.rs） */
   llmBaseUrl: string;
   llmModel: string;
-  llmApiKey: string;
+  /** 密钥后端不发给界面（存在 secrets.json）；只在填新的时候往回发 */
+  llmApiKey?: string;
+  /** 密钥的提示「…3f9a」，空 = 没填 */
+  llmKeyHint?: string;
+  /** 这个模型能不能看图：空 = 不知道 / yes / no（「测试连接」测出来） */
+  llmVision?: string;
+  /** 素材库整理过以后，新下载的自动放进分类 */
+  aiAutoCategorize?: boolean;
+  /** 分类时，看不出内容的素材附上封面给模型看 */
+  aiSendCovers?: boolean;
   ytdlpPath: string;
   ffmpegPath: string;
   aria2Path?: string;
@@ -178,6 +188,9 @@ export type TaskStatus = {
 /** AI 助手调用记录 */
 export type CallRecord = { id: number; at: number; who: string; tool: string; args: unknown; st: "run" | "ok" | "err"; res?: unknown; ms?: number | null };
 
+/** 素材库的一个分类和它下面有几条（core library.rs 的 Category） */
+export type Category = { id: number; name: string; desc: string; sort: number; by: "ai" | "user" | string; count: number };
+
 export type Boot = {
   /** 系统的首选语言里第一个支持的（都不支持时 en）；settings.language 为空时用它 */
   systemLang?: string;
@@ -188,6 +201,8 @@ export type Boot = {
   sniffed: Sniffed[];
   presets: Preset[];
   libraryCount: number;
+  /** 素材库的分类（core library.rs 的 Category） */
+  categories?: Category[];
   tools: { name: string; label: string }[];
   calls: CallRecord[];
   mcpCommand: unknown;

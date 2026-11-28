@@ -1,23 +1,27 @@
 // 多选：网格底部浮着的工具条（磨砂玻璃）——已选几项、转成 MP4、拼接、加标签、完成；以及拼接的确认弹窗。
 // 工具条进出照课程 03/06 的工具栏：从下面 20px 浮上来 + 淡入，弹簧 0.3s、不回弹；退场原路回去。
 // 工具条本身是磨砂玻璃，不给它加 blur 滤镜（filter 会让 backdrop-filter 失效，也不给 backdrop-filter 做动画，BRIEF-v2）。
-import { ArrowDown01Icon, ArrowUp01Icon, Exchange01Icon, GitMergeIcon, Tag01Icon } from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon, ArrowUp01Icon, Exchange01Icon, FolderLibraryIcon, GitMergeIcon, Tag01Icon } from "@hugeicons/core-free-icons";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { Popover } from "@/components/ui/popover";
 import { TextField } from "@/components/ui/text-field";
 import { Tooltip } from "@/components/ui/tooltip";
 import { t, tx } from "@/i18n";
 import { fileSrc } from "@/lib/bridge";
 import { clock } from "@/lib/format";
+import { useApp } from "@/lib/store";
 import { Icon, TipIcon } from "@/parts";
 import { concat, convertMany, tagMany } from "./act";
+import { setCategoryMany } from "./categories";
 import { concatable, concatInfo, needMp4, type Asset } from "./model";
 
 export function BatchBar({ picked, tags, onClear, onDone }: { picked: Asset[]; tags: [string, number][]; onClear: () => void; onDone: () => void }) {
   const reduce = useReducedMotion();
+  const cats = useApp((s) => s.categories);
   const [catOpen, setCatOpen] = useState(false);
   const [tagOpen, setTagOpen] = useState(false);
   const vids = concatable(picked);
@@ -69,6 +73,21 @@ export function BatchBar({ picked, tags, onClear, onDone }: { picked: Asset[]; t
           </Button>
           <TagPopover open={tagOpen} n={n} tags={tags} onClose={() => setTagOpen(false)} onPick={(tag) => tagMany(picked, tag).then((ok) => ok && onDone())} />
         </span>
+        {cats.length > 0 && (
+          <DropdownMenu
+            side="top"
+            aria-label={t("放进分类")}
+            items={[
+              ...cats.map((c) => ({ label: c.name, description: t("{n}项", { n: c.count }), onSelect: () => void setCategoryMany(picked.map((a) => a.id), c.id).then((ok) => ok && onDone()) })),
+              { label: t("未分类"), divider: true, onSelect: () => void setCategoryMany(picked.map((a) => a.id), null).then((ok) => ok && onDone()) },
+            ]}
+            trigger={({ triggerProps }) => (
+              <Button size="sm" variant="ghost" icon={<Icon icon={FolderLibraryIcon} size={14} />} disabled={!n} {...triggerProps}>
+                {t("放进分类")}
+              </Button>
+            )}
+          />
+        )}
         <span className="sep" aria-hidden />
         <Button size="sm" variant="secondary" className="cp-pill" onClick={onClear}>
           {t("完成")}

@@ -176,5 +176,9 @@
   "没能移到回收站：{err}。外置盘、网络盘上可能没有回收站，可以在文件管理器里直接删除": "No se pudo trasladar a la Papelera: {err}. Puede que las unidades externas y de red no tengan Papelera. Puedes eliminar el archivo directamente en tu gestor de archivos",
   "Captae 还没启动好，请稍后再试": "Captae aún se está iniciando. Vuelve a intentarlo en un momento",
   "读登录存储用的窗口没建好": "No se pudo abrir la ventana para leer los datos de sesión",
-  "登录存储没有回应": "Los datos de sesión no respondieron"
+  "登录存储没有回应": "Los datos de sesión no respondieron",
+  "这个分类已经不在了": "Esta categoría ya no existe",
+  "用 AI 整理素材库": "Organizar la Biblioteca con IA",
+  "给未分类的素材归类": "Clasificar los elementos sin categoría",
+  "先填上地址和模型名": "Primero añade la URL y el nombre del modelo"
 }

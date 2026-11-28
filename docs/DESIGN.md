@@ -218,13 +218,34 @@ Captae 自己的 HTTP 请求、aria2c（`--all-proxy`）、ffmpeg 和 yt-dlp（`
   后来加的列（目前只有 `live`）在 `Library::migrate` 里补：第一版建的素材库打开时补上，新列都带默认值，退回旧版时旧版照样能读写（它写明列名插入、按列名读）。
   界面里能转换、剪辑（胶片条和波形 + 两个把手）、拼接、换音轨、生成字幕、打标签、在访达中显示、移到废纸篓（6 秒内可以撤销）。
 - 字幕：先用 yt-dlp 取网站字幕（包括自动字幕，去掉 YouTube 自动字幕的重复行），没有再用 faster-whisper 本地识别。可以导出 SRT、VTT、TXT，可以烧录（附带的 ffmpeg 带 libass），
-  可以翻译（走用户在设置里填的 OpenAI 兼容接口，本地 Ollama 也行，没填就不提供）。
+  可以翻译（走设置里的「AI 模型」，见 6.1，没填就不提供）。
 - 发给 AI：一个视频变成 AI 能直接读的材料——720p 下载（已经在素材库里就直接用）、取文字稿（网站字幕优先，其次本地识别）、挑关键画面（每秒 4 帧扫一遍全片，按时长平均分段，每段取变化最大的那次换镜头稳定后的画面、没有换镜头取中间，避开黑场闪白；默认按时长 6–12 张，AI 助手最多可要 20 张，见 `ffmpeg::keyframes`），
   写出 `context.md`、`frames/`、`transcript.srt`、`meta.json`，再把文字、HTML 和图片文件放进剪贴板。插件里的「发给 AI」带浏览器的登录状态（同一个开关），AI 助手调 `share_video` 不带。
 
+### 6.1 分类和「用 AI 整理」（`categorize.rs`、`llm.rs`，2026-11-28）
+
+- 每条素材最多属于一个分类（像文件夹），另外可以有 AI 加的标签。分类表 `categories`（名字、一句话说明、排序、`by`：ai / user）；`assets` 加 `category_id`（空 = 未分类）、`category_by`（空 = 还没整理过 / ai / user），`tags` 加 `by`（user / ai）。
+  都在 `Library::migrate` 里加，带默认值，旧版照样能读写。分类名和 AI 看封面写的一句描述（`asset_cache` 的 `ai_caption`）写进全文检索的标签那一栏，搜分类名、搜封面上的内容都找得到。
+- 模型由用户自己填（BYOK）：设置里「AI 模型」一组（地址、模型名、密钥），和字幕翻译共用。只走 OpenAI 兼容的 `/chat/completions`（`llm.rs`）：DeepSeek、OpenAI、OpenRouter、Gemini 的兼容接口、本地 Ollama / LM Studio 都是这个格式，界面上给了这几家的预设。
+  要 JSON 时带 `response_format`，服务回 400 就去掉它再问一次、从回复里找 JSON；思考档位 `reasoning_effort` 只发给 DeepSeek（别家收到不认识的参数会报 400）。「测试连接」再发一张 64×64 的红色小图问颜色，答对了记 `llmVision = yes`。
+- 密钥不进 `settings.json`：单独存在同一目录的 `secrets.json`（600），序列化设置时跳过它，界面只拿到 `llmKeyHint`（「…3f9a」），填新的时才往回发。旧版写在 `settings.json` 里的，打开时挪过去。
+- 第一次整理（素材库顶栏的星星按钮，或者顶上的提示）：先说清楚会把多少条的什么发给哪个地址、大约多少 token →
+  标题和简介看不出内容的（简介不到 40 字，或者标题是「xxx / X」）先看封面各写一句描述（6 张一批，`detail: low`）→
+  提分类（开低档思考，最多拿 400 条当样本；类数跟着素材数走，平均每类七八条，最多 8 类）→ 逐批归类（40 条一批，关思考，置信度低于 0.35 的留在未分类）。
+  结果先放在内存里给用户看：能改名、并进别的类、不要某一类；点「用这套分类」才写进素材库，关掉弹窗就是不要。同样的请求问两次，分出来的类不一样（实验记在维护者本机 `work/library-categories/`），所以分类要用户确认后固定下来。
+- 之后新下载的（`queue.rs` 入库以后调 `on_added`）在后台往已有的分类里放（设置里能关），转换、剪辑出来的跟着原素材，不问模型；一条一条来，不同时发一堆请求。
+  没分成的（网络、额度）留着，桌面端下次启动 20 秒后再试一次（`sweep`，一次最多 200 条）。「给未分类的归类」也只往已有的分类里放。
+- 用户亲手放的（详情里的「分类」、多选的「放进分类」、AI 助手的 `library_set_category`）记成 user：AI 不再动它，最近 12 条带进提示词当例子。
+  重新整理时，用户建的分类、用户改过名的分类、放着用户素材的分类原样留着；原来 AI 建的、这次没留下的删掉，里面的素材重新放。
+- 发给模型的只有标题、简介（前 400 字）、来源站点和页面、上传者、时长、用户加的标签、封面描述；看不出内容时附上封面（设置里能关，模型看不了图时不发）。文件路径、cookie 不发。
+- 提示词只用英文；分类名、说明、标签按当时的界面语言写，存下来就是用户数据，换语言以后不翻（和标签一样）。
+- 真模型实测（DeepSeek `deepseek-flash`，维护者的 45 条素材的副本）：12 秒，输入约 1.6 万 token、输出约 2500，周末价约 0.004 美元，45 条都放进了 5 个分类。
+  `crates/captae-core/tests/categorize_live.rs` 是手动运行的测试（默认跳过，会花模型服务的钱），用法写在文件开头。
+
 ## 7. AI 助手（MCP）
 
-工具：`download`、`convert`、`subtitle`、`trim`、`concat`、`library_query`、`library_add_tag`、`preset_run`、`preset_list`、`share_video`。
+工具：`download`、`convert`、`subtitle`、`trim`、`concat`、`library_query`、`library_categories`、`library_set_category`、`library_add_tag`、`preset_run`、`preset_list`、`share_video`。
+AI 助手不用 Captae 里填的模型：它自己就是模型，可以用 `library_categories`、`library_set_category` 替用户整理（放进去的算用户亲手放的，见 6.1）。
 AI 访问关掉时 `tools/list` 返回空列表，单独关掉的工具不出现；设置变化时发 `notifications/tools/list_changed`。每个 MCP 进程把客户端名称和心跳写进 `<数据目录>/mcp_clients/`，
 AI 助手页据此显示「已连接 · Claude Desktop · 2 分钟前用过」。工具名只用小写字母和下划线，界面上显示成 `captae.library.query` 这种样子。
 

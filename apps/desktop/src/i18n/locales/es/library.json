@@ -145,10 +145,8 @@
   "视频里说的语言": "Idioma hablado",
   "导出格式": "Formato de exportación",
   "翻译成中文§字幕翻译成界面语言：每种语言都写「翻译成这种语言」（英文 Translate to English）": "Traducir al español",
-  "先在设置里填翻译服务": "Primero configura un servicio de traducción en Ajustes",
   "去设置": "Abrir Ajustes",
   "已经是中文了§字幕已经是界面语言，不用翻译：每种语言都写「已经是这种语言了」（英文 It's already in English）": "Ya está en español",
-  "用你在设置里填的 AI 翻译": "Usa la traducción con IA que configuraste en Ajustes",
   "把字幕嵌进画面": "Incrustar subtítulos",
   "另存一份新视频，原文件不变": "Guarda un vídeo nuevo y el original no cambia",
   "现在的 ffmpeg 做不到，需要完整版": "El ffmpeg actual no puede hacerlo. Hace falta la versión completa",
@@ -327,5 +325,127 @@
   "下载{lang}字幕": "Descargar subtítulos en {lang}",
   "提取声音": "Extraer el audio",
   "把语音转成文字": "Transcribir la voz",
-  "导出{fmt}": "Exportar {fmt}"
+  "导出{fmt}": "Exportar {fmt}",
+  "分类": "Categoría",
+  "全部分类": "Todas las categorías",
+  "给未分类的归类": "Clasificar los elementos sin categoría",
+  "重新整理…": "Reorganizar…",
+  "管理分类…": "Gestionar categorías…",
+  "清除 AI 加的标签": "Quitar etiquetas añadidas por la IA",
+  "AI 模型设置…": "Ajustes del modelo de IA…",
+  "用 AI 整理": "Organizar con IA",
+  "用 AI 整理：按内容分好类": "Organizar con IA: clasificar por contenido",
+  "素材多了不好找？让 AI 按内容分好类": "¿Te cuesta encontrar las cosas? Deja que la IA organice tu Biblioteca por contenido",
+  "用你自己的模型服务，分好以后可以改，新下载的会自动放进去": "Usa tu propio servicio de modelos. Puedes cambiar las categorías después, y las nuevas descargas se clasifican automáticamente",
+  "不再提示": "No volver a mostrar",
+  "放进分类": "Mover a categoría",
+  "AI 加的标签": "Etiqueta añadida por la IA",
+  "{n}项放进了分类": {
+    "one": "{n} elemento clasificado",
+    "other": "{n} elementos clasificados"
+  },
+  "{n}项没把握，还在未分类": {
+    "one": "{n} elemento sigue sin categoría (sin coincidencia segura)",
+    "other": "{n} elementos siguen sin categoría (sin coincidencia segura)"
+  },
+  "整理好了：{n}个分类": {
+    "one": "Organizado en {n} categoría",
+    "other": "Organizado en {n} categorías"
+  },
+  "没有用上这套分类": "No se pudieron aplicar estas categorías",
+  "分成了{n}类": {
+    "one": "{n} categoría",
+    "other": "{n} categorías"
+  },
+  "用 AI 整理素材库": "Organizar la Biblioteca con IA",
+  "开始整理": "Empezar a organizar",
+  "去设置 AI 模型": "Configurar modelo de IA",
+  "取消整理": "Cancelar la organización",
+  "用这套分类": "Usar estas categorías",
+  "这次没有整理完": "La organización no terminó",
+  "按内容把素材分成几类，每条放进一类，再加两三个标签方便以后搜。分好以后可以改名、合并、删掉；新下载的会自动放进去。": "Clasifica tus elementos en unas pocas categorías según su contenido, pone cada uno en una y añade dos o tres etiquetas para que sea más fácil encontrarlos después. Luego puedes renombrar, fusionar o eliminar categorías, y las nuevas descargas se clasifican automáticamente.",
+  "还没有设置 AI 模型": "Aún no hay ningún modelo de IA configurado",
+  "用你自己的模型服务和密钥（DeepSeek、OpenAI、本地的 Ollama……），在设置 › AI 模型里填上": "Usa tu propio servicio de modelos y clave (DeepSeek, OpenAI, un Ollama local…). Añádelos en Ajustes › Modelo de IA",
+  "素材都由你亲手放好了，没有要 AI 整理的": "Clasificaste todos los elementos a mano, así que la IA no tiene nada que organizar",
+  "素材库还是空的，先下载一些再来": "Tu Biblioteca está vacía. Descarga algo primero",
+  "发给§整理前的说明：发给哪个模型服务": "Se envía a",
+  "内容§整理前的说明：发过去的是什么": "Qué se envía",
+  "{n}项素材的标题、简介和来源": {
+    "one": "Título, descripción y origen de {n} elemento",
+    "other": "Títulos, descripciones y orígenes de {n} elementos"
+  },
+  "其中{n}项光看文字看不出内容，会附上封面": {
+    "one": "{n} de ellos dice muy poco en el texto, así que se incluye su miniatura",
+    "other": "{n} de ellos dicen muy poco en el texto, así que se incluyen sus miniaturas"
+  },
+  "用量§整理前的说明：大约多少 token": "Uso",
+  "大约 {n} token": "Unos {n} tokens",
+  "按你的模型服务的价格算，费用记在你自己的账户上": "Se cobra en tu propia cuenta según los precios de tu servicio de modelos",
+  "已有§整理前的说明：已经有的分类": "Existentes",
+  "你建的分类和你亲手放的{n}项素材不会动": {
+    "one": "Las categorías que creaste y {n} elemento que clasificaste a mano se quedan como están",
+    "other": "Las categorías que creaste y los {n} elementos que clasificaste a mano se quedan como están"
+  },
+  "你建的分类不会动，AI 建的会重新整理": "Las categorías que creaste se quedan; las que creó la IA se reorganizan",
+  "整理进度": "Progreso de la organización",
+  "正在准备": "Preparando",
+  "关掉这个窗口就是取消，已经看过的封面描述会留着，下次不用再看": "Cerrar esta ventana cancela. Las descripciones de miniaturas ya hechas se guardan para la próxima vez",
+  "整理了{n}项。名字可以直接改；不合适的可以并进别的类，或者不要这一类（里面的放回未分类）。": {
+    "one": "{n} elemento organizado. Puedes renombrar una categoría aquí mismo, fusionarla con otra o quitarla (sus elementos vuelven a Sin categoría).",
+    "other": "{n} elementos organizados. Puedes renombrar una categoría aquí mismo, fusionarla con otra o quitarla (sus elementos vuelven a Sin categoría)."
+  },
+  "并进别的类": "Fusionar con",
+  "不要这一类": "Quitar esta categoría",
+  "分类名": "Nombre de la categoría",
+  "你建的": "Creada por ti",
+  "这一类的操作": "Acciones de la categoría",
+  "{n}项没把握，会留在未分类，之后可以自己放": {
+    "one": "{n} elemento no tuvo una coincidencia segura y queda sin categoría. Puedes clasificarlo tú más tarde",
+    "other": "{n} elementos no tuvieron una coincidencia segura y quedan sin categoría. Puedes clasificarlos tú más tarde"
+  },
+  "删掉这一类": "Eliminar categoría",
+  "管理分类": "Gestionar categorías",
+  "重新整理": "Reorganizar",
+  "改名、合并、删掉都马上生效。删掉的分类里的素材放回未分类。": "Renombrar, fusionar y eliminar se aplican al instante. Los elementos de una categoría eliminada vuelven a Sin categoría.",
+  "新分类的名字": "Nombre de la nueva categoría",
+  "新分类的名字，回车建好": "Nombre de la nueva categoría, pulsa Retorno para añadirla",
+  "还有{n}项未分类": {
+    "one": "Aún queda {n} elemento sin categoría",
+    "other": "Aún quedan {n} elementos sin categoría"
+  },
+  "先在设置里填 AI 模型": "Primero configura un modelo de IA en Ajustes",
+  "用你在设置里填的 AI 模型翻译": "Usa el modelo de IA de Ajustes",
+  "没有放进分类": "No se pudo mover a la categoría",
+  "{n}项放进了「{name}」": {
+    "one": "Se movió {n} elemento a “{name}”",
+    "other": "Se movieron {n} elementos a “{name}”"
+  },
+  "{n}项放回了未分类": {
+    "one": "Se movió {n} elemento a Sin categoría",
+    "other": "Se movieron {n} elementos a Sin categoría"
+  },
+  "没有改名": "No se pudo renombrar",
+  "没有建好分类": "No se pudo añadir la categoría",
+  "删掉了「{name}」": "Se eliminó “{name}”",
+  "里面的{n}项放回了未分类": {
+    "one": "{n} elemento que contenía volvió a Sin categoría",
+    "other": "Los {n} elementos que contenía volvieron a Sin categoría"
+  },
+  "没有删掉": "No se pudo eliminar",
+  "「{from}」并进了「{into}」": "Se fusionó “{from}” con “{into}”",
+  "没有合并": "No se pudo fusionar",
+  "正在给未分类的素材归类": "Clasificando los elementos sin categoría",
+  "好了会告诉你": "Te avisaremos cuando termine",
+  "归类好了": "Clasificación terminada",
+  "没有归类完": "La clasificación no terminó",
+  "清掉了{n}个 AI 加的标签": {
+    "one": "Se quitó {n} etiqueta añadida por la IA",
+    "other": "Se quitaron {n} etiquetas añadidas por la IA"
+  },
+  "没有 AI 加的标签": "No hay etiquetas añadidas por la IA",
+  "没有清掉": "No se pudieron quitar",
+  "都分好类了": "Todo está clasificado",
+  "没有未分类的素材": "No hay elementos sin categoría",
+  "这个分类里还没有素材": "Aún no hay nada en esta categoría",
+  "在素材详情里可以把素材放进这个分类": "Puedes mover elementos aquí desde sus detalles"
 }

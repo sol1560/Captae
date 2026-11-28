@@ -61,6 +61,8 @@ pub struct Inner {
     login_store: RwLock<Option<Arc<dyn login::Store>>>,
     /// 在 Captae 里登录过 / 验证过的网站（logins.json，只有网站和时间）
     logins: Mutex<login::Logins>,
+    /// 素材库 AI 分类：等用户确认的整理结果、自动归类排队（categorize.rs）
+    pub(crate) categorize: crate::categorize::State,
 }
 
 #[derive(Clone)]
@@ -158,6 +160,7 @@ impl Core {
             done: Mutex::new(HashMap::new()),
             login_store: RwLock::new(None),
             logins: Mutex::new(logins),
+            categorize: Default::default(),
         }));
         if o.restore {
             core.restore_queue();
@@ -205,6 +208,7 @@ impl Core {
         self.settings.read().unwrap().clone()
     }
     pub fn set_settings(&self, s: Settings) -> Result<()> {
+        let s = s.with_hint();
         s.save(&self.paths.settings())?;
         crate::i18n::apply(&s.language);
         *self.tools.write().unwrap() = Toolbox::from_settings(&s, self.sidecar_dir.clone(), Some(self.paths.data.clone())).with_runner(self.runner.clone());
@@ -214,13 +218,23 @@ impl Core {
     }
     /// 只改传入的字段（界面每次只发改动的那几项，避免拿旧快照把别的设置盖回去）。
     pub fn patch_settings(&self, patch: &serde_json::Value) -> Result<Settings> {
-        let mut cur = serde_json::to_value(self.settings())?;
+        let old = self.settings();
+        let mut cur = serde_json::to_value(&old)?;
         if let (Some(c), Some(p)) = (cur.as_object_mut(), patch.as_object()) {
             for (k, v) in p {
                 c.insert(k.clone(), v.clone());
             }
         }
-        let s: Settings = serde_json::from_value(cur)?;
+        let mut s: Settings = serde_json::from_value(cur)?;
+        // 密钥不在序列化出来的设置里（config.rs）：这次没改它就沿用原来的
+        if patch.get("llmApiKey").is_none() {
+            s.llm_api_key = old.llm_api_key;
+        }
+        // 换了地址或模型：原来测出的「能不能看图」不算数了
+        if (patch.get("llmBaseUrl").is_some() || patch.get("llmModel").is_some()) && patch.get("llmVision").is_none() && (s.llm_base_url != old.llm_base_url || s.llm_model != old.llm_model) {
+            s.llm_vision.clear();
+        }
+        let s = s.with_hint();
         self.set_settings(s.clone())?;
         self.emit(Event::Settings { settings: s.clone() });
         Ok(s)
@@ -1325,6 +1339,8 @@ impl Core {
             live: job.rec.is_some(),
         };
         let id = self.lib.add(&a)?;
+        // 素材库整理过、开着自动归类时，后台往已有的分类里放（不挡下载完成）
+        crate::categorize::on_added(self, id);
         Ok(id)
     }
 
@@ -1360,6 +1376,8 @@ impl Core {
             parent_id: parent,
         };
         let id = self.lib.add(&a)?;
+        // 转换、剪辑出来的跟着原素材的分类；导入的本地文件照新下载的办
+        crate::categorize::on_added(self, id);
         self.emit(Event::Library);
         Ok(id)
     }

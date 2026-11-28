@@ -72,6 +72,18 @@ macOS、Windows、Linux 上的开源下载器（AGPL-3.0-or-later），四块共
 - 主目录新加的 `crates/captae-core/src/engine/remux.rs` 有三个测试把结果和本机 ffmpeg 精确比对（起点差 0.2 毫秒也算不过）：
   Mac 上的 ffmpeg 8.0 能过，Linux 容器里的 ffmpeg 4.4、9.0 和 GitHub 的 macOS 机器上各有不过的；2026-11-26 `ts_h264_aac` 改成起点允许差 2 毫秒（CI 上差 0.22 毫秒），另外两个照旧，在别的 ffmpeg 版本上不过时照这样改。
 
+## 素材库分类（2026-11-28，分支 `library-categories`）
+
+- 用户提的：素材库太乱，接 AI 模型分类，用户自己填密钥（BYOK）。调研、实验和两次真模型整理的结果在维护者本机 `work/library-categories/`（`RESEARCH.md`、`live-run-1.md`、`live-run-2.md`）。
+- 做了什么（做法见 DESIGN 6.1）：每条素材最多一个分类，外加 AI 标签；素材库顶栏「用 AI 整理」→ 说明发什么、发给谁 → 整理 → 看结果、改名、合并、不要某一类 → 确认才写库；
+  侧栏多了「分类」一组（最多 8 个，加「未分类」），筛选菜单、详情「信息」、多选工具条里都能放进分类；新下载的自动放进已有的分类，转换、剪辑出来的跟着原素材；
+  用户亲手放的 AI 不再动。设置里原来的「字幕翻译」改成「AI 模型」一组（预设、测试连接、能不能看图、两个开关），字幕翻译和分类共用；密钥挪到 `secrets.json`（600），界面拿不到。
+  AI 助手多了 `library_categories`、`library_set_category`，`library_query` 能按分类筛。
+- 测试：`cargo test -p captae-core` 241 个单元测试全过（分类的增删改、合并、旧库加列、AI 标签、密钥文件、模型接口的各种回复、整理和归类的整个流程用假的 OpenAI 兼容服务测）；
+  DeepSeek `deepseek-flash` 整理维护者真素材库的副本两次（共约 0.008 美元），第二次 45 条分成 5 类、没有留在未分类的；演示构建上点过一遍、截图（`work/library-categories/shots/`），没有页面报错。
+- 没做的：真窗口里没看过；7 种语言的译文是 AI 翻的；从 X 时间线下的视频入库时标题是「主页 / X」、帖子文字没存（插件那边的事，影响搜索和分类，没在这一轮做）；
+  手机端（`apps/ios`、`apps/android`）的素材库还没有分类（`captae-remote` 的 `/v1/library` 没加分类参数）。
+
 ## 目录
 
 ```

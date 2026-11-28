@@ -176,5 +176,9 @@
   "没能移到回收站：{err}。外置盘、网络盘上可能没有回收站，可以在文件管理器里直接删除": "Konnte nicht in den Papierkorb gelegt werden: {err}. Externe Laufwerke und Netzlaufwerke haben eventuell keinen Papierkorb. Du kannst die Datei stattdessen im Dateimanager löschen",
   "Captae 还没启动好，请稍后再试": "Captae startet noch. Versuche es gleich noch einmal",
   "读登录存储用的窗口没建好": "Das Fenster zum Lesen der Anmeldedaten konnte nicht geöffnet werden",
-  "登录存储没有回应": "Der Speicher für Anmeldedaten antwortet nicht"
+  "登录存储没有回应": "Der Speicher für Anmeldedaten antwortet nicht",
+  "这个分类已经不在了": "Diese Kategorie gibt es nicht mehr",
+  "用 AI 整理素材库": "Mediathek mit KI ordnen",
+  "给未分类的素材归类": "Objekte ohne Kategorie einordnen",
+  "先填上地址和模型名": "Gib zuerst die URL und den Modellnamen ein"
 }

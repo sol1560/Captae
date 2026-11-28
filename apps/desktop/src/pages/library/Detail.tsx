@@ -13,6 +13,7 @@ import {
   MoreHorizontalIcon,
   PlayIcon,
   PlusSignIcon,
+  SparklesIcon,
   SquareArrowUpRight02Icon,
 } from "@hugeicons/core-free-icons";
 import { AnimatePresence, motion } from "motion/react";
@@ -21,16 +22,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { TextField } from "@/components/ui/text-field";
 import { t } from "@/i18n";
 import { fileSrc, invoke, native, platform } from "@/lib/bridge";
 import { bare, home } from "@/lib/format";
 import { getPref, setPref } from "@/lib/prefs";
+import { useApp } from "@/lib/store";
 import { Collapse, Icon, IconSwap, TipIcon } from "@/parts";
 import { addTag, copyLink, moveToTrash, openFile, openSource, redownload, removeTag, REVEAL, revealFile, shareToAI, useOp } from "./act";
 import { Convert } from "./Convert";
 import { fetchAsset, knownAsset } from "./data";
+import { setCategory } from "./categories";
 import { Cover } from "./Grid";
 import { ConcatOp } from "./Steps";
 import { assetMenu, type Tool } from "./menu";
@@ -289,8 +293,17 @@ function Section({ id, title, openSignal, children }: { id: string; title: strin
 function Info({ a, onOpenAsset }: { a: Asset; onOpenAsset: (id: number) => void }) {
   const url = sourceUrl(a);
   const parent = useParent(a.parent_id ?? null);
+  const cats = useApp((s) => s.categories);
   return (
     <dl className="cp-kv lib-kv">
+      {cats.length > 0 && (
+        <>
+          <dt className="lib-cat-dt">{t("分类")}</dt>
+          <dd className="lib-cat-dd">
+            <CategorySelect a={a} />
+          </dd>
+        </>
+      )}
       <dt>{t("来源")}</dt>
       <dd>
         {url ? (
@@ -345,6 +358,26 @@ function Info({ a, onOpenAsset }: { a: Asset; onOpenAsset: (id: number) => void 
   );
 }
 
+/** 详情里的「分类」：选了就是用户亲手放的（之后自动整理不再动它）。先在本地换上，后端回来再跟着素材库刷新 */
+function CategorySelect({ a }: { a: Asset }) {
+  const cats = useApp((s) => s.categories);
+  const [v, setV] = useState(a.category_id != null ? String(a.category_id) : "");
+  useEffect(() => setV(a.category_id != null ? String(a.category_id) : ""), [a.id, a.category_id]);
+  return (
+    <Select
+      size="sm"
+      aria-label={t("分类")}
+      className="lib-cat-select"
+      value={v}
+      onChange={(x) => {
+        setV(x);
+        setCategory([a.id], x ? Number(x) : null);
+      }}
+      options={[...cats.map((c) => ({ value: String(c.id), label: c.name })), { value: "", label: t("未分类") }]}
+    />
+  );
+}
+
 /** 转换、剪辑出来的新文件：找到原来那一条（列表里没有时问一次后端） */
 function useParent(id: number | null): Asset | null {
   const [p, setP] = useState<Asset | null>(() => (id != null ? (knownAsset(id) ?? null) : null));
@@ -391,7 +424,14 @@ function Tags({ a }: { a: Asset }) {
   return (
     <div className="cp-tags lib-tags">
       {tags.map((tag) => (
-        <Badge key={tag} size="md" className="lib-tag">
+        <Badge
+          key={tag}
+          size="md"
+          className="lib-tag"
+          data-ai={a.ai_tags?.includes(tag) || undefined}
+          title={a.ai_tags?.includes(tag) ? t("AI 加的标签") : undefined}
+          icon={a.ai_tags?.includes(tag) ? <Icon icon={SparklesIcon} size={11} /> : undefined}
+        >
           {tag}
           <button
             className="x"

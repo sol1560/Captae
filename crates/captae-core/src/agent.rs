@@ -206,9 +206,24 @@ pub const TOOLS: &[ToolDef] = &[
                 "days": {"type": "integer", "description": "Downloaded within the last N days"},
                 "since": {"type": "string", "description": "Downloaded on or after this date (YYYY-MM-DD)"},
                 "tags": {"type": "array", "items": {"type": "string"}},
+                "category": {"type": "string", "description": "Only items in this category (the name from library_categories)"},
                 "limit": {"type": "integer", "default": 20, "maximum": 200}
             }})
         },
+    },
+    ToolDef {
+        name: "library_categories",
+        label: crate::tr_key!("查看素材库的分类"),
+        description: "List the categories of the user's library (like folders: each item is in at most one), with how many items each has and how many are uncategorized.",
+        read_only: true,
+        schema: || json!({"type": "object", "properties": {}}),
+    },
+    ToolDef {
+        name: "library_set_category",
+        label: crate::tr_key!("把素材放进分类"),
+        description: "Put an item of the library into a category by name. A category that doesn't exist yet is created. Use an empty name to make the item uncategorized. Captae's automatic sorting won't move items you place this way.",
+        read_only: false,
+        schema: || json!({"type": "object", "properties": merge(target_props(), json!({"category": {"type": "string", "description": "Category name; empty to remove the item from its category"}})), "required": ["category"]}),
     },
     ToolDef {
         name: "library_add_tag",
@@ -307,8 +322,10 @@ fn check_dir(d: &Option<String>) -> Result<Option<PathBuf>> {
     }
 }
 
-fn asset_json(a: &crate::library::Asset) -> Value {
+fn asset_json(a: &crate::library::Asset, cats: &[crate::library::Category]) -> Value {
+    let category = a.category_id.and_then(|id| cats.iter().find(|c| c.id == id)).map(|c| c.name.clone());
     json!({
+        "category": category,
         "asset_id": a.id, "title": a.title, "type": a.kind, "path": a.path, "url": if a.page.is_empty() { &a.url } else { &a.page },
         "source": a.src, "format": a.fmt, "resolution": a.res, "duration": a.duration, "size": a.size, "tags": a.tags,
         "downloaded": a.when, "has_transcript": a.has_transcript
@@ -728,7 +745,22 @@ async fn dispatch(core: &Core, client: &str, name: &str, a: &Value, adv: bool) -
             let mut q: crate::library::Query = serde_json::from_value(a.clone()).unwrap_or_default();
             q.limit = Some(q.limit.unwrap_or(20).min(200));
             let (items, total) = core.lib.query(&q)?;
-            Ok(json!({"count": total, "items": items.iter().map(asset_json).collect::<Vec<_>>()}))
+            let (cats, _) = core.lib.categories()?;
+            Ok(json!({"count": total, "items": items.iter().map(|x| asset_json(x, &cats)).collect::<Vec<_>>()}))
+        }
+        "library_categories" => {
+            let (cats, none) = core.lib.categories()?;
+            let v: Vec<Value> = cats.iter().map(|c| json!({"name": c.name, "description": c.desc, "count": c.count})).collect();
+            Ok(json!({"categories": v, "uncategorized": none}))
+        }
+        "library_set_category" => {
+            let (id, _) = target(core, a).await?;
+            let name = a.get("category").and_then(|v| v.as_str()).ok_or_else(|| anyhow!(tr!("需要 {name}", name = "category")))?.trim().to_string();
+            // AI 助手替用户放的算用户亲手放的：自动整理不再动它
+            let cat = if name.is_empty() { None } else { Some(core.lib.add_category(&name, "", "user")?) };
+            core.lib.set_category(&[id], cat, "user")?;
+            core.emit(Event::Library);
+            Ok(json!({"asset_id": id, "category": if name.is_empty() { Value::Null } else { json!(name) }}))
         }
         "library_add_tag" => {
             let (id, _) = target(core, a).await?;

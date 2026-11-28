@@ -26,6 +26,7 @@ import type { CallRecord, CaptaeEvent, Entry, Job, Preset, SegState, Settings, S
 import { AGENT_TOOLS, agentHandlers, DEMO_PRESETS, demoCalls } from "./mock-agent";
 import { extensionHandlers } from "./mock-extension";
 import { libraryHandlers } from "./mock-library";
+import { categoryHandlers } from "./mock-categories";
 import { remoteHandlers } from "./mock-remote";
 import bbb from "./img/bbb-frank.jpg";
 import edEmo from "./img/ed-emo-proog.jpg";
@@ -87,9 +88,13 @@ const SETTINGS: Settings = {
   toolsOff: [],
   pickSeconds: 6,
   whisperModel: "small",
-  llmBaseUrl: "",
-  llmModel: "",
-  llmApiKey: "",
+  // &llm：AI 模型已经填好（DeepSeek）
+  llmBaseUrl: q.has("llm") ? "https://api.deepseek.com" : "",
+  llmModel: q.has("llm") ? "deepseek-flash" : "",
+  llmKeyHint: q.has("llm") ? "…3f9a" : "",
+  llmVision: q.has("llm") ? "yes" : "",
+  aiAutoCategorize: true,
+  aiSendCovers: true,
   ytdlpPath: "",
   ffmpegPath: "",
   aria2Path: "",
@@ -751,6 +756,13 @@ export function createMock() {
       mcpCommand: "/Applications/Captae.app/Contents/MacOS/captae",
     }),
     set_settings: ({ patch }) => {
+      // 密钥和真的后端一样不回给界面，只留提示「…3f9a」
+      if ("llmApiKey" in patch) {
+        const k = String(patch.llmApiKey ?? "").trim();
+        patch = { ...patch, llmKeyHint: k ? `…${k.slice(-4)}` : "" };
+        delete patch.llmApiKey;
+      }
+      if (("llmBaseUrl" in patch || "llmModel" in patch) && !("llmVision" in patch)) patch = { ...patch, llmVision: "" };
       state.settings = { ...state.settings, ...patch };
       emit({ type: "settings", settings: { ...state.settings } });
       if ("concurrency" in patch) schedule();
@@ -997,7 +1009,7 @@ export function createMock() {
     window_ctl: () => undefined,
   };
 
-  const tables = [core, libraryHandlers, agentHandlers, extensionHandlers, remoteHandlers];
+  const tables = [core, libraryHandlers, categoryHandlers, agentHandlers, extensionHandlers, remoteHandlers];
 
   // 等界面画出来、下载页订阅了事件再发（截图时也要等一下）
   if (q.has("wait")) setTimeout(() => void core.login_open({ jobId: 27, kind: "login" }, ctx), STILL ? 400 : 1200);

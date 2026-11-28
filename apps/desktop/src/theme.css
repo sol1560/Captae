@@ -418,9 +418,17 @@ button {
 }
 /* 侧栏的行和导航一样：悬停即时，不过渡（配方 a） */
 @media (hover: hover) and (pointer: fine) {
-  .cp-side-row:hover {
+  .cp-side-row:not([aria-current="page"]):hover {
     background: var(--hover);
   }
+}
+/* 侧栏「分类」：素材库正按这个分类筛着（选中即时，不过渡，配方 a） */
+.cp-side-row[aria-current="page"] {
+  background: var(--select);
+  font-weight: 560;
+}
+.cp-side-row .t.dim {
+  color: var(--ink-2);
 }
 .cp-side-row .trail {
   flex: none;
@@ -2657,6 +2665,33 @@ button {
   display: grid;
   gap: 10px;
   padding: 10px 0 14px;
+}
+/* 设置 › AI 模型：密钥一行（输入框 + 清除）、测试连接一行 */
+.cp-set-key {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+.cp-set-key > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+.cp-set-test {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 30px;
+}
+.cp-set-test-r {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.cp-set-test-r[data-tone="err"] {
+  color: var(--err);
 }
 /* 安装语音识别的进度 */
 .cp-tprog {

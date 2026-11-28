@@ -325,35 +325,20 @@ pub async fn whisper(core: &Core, media: &Path, lang: Option<&str>, model: &str,
     Ok((cues, language))
 }
 
-/// 用 OpenAI 兼容接口逐批翻译，保持时间轴不变。
+/// 用设置里的「AI 模型」（OpenAI 兼容接口，llm.rs）逐批翻译，保持时间轴不变。
 pub async fn translate(core: &Core, cues: &[Cue], to: &str) -> Result<Vec<Cue>> {
     let s = core.settings();
     if s.llm_base_url.trim().is_empty() {
-        bail!(tr!("还没有设置翻译服务，在设置里填一个 OpenAI 兼容的地址（本地 Ollama 也可以）"));
+        bail!(tr!("还没有设置 AI 模型，在设置里填一个 OpenAI 兼容的地址（本地 Ollama 也可以）"));
     }
     if s.llm_model.trim().is_empty() {
-        bail!(tr!("还没有填翻译用的模型名，在设置里填上（比如 gpt-4o-mini、qwen2.5）"));
+        bail!(tr!("还没有填 AI 模型的名字，在设置里填上（比如 deepseek-flash、qwen2.5）"));
     }
-    translate_with(&core.http(), &Llm { base_url: s.llm_base_url.clone(), model: s.llm_model.clone(), api_key: s.llm_api_key.clone() }, cues, to).await
+    let llm = crate::llm::Llm::from_settings(&s).expect("地址和模型都有");
+    translate_with(&core.http(), &llm, cues, to).await
 }
 
-pub struct Llm {
-    pub base_url: String,
-    pub model: String,
-    pub api_key: String,
-}
-
-impl Llm {
-    /// 接受 `https://api.openai.com/v1`、`http://localhost:11434/v1`，也接受直接填到 `/chat/completions` 的地址。
-    pub fn endpoint(&self) -> String {
-        let b = self.base_url.trim().trim_end_matches('/');
-        if b.ends_with("/chat/completions") {
-            b.to_string()
-        } else {
-            format!("{b}/chat/completions")
-        }
-    }
-}
+pub use crate::llm::Llm;
 
 /// 一批最多多少条。太多模型容易漏行，太少请求次数多。
 const BATCH: usize = 40;
@@ -380,36 +365,10 @@ pub async fn translate_with(http: &reqwest::Client, llm: &Llm, cues: &[Cue], to:
     let mut out = Vec::with_capacity(cues.len());
     for chunk in cues.chunks(BATCH) {
         let numbered: String = chunk.iter().enumerate().map(|(i, c)| format!("{}\t{}\n", i + 1, c.text.replace('\n', " "))).collect();
-        let body = serde_json::json!({
-            "model": llm.model,
-            "temperature": 0.2,
-            "stream": false,
-            "messages": [
-                // 给模型看的提示词：只用英文，不跟界面语言（docs/I18N.md 第 1 节）
-                {"role": "system", "content": format!("You are a subtitle translator. Translate each subtitle line the user sends into {to}. Each line is in the form \"number<TAB>original text\". Reply in the same form, \"number<TAB>translation\", keeping the numbers and the number of lines unchanged. Don't merge or split lines, and don't output anything else.")},
-                {"role": "user", "content": numbered}
-            ]
-        });
-        let mut r = http.post(llm.endpoint()).timeout(std::time::Duration::from_secs(180)).json(&body);
-        if !llm.api_key.trim().is_empty() {
-            r = r.bearer_auth(llm.api_key.trim());
-        }
-        let resp = r.send().await.map_err(|e| anyhow!(tr!("连不上翻译服务：{error}", error = e)))?;
-        let status = resp.status();
-        if !status.is_success() {
-            let t = resp.text().await.unwrap_or_default();
-            // 按状态码给一句提示：四种整句，不拼片段（docs/I18N.md 2.3）
-            let (code, body) = (status.as_u16(), t.chars().take(200).collect::<String>());
-            bail!(match code {
-                401 | 403 => tr!("翻译服务返回了错误 {status}，检查一下设置里的 API Key：{body}", status = code, body = body),
-                404 => tr!("翻译服务返回了错误 {status}，检查一下设置里的地址和模型名：{body}", status = code, body = body),
-                429 => tr!("翻译服务返回了错误 {status}，请求太频繁或额度用完了：{body}", status = code, body = body),
-                _ => tr!("翻译服务返回了错误 {status}：{body}", status = code, body = body),
-            });
-        }
-        let v: serde_json::Value = resp.json().await.context(tr!("翻译服务返回的内容无法解析"))?;
-        let text = v["choices"][0]["message"]["content"].as_str().ok_or_else(|| anyhow!(tr!("翻译服务没有返回译文")))?;
-        let map = parse_numbered(text);
+        // 给模型看的提示词：只用英文，不跟界面语言（docs/I18N.md 第 1 节）
+        let system = format!("You are a subtitle translator. Translate each subtitle line the user sends into {to}. Each line is in the form \"number<TAB>original text\". Reply in the same form, \"number<TAB>translation\", keeping the numbers and the number of lines unchanged. Don't merge or split lines, and don't output anything else.");
+        let r = crate::llm::chat(http, llm, &crate::llm::Chat::new(system, vec![crate::llm::Part::Text(numbered)])).await?;
+        let map = parse_numbered(&r.text);
         for (i, c) in chunk.iter().enumerate() {
             out.push(Cue { start: c.start, end: c.end, text: map.get(&(i + 1)).cloned().unwrap_or_else(|| c.text.clone()) });
         }

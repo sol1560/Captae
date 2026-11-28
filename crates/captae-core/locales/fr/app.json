@@ -176,5 +176,9 @@
   "没能移到回收站：{err}。外置盘、网络盘上可能没有回收站，可以在文件管理器里直接删除": "Impossible de placer dans la corbeille : {err}. Les disques externes et réseau n’ont pas toujours de corbeille. Vous pouvez supprimer le fichier directement dans le gestionnaire de fichiers",
   "Captae 还没启动好，请稍后再试": "Captae est encore en cours de démarrage. Réessayez dans un instant",
   "读登录存储用的窗口没建好": "Impossible d’ouvrir la fenêtre servant à lire les données de connexion",
-  "登录存储没有回应": "Les données de connexion ne répondent pas"
+  "登录存储没有回应": "Les données de connexion ne répondent pas",
+  "这个分类已经不在了": "Cette catégorie n’existe plus",
+  "用 AI 整理素材库": "Organiser la Bibliothèque avec l’IA",
+  "给未分类的素材归类": "Classement des éléments sans catégorie",
+  "先填上地址和模型名": "Renseignez d’abord l’URL et le nom du modèle"
 }

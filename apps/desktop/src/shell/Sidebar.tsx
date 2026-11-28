@@ -5,6 +5,7 @@ import {
   Album02Icon,
   Download04Icon,
   FileVideoIcon,
+  Folder01Icon,
   Image01Icon,
   MusicNote01Icon,
   PlayListIcon,
@@ -28,6 +29,8 @@ import { downloadSniffed, openDialog } from "./actions";
 const SNIFF_ICON: Record<string, HugeIcon> = { list: PlayListIcon, film: FileVideoIcon, music: MusicNote01Icon, image: Image01Icon };
 /** 侧栏「浏览器里发现的」最多放几条 */
 const SIDE_FOUND = 3;
+/** 侧栏「分类」最多放几个（其余在素材库的筛选里） */
+const SIDE_CATS = 8;
 
 /** macOS 的红绿灯：Captae 里用系统自己的（位置在 tauri.conf.json 里定），这里只留出位置；
  *  在浏览器里看演示数据时没有系统的，画三个圆点，截图才和真窗口一样。
@@ -55,6 +58,9 @@ export function Sidebar({ onToggle }: { onToggle: () => void }) {
   const libraryCount = useApp((s) => s.libraryCount);
   const settings = useApp((s) => s.settings);
   const clients = useApp((s) => s.mcpClients);
+  const cats = useApp((s) => s.categories);
+  const uncategorized = useApp((s) => s.uncategorized);
+  const libCat = useApp((s) => s.libCat);
 
   // 「下载」后面的数和下载页「进行中」页签一致：还没下完的都算，包括要登录、要验证、失败了等你处理的
   const { active, open } = useMemo(() => {
@@ -106,7 +112,13 @@ export function Sidebar({ onToggle }: { onToggle: () => void }) {
 
         <nav className="cp-nav" aria-label={t("页面")}>
           {nav.map(([id, icon, label, count]) => (
-            <button key={id} className="cp-nav-item" aria-current={page === id ? "page" : undefined} onClick={() => go(id)}>
+            <button
+              key={id}
+              className="cp-nav-item"
+              // 素材库正按某个分类筛着时，选中的是下面「分类」里那一行
+              aria-current={page === id && !(id === "library" && libCat) ? "page" : undefined}
+              onClick={() => (id === "library" ? go("library", { cat: "" }) : go(id))}
+            >
               <Icon icon={icon} size={16} />
               {label}
               {count !== "" && <span className="count">{count}</span>}
@@ -148,6 +160,40 @@ export function Sidebar({ onToggle }: { onToggle: () => void }) {
           ))
         ) : (
           <div className="cp-side-empty">{t("在浏览器里看视频时，能下载的会出现在这里")}</div>
+        )}
+
+        {/* 素材库的分类：整理过才有。最多列 8 个，其余在素材库的筛选里；有未分类的列在最后 */}
+        {cats.length > 0 && (
+          <>
+            <div className="cp-side-label">
+              {t("分类§侧栏里的一组：素材库的分类")}
+              <button className="cp-side-link" onClick={() => go("library", { org: "manage" })}>
+                {t("管理")}
+              </button>
+            </div>
+            {cats.slice(0, SIDE_CATS).map((c) => (
+              <button
+                key={c.id}
+                className="cp-side-row"
+                aria-current={page === "library" && libCat === String(c.id) ? "page" : undefined}
+                title={c.desc || undefined}
+                onClick={() => go("library", { cat: c.id })}
+              >
+                <span className="glyph">
+                  <Icon icon={Folder01Icon} size={15} />
+                </span>
+                <span className="t">{c.name}</span>
+                <span className="trail num">{c.count}</span>
+              </button>
+            ))}
+            {uncategorized > 0 && (
+              <button className="cp-side-row" aria-current={page === "library" && libCat === "none" ? "page" : undefined} onClick={() => go("library", { cat: "none" })}>
+                <span className="glyph" />
+                <span className="t dim">{t("未分类")}</span>
+                <span className="trail num">{uncategorized}</span>
+              </button>
+            )}
+          </>
         )}
 
         {presets.length > 0 && (

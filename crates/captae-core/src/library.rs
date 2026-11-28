@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS assets (
   transcript   TEXT NOT NULL DEFAULT '',   -- 字幕或识别出的文字，参与全文检索
   parent_id    INTEGER REFERENCES assets(id) ON DELETE SET NULL,  -- 转换/剪辑产物指向原素材
   created_at   INTEGER NOT NULL
-  -- 后来加的列在 migrate() 里补（老的素材库打开时也补上）：live
+  -- 后来加的列在 migrate() 里加（老的素材库打开时也加上）：live、category_id、category_by
 );
 CREATE INDEX IF NOT EXISTS assets_created ON assets(created_at DESC);
 CREATE INDEX IF NOT EXISTS assets_kind ON assets(kind);
@@ -41,6 +41,16 @@ CREATE TABLE IF NOT EXISTS tags (
   asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
   tag      TEXT NOT NULL,
   PRIMARY KEY (asset_id, tag)
+  -- 后来加的列：by（user 用户加的 / ai AI 加的）
+);
+-- 分类（每条素材最多属于一个）：AI 整理时提议、用户确认，或者用户自己建（categorize.rs）
+CREATE TABLE IF NOT EXISTS categories (
+  id          INTEGER PRIMARY KEY,
+  name        TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',   -- 一句话说明，界面上显示，也写进给模型的提示词
+  sort        INTEGER NOT NULL DEFAULT 0,
+  by          TEXT NOT NULL DEFAULT 'user', -- ai：AI 整理时建的（重新整理时可以换掉）/ user：用户建的（不动）
+  created_at  INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS tags_tag ON tags(tag);
 CREATE VIRTUAL TABLE IF NOT EXISTS assets_fts USING fts5(
@@ -93,6 +103,12 @@ pub struct Asset {
     pub has_transcript: bool,
     /// 录直播录下来的（和它转换、剪辑出来的）：按链接查「下载过没有」时不算
     pub live: bool,
+    /// 分类（categories.id），没有就是「未分类」
+    pub category_id: Option<i64>,
+    /// 分类是谁定的：空 = 还没整理过 / ai / user（用户亲手放的，AI 不再动；放进「未分类」也算）
+    pub category_by: String,
+    /// `tags` 里哪些是 AI 加的（界面上样子不一样，能一起清掉）
+    pub ai_tags: Vec<String>,
     // ---- 展示用派生字段 ----
     pub res: String,
     pub dur: String,
@@ -144,8 +160,37 @@ pub struct Query {
     /// ISO 日期 YYYY-MM-DD，下载时间不早于
     pub since: Option<String>,
     pub tags: Vec<String>,
+    /// 按分类筛（界面用 id）：0 = 未分类
+    #[serde(alias = "category_id")]
+    pub cat: Option<i64>,
+    /// 按分类名筛（AI 助手用名字）
+    pub category: Option<String>,
     pub limit: Option<u32>,
     pub offset: Option<u32>,
+}
+
+/// 分类和它下面有几条素材
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Category {
+    pub id: i64,
+    pub name: String,
+    pub desc: String,
+    pub sort: i64,
+    /// ai / user
+    pub by: String,
+    pub count: u64,
+}
+
+/// 整理时挑哪些素材
+#[derive(Debug, Clone)]
+pub enum Pick {
+    /// 用户没亲手定过分类的（重新整理）
+    NotByUser,
+    /// 未分类、而且不是用户亲手放进未分类的
+    Uncategorized,
+    /// 还没整理过的（新下载的、上次没分成的）
+    Never,
+    Ids(Vec<i64>),
 }
 
 pub fn human_size(b: u64) -> String {
@@ -189,7 +234,22 @@ impl Library {
             let mut st = db.prepare("SELECT 1 FROM pragma_table_info('assets') WHERE name = ?1")?;
             Ok(st.exists([col])?)
         };
-        // live：录直播录下来的（1）。两个进程同时打开、同时补列时，后补的那个会报「列已经有了」，再看一眼有就行
+        // 两个进程同时打开、同时加列时，后加的那个会报「列已经有了」，再看一眼有就行
+        let add = |table: &str, col: &str, ddl: &str| -> Result<()> {
+            let has = |c: &str| -> Result<bool> {
+                let mut st = db.prepare(&format!("SELECT 1 FROM pragma_table_info('{table}') WHERE name = ?1"))?;
+                Ok(st.exists([c])?)
+            };
+            if !has(col)? {
+                if let Err(e) = db.execute_batch(&format!("ALTER TABLE {table} ADD COLUMN {ddl}")) {
+                    if !has(col)? {
+                        return Err(e).context(format!("ALTER TABLE {table} ADD COLUMN {col}"));
+                    }
+                }
+            }
+            Ok(())
+        };
+        // live：录直播录下来的（1）
         if !has("live")? {
             if let Err(e) = db.execute_batch("ALTER TABLE assets ADD COLUMN live INTEGER NOT NULL DEFAULT 0") {
                 if !has("live")? {
@@ -197,14 +257,24 @@ impl Library {
                 }
             }
         }
+        // 分类（2026-11-28）：不加外键，删分类时自己把素材放回未分类（delete_category）
+        add("assets", "category_id", "category_id INTEGER")?;
+        add("assets", "category_by", "category_by TEXT NOT NULL DEFAULT ''")?;
+        add("tags", "by", "by TEXT NOT NULL DEFAULT 'user'")?;
+        db.execute_batch("CREATE INDEX IF NOT EXISTS assets_category ON assets(category_id)")?;
         Ok(())
     }
 
+    /// 全文检索的「标签」那一栏也放分类名和 AI 看封面写的一句描述（asset_cache 的 ai_caption）：搜「设计参考」「日程」都找得到
     fn reindex(db: &Connection, id: i64) -> Result<()> {
         db.execute("DELETE FROM assets_fts WHERE rowid = ?1", [id])?;
         db.execute(
             "INSERT INTO assets_fts(rowid, title, description, tags, site, transcript)
-             SELECT a.id, a.title, a.description, COALESCE((SELECT group_concat(tag, ' ') FROM tags WHERE asset_id = a.id), ''), a.site, a.transcript
+             SELECT a.id, a.title, a.description,
+                    trim(COALESCE((SELECT group_concat(tag, ' ') FROM tags WHERE asset_id = a.id), '') || ' ' ||
+                         COALESCE((SELECT name FROM categories WHERE id = a.category_id), '') || ' ' ||
+                         COALESCE((SELECT value FROM asset_cache WHERE asset_id = a.id AND key = 'ai_caption'), '')),
+                    a.site, a.transcript
              FROM assets a WHERE a.id = ?1",
             [id],
         )?;
@@ -248,7 +318,8 @@ impl Library {
     pub fn add_tags(&self, id: i64, tags: &[String]) -> Result<Vec<String>> {
         let db = self.db.lock().unwrap();
         for t in tags.iter().map(|t| t.trim()).filter(|t| !t.is_empty()) {
-            db.execute("INSERT OR IGNORE INTO tags(asset_id, tag) VALUES (?1, ?2)", params![id, t])?;
+            // AI 加过的同一个标签，用户再加一次就算用户的（清 AI 标签时留着）
+            db.execute("INSERT INTO tags(asset_id, tag, by) VALUES (?1, ?2, 'user') ON CONFLICT(asset_id, tag) DO UPDATE SET by = 'user'", params![id, t])?;
         }
         Self::reindex(&db, id)?;
         Self::tags_of(&db, id)
@@ -272,6 +343,12 @@ impl Library {
         db.execute("DELETE FROM assets WHERE id = ?1", [id])?;
         db.execute("DELETE FROM assets_fts WHERE rowid = ?1", [id])?;
         Ok(())
+    }
+
+    fn ai_tags_of(db: &Connection, id: i64) -> Result<Vec<String>> {
+        let mut st = db.prepare_cached("SELECT tag FROM tags WHERE asset_id = ?1 AND by = 'ai' ORDER BY rowid")?;
+        let v = st.query_map([id], |r| r.get(0))?.collect::<rusqlite::Result<Vec<String>>>()?;
+        Ok(v)
     }
 
     fn tags_of(db: &Connection, id: i64) -> Result<Vec<String>> {
@@ -311,6 +388,9 @@ impl Library {
             parent_id: r.get("parent_id")?,
             has_transcript: !transcript.is_empty(),
             live: r.get::<_, Option<i64>>("live").ok().flatten().unwrap_or(0) != 0,
+            category_id: r.get::<_, Option<i64>>("category_id").ok().flatten(),
+            category_by: r.get::<_, Option<String>>("category_by").ok().flatten().unwrap_or_default(),
+            ai_tags: Self::ai_tags_of(db, id).unwrap_or_default(),
             res: match (w, h) {
                 (Some(w), Some(h)) => format!("{w}×{h}"),
                 _ => "—".into(),
@@ -351,9 +431,12 @@ impl Library {
                 sql.push_str(" AND a.id IN (SELECT rowid FROM assets_fts WHERE assets_fts MATCH ?)");
                 args.push(Box::new(format!("\"{}\"", text.replace('"', "\"\""))));
             } else {
-                sql.push_str(" AND (a.title LIKE ? OR a.description LIKE ? OR a.site LIKE ? OR a.id IN (SELECT asset_id FROM tags WHERE tag LIKE ?))");
+                sql.push_str(
+                    " AND (a.title LIKE ? OR a.description LIKE ? OR a.site LIKE ? OR a.id IN (SELECT asset_id FROM tags WHERE tag LIKE ?)
+                      OR a.category_id IN (SELECT id FROM categories WHERE name LIKE ?) OR a.id IN (SELECT asset_id FROM asset_cache WHERE key = 'ai_caption' AND value LIKE ?))",
+                );
                 let like = format!("%{text}%");
-                for _ in 0..4 {
+                for _ in 0..6 {
                     args.push(Box::new(like.clone()));
                 }
             }
@@ -384,6 +467,18 @@ impl Library {
         for t in &q.tags {
             sql.push_str(" AND a.id IN (SELECT asset_id FROM tags WHERE tag = ?)");
             args.push(Box::new(t.clone()));
+        }
+        match q.cat {
+            Some(0) => sql.push_str(" AND a.category_id IS NULL"),
+            Some(c) => {
+                sql.push_str(" AND a.category_id = ?");
+                args.push(Box::new(c));
+            }
+            None => {}
+        }
+        if let Some(name) = q.category.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
+            sql.push_str(" AND a.category_id IN (SELECT id FROM categories WHERE lower(name) = lower(?))");
+            args.push(Box::new(name.to_string()));
         }
         let total: u64 = {
             let mut st = db.prepare(&format!("SELECT count(*){sql}"))?;
@@ -428,6 +523,177 @@ impl Library {
     pub fn count(&self) -> Result<u64> {
         let db = self.db.lock().unwrap();
         Ok(db.query_row("SELECT count(*) FROM assets", [], |r| r.get::<_, i64>(0))? as u64)
+    }
+
+    // ---- 分类 ----
+
+    /// 全部分类（按排序），各带几条素材；第二个值是未分类的条数
+    pub fn categories(&self) -> Result<(Vec<Category>, u64)> {
+        let db = self.db.lock().unwrap();
+        let mut st = db.prepare_cached(
+            "SELECT c.id, c.name, c.description, c.sort, c.by, (SELECT count(*) FROM assets a WHERE a.category_id = c.id) FROM categories c ORDER BY c.sort, c.id",
+        )?;
+        let v = st
+            .query_map([], |r| Ok(Category { id: r.get(0)?, name: r.get(1)?, desc: r.get(2)?, sort: r.get(3)?, by: r.get(4)?, count: r.get::<_, i64>(5)? as u64 }))?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        let none: i64 = db.query_row("SELECT count(*) FROM assets WHERE category_id IS NULL", [], |r| r.get(0))?;
+        Ok((v, none as u64))
+    }
+
+    /// 建一个分类；同名的（不分大小写）已经有了就用它。返回 id
+    pub fn add_category(&self, name: &str, desc: &str, by: &str) -> Result<i64> {
+        let name = name.trim();
+        anyhow::ensure!(!name.is_empty(), crate::tr!("分类名不能是空的"));
+        let db = self.db.lock().unwrap();
+        if let Some(id) = db.query_row("SELECT id FROM categories WHERE lower(name) = lower(?1)", [name], |r| r.get::<_, i64>(0)).optional()? {
+            return Ok(id);
+        }
+        let sort: i64 = db.query_row("SELECT COALESCE(max(sort), 0) + 1 FROM categories", [], |r| r.get(0))?;
+        db.execute(
+            "INSERT INTO categories(name, description, sort, by, created_at) VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![name, desc.trim(), sort, by, crate::util::now_ms()],
+        )?;
+        Ok(db.last_insert_rowid())
+    }
+
+    /// 改名、改说明（None 不改）。用户改过的分类算用户的，以后重新整理也留着
+    pub fn update_category(&self, id: i64, name: Option<&str>, desc: Option<&str>, by: Option<&str>) -> Result<()> {
+        let db = self.db.lock().unwrap();
+        if let Some(n) = name.map(str::trim) {
+            anyhow::ensure!(!n.is_empty(), crate::tr!("分类名不能是空的"));
+            let clash: Option<i64> = db.query_row("SELECT id FROM categories WHERE lower(name) = lower(?1) AND id != ?2", params![n, id], |r| r.get(0)).optional()?;
+            anyhow::ensure!(clash.is_none(), crate::tr!("已经有叫「{name}」的分类了", name = n));
+            db.execute("UPDATE categories SET name = ?2 WHERE id = ?1", params![id, n])?;
+        }
+        if let Some(d) = desc {
+            db.execute("UPDATE categories SET description = ?2 WHERE id = ?1", params![id, d.trim()])?;
+        }
+        if let Some(b) = by {
+            db.execute("UPDATE categories SET by = ?2 WHERE id = ?1", params![id, b])?;
+        }
+        if name.is_some() {
+            Self::reindex_category(&db, id)?;
+        }
+        Ok(())
+    }
+
+    fn reindex_category(db: &Connection, id: i64) -> Result<()> {
+        let ids: Vec<i64> = db.prepare("SELECT id FROM assets WHERE category_id = ?1")?.query_map([id], |r| r.get(0))?.collect::<rusqlite::Result<_>>()?;
+        for a in ids {
+            Self::reindex(db, a)?;
+        }
+        Ok(())
+    }
+
+    /// 删掉分类，里面的素材放回未分类（谁放的照旧记着：用户亲手放的不会被自动整理拿走）
+    pub fn delete_category(&self, id: i64) -> Result<()> {
+        let db = self.db.lock().unwrap();
+        let ids: Vec<i64> = db.prepare("SELECT id FROM assets WHERE category_id = ?1")?.query_map([id], |r| r.get(0))?.collect::<rusqlite::Result<_>>()?;
+        db.execute("UPDATE assets SET category_id = NULL WHERE category_id = ?1", [id])?;
+        db.execute("DELETE FROM categories WHERE id = ?1", [id])?;
+        for a in ids {
+            Self::reindex(&db, a)?;
+        }
+        Ok(())
+    }
+
+    /// 把 from 合并进 into：素材挪过去，from 删掉
+    pub fn merge_category(&self, from: i64, into: i64) -> Result<()> {
+        anyhow::ensure!(from != into, "same category");
+        let db = self.db.lock().unwrap();
+        db.execute("UPDATE assets SET category_id = ?2 WHERE category_id = ?1", params![from, into])?;
+        db.execute("DELETE FROM categories WHERE id = ?1", [from])?;
+        Self::reindex_category(&db, into)?;
+        Ok(())
+    }
+
+    /// 按给的顺序排（没列到的排在后面）
+    pub fn reorder_categories(&self, ids: &[i64]) -> Result<()> {
+        let db = self.db.lock().unwrap();
+        for (i, id) in ids.iter().enumerate() {
+            db.execute("UPDATE categories SET sort = ?2 WHERE id = ?1", params![id, i as i64 + 1])?;
+        }
+        Ok(())
+    }
+
+    /// 放进分类（None = 未分类）。by：user 用户亲手放的 / ai
+    pub fn set_category(&self, ids: &[i64], cat: Option<i64>, by: &str) -> Result<()> {
+        let db = self.db.lock().unwrap();
+        for id in ids {
+            db.execute("UPDATE assets SET category_id = ?2, category_by = ?3 WHERE id = ?1", params![id, cat, by])?;
+            Self::reindex(&db, *id)?;
+        }
+        Ok(())
+    }
+
+    /// 换掉这条素材上 AI 加的标签（用户加的不动；和用户的同名的不再加）
+    pub fn set_ai_tags(&self, id: i64, tags: &[String]) -> Result<()> {
+        let db = self.db.lock().unwrap();
+        db.execute("DELETE FROM tags WHERE asset_id = ?1 AND by = 'ai'", [id])?;
+        for t in tags.iter().map(|t| t.trim()).filter(|t| !t.is_empty()) {
+            db.execute("INSERT OR IGNORE INTO tags(asset_id, tag, by) VALUES (?1, ?2, 'ai')", params![id, t])?;
+        }
+        Self::reindex(&db, id)
+    }
+
+    /// 清掉所有 AI 加的标签，返回清了几个
+    pub fn clear_ai_tags(&self) -> Result<u64> {
+        let db = self.db.lock().unwrap();
+        let ids: Vec<i64> = db.prepare("SELECT DISTINCT asset_id FROM tags WHERE by = 'ai'")?.query_map([], |r| r.get(0))?.collect::<rusqlite::Result<_>>()?;
+        let n = db.execute("DELETE FROM tags WHERE by = 'ai'", [])?;
+        for id in ids {
+            Self::reindex(&db, id)?;
+        }
+        Ok(n as u64)
+    }
+
+    /// 整理时要看的素材（新的在前）
+    pub fn pick(&self, p: &Pick) -> Result<Vec<Asset>> {
+        let db = self.db.lock().unwrap();
+        let (cond, ids): (&str, Vec<i64>) = match p {
+            Pick::NotByUser => ("category_by != 'user'", vec![]),
+            Pick::Uncategorized => ("category_id IS NULL AND category_by != 'user'", vec![]),
+            Pick::Never => ("category_by = ''", vec![]),
+            Pick::Ids(v) => ("1=1", v.clone()),
+        };
+        let mut out = vec![];
+        if let Pick::Ids(_) = p {
+            let mut st = db.prepare_cached("SELECT * FROM assets WHERE id = ?1")?;
+            for id in ids {
+                if let Some(a) = st.query_row([id], |r| Self::row(&db, r)).optional()? {
+                    out.push(a);
+                }
+            }
+            return Ok(out);
+        }
+        let mut st = db.prepare(&format!("SELECT * FROM assets WHERE {cond} ORDER BY created_at DESC"))?;
+        let v = st.query_map([], |r| Self::row(&db, r))?.collect::<rusqlite::Result<Vec<_>>>()?;
+        Ok(v)
+    }
+
+    /// 用户亲手放进分类的最近几条：带进给模型的提示词当例子
+    pub fn user_examples(&self, limit: u32) -> Result<Vec<(Asset, String)>> {
+        let db = self.db.lock().unwrap();
+        let mut st = db.prepare(
+            "SELECT a.*, c.name AS cat_name FROM assets a JOIN categories c ON c.id = a.category_id WHERE a.category_by = 'user' ORDER BY a.created_at DESC LIMIT ?1",
+        )?;
+        let v = st.query_map([limit], |r| Ok((Self::row(&db, r)?, r.get::<_, String>("cat_name")?)))?.collect::<rusqlite::Result<Vec<_>>>()?;
+        Ok(v)
+    }
+
+    /// 用户亲手定过分类的素材：(素材 id, 分类 id，放进未分类的是 None)
+    pub fn user_filed(&self) -> Result<Vec<(i64, Option<i64>)>> {
+        let db = self.db.lock().unwrap();
+        let mut st = db.prepare_cached("SELECT id, category_id FROM assets WHERE category_by = 'user'")?;
+        let v = st.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?.collect::<rusqlite::Result<Vec<_>>>()?;
+        Ok(v)
+    }
+
+    /// 写缓存并更新全文检索（AI 看封面写的描述也要能搜到）
+    pub fn cache_set_indexed(&self, id: i64, key: &str, value: &str) -> Result<()> {
+        let db = self.db.lock().unwrap();
+        db.execute("INSERT OR REPLACE INTO asset_cache(asset_id, key, value, at) VALUES (?1, ?2, ?3, ?4)", params![id, key, value, crate::util::now_ms()])?;
+        Self::reindex(&db, id)
     }
 
     // ---- Agent 调用记录 ----
@@ -624,6 +890,61 @@ mod tests {
         assert!(l.find_by_url(m3u8, false).unwrap().is_some());
     }
 
+    /// 分类：建、改名、合并、删；素材放进去、按分类查；用户亲手放的记着；分类名和 AI 描述能搜到
+    #[test]
+    fn categories_basic() {
+        let l = lib();
+        let all = l.query(&Query::default()).unwrap().0;
+        let (a, b, c) = (all[0].id, all[1].id, all[2].id);
+        let film = l.add_category("影视", "电影和短片", "ai").unwrap();
+        let music = l.add_category("音乐", "", "ai").unwrap();
+        assert_eq!(l.add_category(" 影视 ", "", "user").unwrap(), film, "同名的用原来的");
+        l.set_category(&[a, b], Some(film), "ai").unwrap();
+        l.set_category(&[c], Some(music), "user").unwrap();
+        let (cats, none) = l.categories().unwrap();
+        assert_eq!((cats.len(), cats[0].count, cats[1].count, none), (2, 2, 1, 0));
+        assert_eq!(l.query(&Query { cat: Some(film), ..Default::default() }).unwrap().1, 2);
+        assert_eq!(l.query(&Query { category: Some("音乐".into()), ..Default::default() }).unwrap().1, 1);
+        assert_eq!(l.get(c).unwrap().unwrap().category_by, "user");
+        // 分类名进了全文检索；改名以后跟着变
+        assert_eq!(l.query(&Query { q: Some("影视".into()), ..Default::default() }).unwrap().1, 2);
+        l.update_category(film, Some("电影短片"), None, Some("user")).unwrap();
+        assert_eq!(l.query(&Query { q: Some("电影短片".into()), ..Default::default() }).unwrap().1, 2);
+        assert!(l.update_category(film, Some("音乐"), None, None).is_err(), "不能和别的分类重名");
+        // 用户亲手放的不在「要整理的」里
+        assert_eq!(l.pick(&Pick::NotByUser).unwrap().len(), 2);
+        // 合并：素材挪过去
+        l.merge_category(music, film).unwrap();
+        let (cats, _) = l.categories().unwrap();
+        assert_eq!((cats.len(), cats[0].count), (1, 3));
+        // 删分类：素材回到未分类，谁放的照旧
+        l.delete_category(film).unwrap();
+        let (cats, none) = l.categories().unwrap();
+        assert_eq!((cats.len(), none), (0, 3));
+        assert_eq!(l.query(&Query { cat: Some(0), ..Default::default() }).unwrap().1, 3);
+        assert_eq!(l.get(c).unwrap().unwrap().category_by, "user");
+        assert_eq!(l.pick(&Pick::Uncategorized).unwrap().len(), 2);
+        // AI 看封面写的描述也能搜到
+        l.cache_set_indexed(a, "ai_caption", "日程管理软件的界面演示").unwrap();
+        assert_eq!(l.query(&Query { q: Some("日程管理".into()), ..Default::default() }).unwrap().0[0].id, a);
+    }
+
+    /// AI 加的标签单独记着：换、清都只动 AI 的；用户再加一次同名的就算用户的
+    #[test]
+    fn ai_tags_are_separate() {
+        let l = lib();
+        let id = l.by_path(Path::new("/m/tos.mp4")).unwrap().unwrap().id;
+        l.set_ai_tags(id, &["机器人".into(), "科幻".into(), "阿姆斯特丹".into()]).unwrap();
+        let a = l.get(id).unwrap().unwrap();
+        assert_eq!(a.tags, vec!["科幻", "机器人", "阿姆斯特丹"], "和用户同名的不重复加");
+        assert_eq!(a.ai_tags, vec!["机器人", "阿姆斯特丹"]);
+        l.add_tags(id, &["机器人".into()]).unwrap();
+        assert_eq!(l.get(id).unwrap().unwrap().ai_tags, vec!["阿姆斯特丹"]);
+        assert_eq!(l.query(&Query { q: Some("阿姆斯特丹".into()), ..Default::default() }).unwrap().1, 1);
+        assert_eq!(l.clear_ai_tags().unwrap(), 1);
+        assert_eq!(l.get(id).unwrap().unwrap().tags, vec!["科幻", "机器人"]);
+    }
+
     /// 9 月的第一版建的素材库没有 live 列：打开时补上，原来的素材都不是直播、照常查得到；
     /// 补过列以后，旧版的写法（INSERT 写明列名、SELECT * 按列名取）照样能读写——退回旧版不会坏
     #[test]
@@ -647,6 +968,8 @@ mod tests {
         let l = Library::open(&db).unwrap();
         let a = l.find_by_url("https://a.com/watch/1", true).unwrap().unwrap();
         assert_eq!((a.title.as_str(), a.live, a.tags.clone()), ("旧的", false, vec!["旧标签".to_string()]));
+        // 分类的列也加上了：旧素材是「还没整理过」，旧标签算用户的
+        assert_eq!((a.category_id, a.category_by.as_str(), a.ai_tags.len()), (None, "", 0));
         l.add(&NewAsset { kind: "video".into(), title: "新录的".into(), source_url: "https://a.com/live".into(), path: dir.path().join("r.mp4"), live: true, ..Default::default() }).unwrap();
         drop(l);
         // 再打开一次：列已经有了，不再补

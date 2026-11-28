@@ -142,10 +142,8 @@
   "视频里说的语言": "Spoken language",
   "导出格式": "Export format",
   "翻译成中文§字幕翻译成界面语言：每种语言都写「翻译成这种语言」（英文 Translate to English）": "Translate to English",
-  "先在设置里填翻译服务": "Set up a translation service in Settings first",
   "去设置": "Open Settings",
   "已经是中文了§字幕已经是界面语言，不用翻译：每种语言都写「已经是这种语言了」（英文 It's already in English）": "It's already in English",
-  "用你在设置里填的 AI 翻译": "Uses the AI translation you set up in Settings",
   "把字幕嵌进画面": "Burn in subtitles",
   "另存一份新视频，原文件不变": "Saves a new video, the original stays as it is",
   "现在的 ffmpeg 做不到，需要完整版": "The current ffmpeg can't do this. It needs the full version",
@@ -324,5 +322,127 @@
   "下载{lang}字幕": "Download {lang} subtitles",
   "提取声音": "Extract audio",
   "把语音转成文字": "Transcribe speech",
-  "导出{fmt}": "Export {fmt}"
+  "导出{fmt}": "Export {fmt}",
+  "分类": "Category",
+  "全部分类": "All categories",
+  "给未分类的归类": "File uncategorized items",
+  "重新整理…": "Reorganize…",
+  "管理分类…": "Manage categories…",
+  "清除 AI 加的标签": "Remove tags added by AI",
+  "AI 模型设置…": "AI model settings…",
+  "用 AI 整理": "Organize with AI",
+  "用 AI 整理：按内容分好类": "Organize with AI: sort items by content",
+  "素材多了不好找？让 AI 按内容分好类": "Hard to find things? Let AI sort your library by content",
+  "用你自己的模型服务，分好以后可以改，新下载的会自动放进去": "Uses your own model service. You can change the categories afterwards, and new downloads are filed automatically",
+  "不再提示": "Don't show again",
+  "放进分类": "Move to category",
+  "AI 加的标签": "Tag added by AI",
+  "{n}项放进了分类": {
+    "one": "{n} item filed",
+    "other": "{n} items filed"
+  },
+  "{n}项没把握，还在未分类": {
+    "one": "{n} item is still uncategorized (no confident match)",
+    "other": "{n} items are still uncategorized (no confident match)"
+  },
+  "整理好了：{n}个分类": {
+    "one": "Organized into {n} category",
+    "other": "Organized into {n} categories"
+  },
+  "没有用上这套分类": "Couldn't apply these categories",
+  "分成了{n}类": {
+    "one": "{n} category",
+    "other": "{n} categories"
+  },
+  "用 AI 整理素材库": "Organize library with AI",
+  "开始整理": "Start organizing",
+  "去设置 AI 模型": "Set up AI model",
+  "取消整理": "Stop organizing",
+  "用这套分类": "Use these categories",
+  "这次没有整理完": "Organizing didn't finish",
+  "按内容把素材分成几类，每条放进一类，再加两三个标签方便以后搜。分好以后可以改名、合并、删掉；新下载的会自动放进去。": "Sorts your items into a few categories by content, puts each item in one, and adds two or three tags so they're easier to find later. You can rename, merge or delete categories afterwards, and new downloads are filed automatically.",
+  "还没有设置 AI 模型": "No AI model set up yet",
+  "用你自己的模型服务和密钥（DeepSeek、OpenAI、本地的 Ollama……），在设置 › AI 模型里填上": "Use your own model service and key (DeepSeek, OpenAI, a local Ollama…). Add it in Settings › AI model",
+  "素材都由你亲手放好了，没有要 AI 整理的": "You've filed every item yourself, so there's nothing for AI to organize",
+  "素材库还是空的，先下载一些再来": "Your library is empty. Download a few things first",
+  "发给§整理前的说明：发给哪个模型服务": "Sent to",
+  "内容§整理前的说明：发过去的是什么": "What's sent",
+  "{n}项素材的标题、简介和来源": {
+    "one": "Title, description and source of {n} item",
+    "other": "Titles, descriptions and sources of {n} items"
+  },
+  "其中{n}项光看文字看不出内容，会附上封面": {
+    "one": "{n} of them says too little in text, so its thumbnail is included",
+    "other": "{n} of them say too little in text, so their thumbnails are included"
+  },
+  "用量§整理前的说明：大约多少 token": "Usage",
+  "大约 {n} token": "About {n} tokens",
+  "按你的模型服务的价格算，费用记在你自己的账户上": "Charged to your own account at your model service's prices",
+  "已有§整理前的说明：已经有的分类": "Existing",
+  "你建的分类和你亲手放的{n}项素材不会动": {
+    "one": "Categories you made and the {n} item you filed yourself stay as they are",
+    "other": "Categories you made and the {n} items you filed yourself stay as they are"
+  },
+  "你建的分类不会动，AI 建的会重新整理": "Categories you made stay. Ones AI made are reorganized",
+  "整理进度": "Organizing progress",
+  "正在准备": "Getting ready",
+  "关掉这个窗口就是取消，已经看过的封面描述会留着，下次不用再看": "Closing this window cancels. Thumbnail descriptions already made are kept for next time",
+  "整理了{n}项。名字可以直接改；不合适的可以并进别的类，或者不要这一类（里面的放回未分类）。": {
+    "one": "Organized {n} item. Rename a category right here, merge it into another, or remove it (its items go back to Uncategorized).",
+    "other": "Organized {n} items. Rename a category right here, merge it into another, or remove it (its items go back to Uncategorized)."
+  },
+  "并进别的类": "Merge into",
+  "不要这一类": "Remove this category",
+  "分类名": "Category name",
+  "你建的": "Yours",
+  "这一类的操作": "Category actions",
+  "{n}项没把握，会留在未分类，之后可以自己放": {
+    "one": "{n} item had no confident match and stays uncategorized. You can file it yourself later",
+    "other": "{n} items had no confident match and stay uncategorized. You can file them yourself later"
+  },
+  "删掉这一类": "Delete category",
+  "管理分类": "Manage categories",
+  "重新整理": "Reorganize",
+  "改名、合并、删掉都马上生效。删掉的分类里的素材放回未分类。": "Renaming, merging and deleting take effect right away. Items in a deleted category go back to Uncategorized.",
+  "新分类的名字": "New category name",
+  "新分类的名字，回车建好": "New category name, press Return to add",
+  "还有{n}项未分类": {
+    "one": "{n} item is still uncategorized",
+    "other": "{n} items are still uncategorized"
+  },
+  "先在设置里填 AI 模型": "Set up an AI model in Settings first",
+  "用你在设置里填的 AI 模型翻译": "Uses the AI model from Settings",
+  "没有放进分类": "Couldn't move to category",
+  "{n}项放进了「{name}」": {
+    "one": "Moved {n} item to “{name}”",
+    "other": "Moved {n} items to “{name}”"
+  },
+  "{n}项放回了未分类": {
+    "one": "Moved {n} item to Uncategorized",
+    "other": "Moved {n} items to Uncategorized"
+  },
+  "没有改名": "Couldn't rename",
+  "没有建好分类": "Couldn't add the category",
+  "删掉了「{name}」": "Deleted “{name}”",
+  "里面的{n}项放回了未分类": {
+    "one": "Its {n} item went back to Uncategorized",
+    "other": "Its {n} items went back to Uncategorized"
+  },
+  "没有删掉": "Couldn't delete",
+  "「{from}」并进了「{into}」": "Merged “{from}” into “{into}”",
+  "没有合并": "Couldn't merge",
+  "正在给未分类的素材归类": "Filing uncategorized items",
+  "好了会告诉你": "You'll get a notice when it's done",
+  "归类好了": "Filing done",
+  "没有归类完": "Filing didn't finish",
+  "清掉了{n}个 AI 加的标签": {
+    "one": "Removed {n} tag added by AI",
+    "other": "Removed {n} tags added by AI"
+  },
+  "没有 AI 加的标签": "No tags added by AI",
+  "没有清掉": "Couldn't remove them",
+  "都分好类了": "Everything is filed",
+  "没有未分类的素材": "No uncategorized items",
+  "这个分类里还没有素材": "Nothing in this category yet",
+  "在素材详情里可以把素材放进这个分类": "You can move items here from their details"
 }
