@@ -10,6 +10,7 @@ pub mod api;
 pub mod clipboard;
 pub mod config;
 pub mod detect;
+pub mod douyin;
 pub mod engine;
 pub mod errors;
 pub mod ffmpeg;
@@ -36,6 +37,7 @@ pub mod tasks;
 pub mod tools;
 pub mod updater;
 pub mod util;
+pub mod webpage;
 pub mod whisper_setup;
 
 pub use config::{Paths, Settings};

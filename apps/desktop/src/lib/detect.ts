@@ -110,13 +110,14 @@ const MORE: [string, string][] = [
 
 /** 任务来自哪个网站：「YouTube」「哔哩哔哩」「芒果TV」，不认识的显示域名。
  *  返回的是存下来的原文（判断「是不是 YouTube」用它），显示时 tAny(…)。
- *  named：后端在失败信息里给的名字（Failure.site，和那句说法用的是同一个），有就用它 */
+ *  named：后端在失败信息里给的名字（Failure.site，和那句说法用的是同一个），有就用它。
+ *  先按域名认、再按站点代号：后端给抖音的代号是 tiktok（和 TikTok 共用图标），先看代号会在读取时显示成「TikTok」 */
 export function siteLabel(plat: string | null | undefined, url: string, named?: string | null): string {
   if (named) return named;
-  if (plat && NAMES[plat]) return NAMES[plat];
   const h = host(url);
   const s = siteOf(h);
   if (s) return s[1];
+  if (plat && NAMES[plat]) return NAMES[plat];
   const m = MORE.find(([d]) => h === d || h.endsWith("." + d));
   return m ? m[1] : h;
 }

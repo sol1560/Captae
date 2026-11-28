@@ -186,6 +186,11 @@ scripts/render-dmg-background.sh              # 改了安装包窗口的背景�
 - GPL 源码（2026-11-26 定）：每个版本的 Release 页附上 FFmpeg、aria2、yt-dlp 对应版本的源码包，`licenses/README.md` 里「三年内可索取」的书面承诺也保留，兜底 FFmpeg 静态链接的各个库。
 - 打赏入口没加。CI 在 `.github/workflows/`：`ci.yml`（核心库测试、界面类型检查、词表、插件面板产物）、`release-winlinux.yml`（手动运行，打 Windows / Linux 包并挂到 Release）、`cla.yml`（贡献者协议）。
 - 直播还没开始时（`live_upcoming`）只给出开始时间，没有「开始后自动下载」。
+- **抖音视频由桌面端在看不见的网页里读**（2026-11-28，做法见 DESIGN 4.8）：yt-dlp 2026.11.23 的抖音提取器读不了（抖音要网页自己算的签名参数，不带就 403，cookies 多新都一样），
+  测试者遇到的「去验证」点「完成」以后照样失败就是这个原因。现在桌面端静音打开视频页、接住网页自己请求到的详情，再交给 yt-dlp 下。macOS 上实测：测试者那条短链、另一个视频，
+  同时加、指定和不指定清晰度、本机控制接口读清晰度都通（1080p h264 + aac）。抖音有时拦下网页自己的请求（「Sign Invalid」），会自动重开，3 次都不行才报「要验证」。
+  没有桌面端的地方还是读不了：命令行 `captae probe` / `download --sample`、桌面端没开时 MCP 和插件宿主自己读。Windows、Linux 只过了编译，没在真系统上跑。
+  以后 yt-dlp 自己修好了抖音，可以去掉 `ytdlp::probe_url` 开头那一句，回到 yt-dlp。
 - 微信视频号暂不支持（yt-dlp 没有，视频还有加密）；图片帖（小红书图文、抖音图集、Flickr……）桌面端不下，提示用插件在网页里下。Archive.org 借阅制条目、X 敏感内容推文报「没有视频」（分不清）。
 - 插件里「电脑上还没有 Captae」的卡片和面板有「下载 Captae」按钮，打开 GitHub 上最新的 Release。插件没上架商店（Chrome 网上应用店不允许能下载 YouTube 的插件）。
 - 系统开了 PAC 自动代理时按直连处理（三个系统都是）。

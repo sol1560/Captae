@@ -23,6 +23,7 @@ mod clip_ask;
 mod ext_cmds;
 mod login;
 mod media_server;
+mod page_reader;
 mod remote_cmds;
 #[cfg(target_os = "macos")]
 mod menu;
@@ -564,6 +565,8 @@ fn main() {
             app.manage(login::Login::default());
             login::prepare(app.handle());
             core.set_login_store(std::sync::Arc::new(login::DesktopStore(app.handle().clone())));
+            // 看不见的网页（抖音这种下载引擎读不了、网页自己拿得到的网站，见 page_reader.rs）
+            captae_core::webpage::set_reader(std::sync::Arc::new(page_reader::Reader::new(app.handle().clone())));
             if !login::separate_store() {
                 tracing::info!("macOS 14 以下没有单独的网页数据存储：登录窗口用默认存储（和 Captae 界面共用）");
             }
@@ -697,6 +700,7 @@ fn main() {
                     captae_core::api::clear(&a.core);
                 }
                 login::close_all(w.app_handle());
+                page_reader::close(w.app_handle());
                 remote_cmds::shutdown(w.app_handle());
                 // 退出时还在下载、转换：把 yt-dlp、ffmpeg、aria2c 连同它们的子进程结束，不留在后台继续跑
                 captae_core::tools::kill_all();

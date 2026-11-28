@@ -465,6 +465,10 @@ async fn probe_url_uncached(tools: &Toolbox, http: &reqwest::Client, r: &ProbeRe
         }
         None => crate::detect::canonical(r.url),
     };
+    // 抖音的视频：yt-dlp 读不了，从看不见的网页里读（只有桌面端有，见 douyin.rs）
+    if let Some(res) = crate::douyin::probe(http, &start, r.note).await {
+        return res;
+    }
     let mut url = start.clone();
     let mut extra: Vec<String> = r.extra.clone();
     let mut tried_clients = extra.iter().any(|a| a.contains("player_client"));

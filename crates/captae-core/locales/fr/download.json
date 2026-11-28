@@ -360,5 +360,6 @@
   "读不了 {browser} 里的登录状态：{browser} 开着时不让别的程序读。关掉 {browser} 再试，或者在 Captae 里登录这个网站": "Impossible de lire la connexion enregistrée dans {browser} : {browser} empêche les autres applications de la lire tant qu’il est ouvert. Quittez {browser} et réessayez, ou connectez-vous à ce site dans Captae",
   "读不了 {browser} 里的登录状态：系统的密钥环（GNOME Keyring / KWallet）里取不到解密用的密钥。确认密钥环已经解锁，或者在 Captae 里登录这个网站": "Impossible de lire la connexion enregistrée dans {browser} : la clé de déchiffrement est introuvable dans le trousseau de clés du système (GNOME Keyring / KWallet). Vérifiez que le trousseau est déverrouillé, ou connectez-vous à ce site dans Captae",
   "没找到 {browser} 的登录信息：{browser} 没装，或者装在了 yt-dlp 找不到的地方（Flatpak、Snap 版）": "Données de connexion de {browser} introuvables : {browser} n’est pas installé, ou il est installé à un endroit où yt-dlp ne le trouve pas (version Flatpak ou Snap)",
-  "{reason}。这次先不带它的登录状态再读一次": "{reason}. Nouvel essai, cette fois sans la connexion de ce navigateur"
+  "{reason}。这次先不带它的登录状态再读一次": "{reason}. Nouvel essai, cette fois sans la connexion de ce navigateur",
+  "抖音网页这次没给出视频信息，重新打开再试一次": "La page Douyin n’a pas fourni les infos de la vidéo cette fois. Nouvelle ouverture"
 }

@@ -1054,10 +1054,25 @@ impl Core {
         self.persist_queue();
         let out = match eng {
             Engine::YtDlp => {
-                let ij = info_json.exists().then_some(info_json.as_path()).filter(|p| {
+                let mut ij = info_json.exists().then_some(info_json.as_path()).filter(|p| {
                     // 信息里的直链一般几小时后过期，太旧就重新解析
                     std::fs::metadata(p).and_then(|m| m.modified()).map(|t| t.elapsed().map(|e| e.as_secs() < 1800).unwrap_or(false)).unwrap_or(false)
                 });
+                // 抖音：信息太旧（排队、暂停久了）时 yt-dlp 自己重新解析会失败，从看不见的网页重新读一次（douyin.rs）
+                if ij.is_none() && crate::douyin::handles(&job.url) {
+                    h.update(|j| j.log(tr!("正在读取视频信息")));
+                    let nh = h.clone();
+                    let note = move |s: String| {
+                        nh.update(|j| j.warn(s));
+                    };
+                    let pr = ytdlp::ProbeReq { url: &job.url, headers: &req.headers, item: req.playlist_item, record_live: false, note: &note, auth: None, extra: vec![] };
+                    if let ytdlp::Probed::Video { info, mut raw, .. } = ytdlp::probe_url(&ctx.tools, &ctx.http, &pr).await? {
+                        ytdlp::prepare_info(&mut raw);
+                        tokio::fs::write(&info_json, serde_json::to_vec(&raw).unwrap_or_default()).await?;
+                        h.update(|j| j.meta = Some(info));
+                        ij = Some(info_json.as_path());
+                    }
+                }
                 let tmp = ytdlp::temp_dir(&out_dir, &job.url, req.playlist_item);
                 h.update(|j| j.tmp = Some(tmp));
                 match ytdlp::download(&ctx, &job.url, ij, &out_dir, no_watermark).await {

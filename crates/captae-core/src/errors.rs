@@ -279,6 +279,16 @@ pub fn failure_in(e: &anyhow::Error) -> Option<&Failure> {
     e.chain().find_map(|c| c.downcast_ref::<Failure>().or_else(|| c.downcast_ref::<Tagged>().map(|t| &t.failure)))
 }
 
+/// 自己判断出错误码时（抖音从网页读取）：说法和 `classify` 认出这个错误码时一样（按网站），原文用 `raw`
+pub fn by_code(code: ErrorCode, url: &str, raw: impl Into<String>) -> Failure {
+    let raw = raw.into();
+    let (message, brief) = msg(code, url, &raw.to_lowercase());
+    let mut f = Failure::new(code, message, raw);
+    f.brief = brief;
+    f.site = site_name(url).map(str::to_string);
+    f
+}
+
 /// 任意错误 → 分类。错误链里已经有 Failure 就直接用；再看 io / reqwest 错误；最后按文字归类。
 pub fn from_anyhow(e: &anyhow::Error, url: &str) -> Failure {
     if let Some(f) = failure_in(e) {

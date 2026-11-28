@@ -185,6 +185,12 @@ pub fn prepare(dir: &Path, rules: &'static str) {
     }
 }
 
+/// 整块 webview 静音（看不见的读取窗口用，见 page_reader.rs；WebKitGTK 2.30 起有）
+pub fn mute(wv: &WebView) -> bool {
+    wv.set_is_muted(true);
+    true
+}
+
 /// 加到这块 webview 上（主线程）。规则还没编好时返回 false
 pub fn attach(wv: &WebView) -> bool {
     let f = FILTER.with(|x| x.get());

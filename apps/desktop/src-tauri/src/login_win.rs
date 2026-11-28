@@ -18,7 +18,7 @@ use captae_core::login::Cookie;
 use std::cell::RefCell;
 use std::rc::Rc;
 use webview2_com::Microsoft::Web::WebView2::Win32::{
-    ICoreWebView2, ICoreWebView2Controller, ICoreWebView2Cookie, ICoreWebView2CookieList, ICoreWebView2CookieManager, ICoreWebView2Settings2, ICoreWebView2_2, ICoreWebView2_22,
+    ICoreWebView2, ICoreWebView2Controller, ICoreWebView2Cookie, ICoreWebView2CookieList, ICoreWebView2CookieManager, ICoreWebView2Settings2, ICoreWebView2_2, ICoreWebView2_22, ICoreWebView2_8,
     COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL, COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL,
 };
 use webview2_com::{take_pwstr, GetCookiesCompletedHandler};
@@ -164,6 +164,11 @@ pub fn drop_protocol_filters(c: &ICoreWebView2Controller) -> bool {
 }
 
 /// 这块 webview 实际用的 User-Agent（WebView2 自己的，和 Edge 浏览器的写法一样）
+/// 整块 webview 静音（看不见的读取窗口用，见 page_reader.rs）。WebView2 1.0.1072 起才有，没有就返回 false
+pub fn mute(c: &ICoreWebView2Controller) -> bool {
+    unsafe { webview(c).and_then(|w| w.cast::<ICoreWebView2_8>()).and_then(|w| w.SetIsMuted(true)).is_ok() }
+}
+
 pub fn user_agent(c: &ICoreWebView2Controller) -> Option<String> {
     let s = unsafe { webview(c).ok()?.Settings().ok()?.cast::<ICoreWebView2Settings2>().ok()? };
     text(|p| unsafe { s.UserAgent(p) }).ok().filter(|s| !s.is_empty())

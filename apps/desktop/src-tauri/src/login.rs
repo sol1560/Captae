@@ -53,7 +53,7 @@ const STORE_IDLE: i64 = 120;
 const TOP: f64 = 58.0;
 const BOTTOM: f64 = 52.0;
 /// 网站那块最初打开的地址（见文件开头）
-const START: &str = "https://captae-login.invalid/";
+pub(crate) const START: &str = "https://captae-login.invalid/";
 
 type R<T> = Result<T, String>;
 fn e<E: std::fmt::Display>(x: E) -> String {
@@ -115,15 +115,60 @@ pub struct Login {
     /// Windows、Linux：上次读写登录存储的时间（秒），藏起来的那块据此闲久了关掉
     #[cfg(any(windows, target_os = "linux"))]
     last_use: std::sync::atomic::AtomicI64,
+    /// 正在关窗、等网站那块的空白页载入完（见 `destroy_window`）。网站那块的 on_page_load 看到空白页载入完就用掉它
+    unloaded: Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
 }
 
-/// 自己关掉登录窗口（先记下是自己关的）
+/// 关窗时最多等网站那块的空白页载入多久，过了就直接销毁
+const UNLOAD_WAIT: Duration = Duration::from_secs(2);
+
+/// 自己关掉登录窗口（先记下是自己关的）：先藏起来、卸掉网页，等网站那块换成空白页再真正销毁。
+///
+/// 为什么不直接销毁：macOS 上 wry 销毁 webview 时故意多 retain 一次（wry 0.55 的 `InnerWebView::drop`，0.57 也一样），
+/// WKWebView 永远不会释放，网页在看不见的地方接着跑：在抖音验证窗口里点「完成」以后视频还在出声，只能退出 Captae
+/// （2026-11-28 测试者录屏）。换成空白页再销毁，留下的只是一块空白的 webview。
+/// 跳空白页和销毁紧挨着发出去不行：空白页还没载入，窗口就没了，旧网页照样在跑
+/// （2026-11-28 实测，本机测试页不静音地播音频、每秒报到一次：改之前关窗以后 10 秒里还报到二十多次；紧挨着发也一样；等载入完再销毁就停了。
+/// 测试页静音时看不出来：WebKit 自己会暂停不在屏幕上的静音媒体）
 fn destroy_window(app: &AppHandle) {
+    let Some(w) = app.get_window(WINDOW) else { return };
+    let st = app.state::<Login>();
+    st.closing.store(true, Ordering::SeqCst);
+    st.closing_wait.store(true, Ordering::SeqCst);
+    let _ = w.hide();
+    let site = app.get_webview(SITE).is_some();
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    *st.unloaded.lock().unwrap() = Some(tx);
+    unload_pages(app);
+    // 销毁的是这一个窗口（拿着它本身，不按名字找），等待期间新开的登录窗口不会被误关
+    tauri::async_runtime::spawn(async move {
+        let t = std::time::Instant::now();
+        let ok = site && matches!(tokio::time::timeout(UNLOAD_WAIT, rx).await, Ok(Ok(())));
+        tracing::info!("登录窗口：网页{}卸掉，{} 毫秒后销毁", if ok { "已经" } else { "没等到" }, t.elapsed().as_millis());
+        let _ = w.destroy();
+    });
+}
+
+/// 退出 Captae 时：不等网页卸掉，马上销毁（不然应用退不出去；进程马上就结束了，网页跑不了多久）
+fn destroy_window_now(app: &AppHandle) {
     if let Some(w) = app.get_window(WINDOW) {
         let st = app.state::<Login>();
         st.closing.store(true, Ordering::SeqCst);
         st.closing_wait.store(true, Ordering::SeqCst);
         let _ = w.destroy();
+    }
+}
+
+/// 把两块 webview 里的网页卸掉：先停掉声音和视频（马上安静下来），再换成空白页。
+/// 在主线程上调时当场执行；在别的线程上调时按顺序排队
+fn unload_pages(app: &AppHandle) {
+    for label in [SITE, BAR] {
+        if let Some(w) = app.get_webview(label) {
+            let _ = w.eval("document.querySelectorAll('video,audio').forEach(m=>{try{m.muted=true;m.pause()}catch(e){}})");
+            if let Ok(u) = "about:blank".parse() {
+                let _ = w.navigate(u);
+            }
+        }
     }
 }
 
@@ -164,7 +209,7 @@ fn title_of(s: &Session) -> String {
 // ------------------------------------------------------------------ 登录存储
 
 #[cfg(target_os = "macos")]
-fn store_id() -> [u8; 16] {
+pub(crate) fn store_id() -> [u8; 16] {
     login::store_uuid(std::env::var_os("CAPTAE_HOME").map(std::path::PathBuf::from).as_deref())
 }
 
@@ -180,7 +225,7 @@ pub fn separate_store() -> bool {
 /// Windows、Linux：登录存储的目录 `<数据目录>/login-store`（测试版设了 CAPTAE_HOME 时跟着换，碰不到正式版的）。
 /// 只有自己能读（Linux 上 WebKitGTK 把 cookie 明文存在这里面的 `cookies` 文件里）
 #[cfg(any(windows, target_os = "linux"))]
-fn store_dir(app: &AppHandle) -> anyhow::Result<std::path::PathBuf> {
+pub(crate) fn store_dir(app: &AppHandle) -> anyhow::Result<std::path::PathBuf> {
     let a = app.try_state::<App>().ok_or_else(|| anyhow::anyhow!(tr!("Captae 还没启动好，请稍后再试")))?;
     let d = a.core.paths.data.join("login-store");
     std::fs::create_dir_all(&d)?;
@@ -587,7 +632,7 @@ pub fn prepare(app: &AppHandle) {
 /// 规则还没编好就等一会儿；一直挡不上返回 false（这时不打开网站）。
 /// Windows 上顺便读出 WebView2 实际的 User-Agent（下载时用同一个）
 #[cfg(any(target_os = "macos", windows, target_os = "linux"))]
-fn attach_blocker(wv: &tauri::Webview) -> bool {
+pub(crate) fn attach_blocker(wv: &tauri::Webview) -> bool {
     #[cfg(target_os = "linux")]
     let dir = filter_dir(wv.app_handle()).ok();
     for _ in 0..30 {
@@ -623,6 +668,36 @@ fn attach_blocker(wv: &tauri::Webview) -> bool {
     false
 }
 
+/// 让这块 webview 出不了声（看不见的读取窗口用，见 page_reader.rs；网页里的脚本静音之外再保险一层）。在主线程上调。
+/// - macOS 12 起：WKWebView 的 `setAllMediaPlaybackSuspended:`，媒体播放整个停住，网页自己也恢复不了（公开接口，先问它认不认）
+/// - Windows：WebView2 的 `IsMuted`；Linux：WebKitGTK 的 `is-muted`
+pub(crate) fn mute_media(pv: tauri::webview::PlatformWebview) -> bool {
+    #[cfg(target_os = "macos")]
+    unsafe {
+        use objc2::runtime::AnyObject;
+        let wk = pv.inner() as *mut AnyObject;
+        if wk.is_null() {
+            return false;
+        }
+        let wk = &*wk;
+        let ok: bool = objc2::msg_send![wk, respondsToSelector: objc2::sel!(setAllMediaPlaybackSuspended:completionHandler:)];
+        if ok {
+            let none: Option<&block2::Block<dyn Fn()>> = None;
+            let _: () = objc2::msg_send![wk, setAllMediaPlaybackSuspended: true, completionHandler: none];
+        }
+        ok
+    }
+    #[cfg(windows)]
+    return win::mute(&pv.controller());
+    #[cfg(target_os = "linux")]
+    return gtk::mute(&pv.inner());
+    #[cfg(not(any(target_os = "macos", windows, target_os = "linux")))]
+    {
+        let _ = pv;
+        false
+    }
+}
+
 // ------------------------------------------------------------------ 窗口
 
 /// 打开哪个地址：登录 → 常见网站用内置的登录页，其他网站打开链接本身；验证 → 任务本身的链接
@@ -643,7 +718,7 @@ fn target_url(key: &str, kind: Kind, page: Option<&str>) -> R<String> {
 }
 
 /// 网站那块能去哪：只许 http / https；iframe 里常见的 about: / data: / blob: 也放行。tauri: / asset: / file: / ipc: 这些都不许
-fn may_navigate(u: &tauri::Url) -> bool {
+pub(crate) fn may_navigate(u: &tauri::Url) -> bool {
     #[cfg(debug_assertions)]
     if u.host_str() == Some("captae-result.invalid") {
         // 开发调试：测试脚本把结果放在这个地址的参数里（见 debug_hooks），只记日志，不真的去
@@ -723,7 +798,14 @@ pub fn on_window_event(w: &tauri::Window, ev: &tauri::WindowEvent) {
             let a = app.clone();
             let _ = app.run_on_main_thread(move || relayout(&a));
         }
-        // 用户点了红色的关闭按钮：当成「取消」。Captae 自己关的（closing）不算
+        // 用户点了红色的关闭按钮：当成「取消」。先不让系统马上销毁，照 destroy_window 的顺序关（藏起来、卸掉网页、再销毁）
+        tauri::WindowEvent::CloseRequested { api, .. } => {
+            api.prevent_close();
+            if end(&app, End::Closed, None).is_none() {
+                destroy_window(&app);
+            }
+        }
+        // 别的原因销毁的（不是 Captae 自己关的）：也当成「取消」
         tauri::WindowEvent::Destroyed => {
             if !app.state::<Login>().closing.swap(false, Ordering::SeqCst) {
                 end(&app, End::Closed, None);
@@ -742,9 +824,11 @@ fn show(app: &AppHandle, s: &Session, target: &str) -> R<()> {
             site.navigate(target).map_err(e)?;
         }
         push_bar(app, s);
-        let _ = win.unminimize();
-        let _ = win.show();
-        let _ = win.set_focus();
+        if may_show() {
+            let _ = win.unminimize();
+            let _ = win.show();
+            let _ = win.set_focus();
+        }
         return Ok(());
     }
     #[allow(unused_mut)]
@@ -773,10 +857,15 @@ fn show(app: &AppHandle, s: &Session, target: &str) -> R<()> {
     #[allow(unused_mut)]
     let mut site = WebviewBuilder::new(SITE, WebviewUrl::External(START.parse().unwrap()))
         .on_navigation(may_navigate)
-        .on_page_load(|wv, p| {
-            if p.event() == PageLoadEvent::Started {
-                on_site_load(wv.app_handle(), p.url());
+        .on_page_load(|wv, p| match p.event() {
+            PageLoadEvent::Started => on_site_load(wv.app_handle(), p.url()),
+            // 关窗时换的空白页载入完了：可以销毁窗口了（见 destroy_window）
+            PageLoadEvent::Finished if p.url().scheme() == "about" => {
+                if let Some(tx) = wv.app_handle().state::<Login>().unloaded.lock().unwrap().take() {
+                    let _ = tx.send(());
+                }
             }
+            _ => {}
         })
         // 网页要开新窗口（target=_blank、window.open）：在这个窗口里打开
         .on_new_window(move |u, _| {
@@ -822,9 +911,22 @@ fn show(app: &AppHandle, s: &Session, target: &str) -> R<()> {
     let a = app.clone();
     let _ = app.run_on_main_thread(move || relayout(&a));
     wv.navigate(target).map_err(e)?;
-    let _ = win.show();
-    let _ = win.set_focus();
+    if may_show() {
+        let _ = win.show();
+        let _ = win.set_focus();
+    }
     Ok(())
+}
+
+/// 开发调试：设了 CAPTAE_TEST_NO_SHOW 时登录窗口照常建好、照常打开网页，只是不显示、不抢焦点
+/// （在别人正用着的电脑上实测，见 docs/DESIGN.md 第 11 节）。正式版一直显示
+fn may_show() -> bool {
+    #[cfg(debug_assertions)]
+    if std::env::var_os("CAPTAE_TEST_NO_SHOW").is_some() {
+        tracing::info!("测试开关 CAPTAE_TEST_NO_SHOW 开着：登录窗口不显示");
+        return false;
+    }
+    true
 }
 
 enum End {
@@ -923,9 +1025,10 @@ pub async fn login_open(app: AppHandle, st: State<'_, App>, url: Option<String>,
     }
     let before = all_cookies(&app).await.map(|c| login_marks(&key, &c)).unwrap_or_default();
     let st_login = app.state::<Login>();
-    // 上一个窗口刚被 Captae 关掉、还没真正关完：等它从 Tauri 里消失再开新的（最多 1 秒），不然会在快要关掉的窗口里打开网站
+    // 上一个窗口刚被 Captae 关掉、还没真正关完：等它从 Tauri 里消失再开新的，不然会在快要关掉的窗口里打开网站。
+    // 关窗要等网页卸掉（最多 UNLOAD_WAIT），所以最多等 3 秒
     if st_login.closing_wait.swap(false, Ordering::SeqCst) {
-        for _ in 0..20 {
+        for _ in 0..60 {
             if app.get_window(WINDOW).is_none() {
                 break;
             }
@@ -1083,7 +1186,7 @@ pub fn login_cancel(app: AppHandle) -> R<()> {
 /// 主窗口销毁（退出）时把登录窗口（和读登录存储用的隐藏窗口）也关掉，不然应用退不出去
 pub fn close_all(app: &AppHandle) {
     app.state::<Login>().cur.lock().unwrap().take();
-    destroy_window(app);
+    destroy_window_now(app);
     if let Some(w) = app.get_window(STORE) {
         let _ = w.destroy();
     }
@@ -1099,8 +1202,10 @@ pub fn close_all(app: &AppHandle) {
 /// - `{"top": true | false}`：主窗口和登录窗口浮在最上面 / 恢复（台前调度开着时实测截图用）
 /// - `{"paint": true}`：几块 webview 不管窗口被不被挡住都照常画（同上）
 /// - `{"closeWindow": true}`：像用户点红色按钮那样关掉登录窗口
+/// - `{"navigate": "网址"}`：让网站那块跳到这个网址（和 Captae 自己调 navigate 一样，测关窗前卸掉网页）
 /// - `{"setCookie": {"name", "value", "domain", "path"?}}`：往登录存储里放一个 cookie（假的登录 cookie，测「判断登录成功」）
 /// - `{"cookies": "域名"}`：把和这个域名有关的 cookie 的名字（不写值）写进日志
+/// - `{"pageRead": "网址", "secs"?: 秒}`：看不见的读取网页打开这个网址、等满几秒（测它出不出声，见 page_reader.rs）
 #[cfg(debug_assertions)]
 pub fn debug_hooks(app: AppHandle, data: std::path::PathBuf) {
     tauri::async_runtime::spawn(async move {
@@ -1152,6 +1257,10 @@ pub fn debug_hooks(app: AppHandle, data: std::path::PathBuf) {
                 let bar = app.get_webview(BAR).and_then(|w| Some((w.position().ok()?, w.size().ok()?)));
                 tracing::info!(target: "login-test", "bounds window={win:?} site={site:?} bar={bar:?}");
             }
+            if let Some(u) = v["navigate"].as_str().and_then(|u| u.parse::<tauri::Url>().ok()) {
+                let r = app.get_webview(SITE).map(|w| w.navigate(u).is_ok());
+                tracing::info!(target: "login-test", "navigate: {r:?}");
+            }
             if let Some(js) = v["evalBar"].as_str() {
                 if let Some(w) = app.get_webview(BAR) {
                     let _ = w.eval(js);
@@ -1186,6 +1295,16 @@ pub fn debug_hooks(app: AppHandle, data: std::path::PathBuf) {
                 #[cfg(target_os = "linux")]
                 let r = on_store(&app, tr!("读登录存储超时"), move |pv, done| gtk::add(&pv.inner(), &ck, done)).await;
                 tracing::info!(target: "login-test", "setCookie: {:?}", r.map_err(|e| e.to_string()));
+            }
+            if let Some(u) = v["pageRead"].as_str() {
+                // 看不见的读取网页打开这个网址，什么都不要、等满 secs 秒（测它出不出声、读完停没停，见 page_reader.rs）
+                let secs = v["secs"].as_u64().unwrap_or(8);
+                let c = captae_core::webpage::Capture { url: u.to_string(), timeout: Duration::from_secs(secs), judge: Box::new(|_, _| captae_core::webpage::Verdict::Wait) };
+                let r = match captae_core::webpage::reader() {
+                    Some(rd) => rd.capture(c).await.map(|s| s.count).map_err(|e| e.to_string()),
+                    None => Err("no reader".into()),
+                };
+                tracing::info!(target: "login-test", "pageRead: {r:?}");
             }
             if let Some(d) = v["cookies"].as_str() {
                 let all = all_cookies(&app).await.unwrap_or_default();

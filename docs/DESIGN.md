@@ -97,7 +97,7 @@ yt-dlp、aria2、ffmpeg、HTTP 状态码、io、网络库的报错都先归类�
 | code | 什么情况 | action |
 |---|---|---|
 | `need_login` | 年龄限制、会员、私密、付费内容只给试看片段 | `login` 登录这个网站 |
-| `need_verify` | 机器人检测、Cloudflare 一类的验证、抖音要新 cookies | `verify` 在网页里确认 |
+| `need_verify` | 机器人检测、Cloudflare 一类的验证、抖音的网页一直不给视频信息（4.8） | `verify` 在网页里确认 |
 | `drm` | DRM 保护（含 YouTube 付费电影、Widevine 加密的 M3U8） | 无 |
 | `geo` | 地区限制 | `retry` |
 | `blocked` | 证书不对、被网络拦截、网站拒绝这个网络（418） | `retry` |
@@ -177,6 +177,30 @@ Captae 自己的 HTTP 请求、aria2c（`--all-proxy`）、ffmpeg 和 yt-dlp（`
   数据目录 `work/` 里的中间文件（`subs-`、`share-subs-`、`whisper-`、`burn-`、`preset-` 开头的）做完、出错、取消都删，开始任务前再清一遍一天以前的残留。
 - 取消下载任务时删掉下到一半的文件和中间目录；已经进了素材库的文件（任务后面还在跑预设步骤时）不删。下载的断点续传文件、录直播的原始数据在退出时不删，下次接着用。
 
+### 4.8 抖音：在看不见的网页里读（`douyin.rs`、`webpage.rs`、桌面端 `page_reader.rs`）
+
+yt-dlp（2026.11.23）的抖音提取器只带视频编号去请求 `/aweme/v1/web/aweme/detail/`，抖音要网页自己算的签名参数（a_bogus 等），不带就回 403、模拟 Safari 时 504，
+cookies 多新、登没登录都一样（源码里写着 TODO）。网页自己请求到的详情里有各档清晰度的 mp4 直链（h264 / h265 + aac，不带 Referer 也能下），所以桌面端改成从网页里拿：
+
+- **什么时候走这条路**：`ytdlp::probe_url` 开头先问 `douyin::probe`：桌面端（登记了看不见的网页）、链接是抖音的视频（`douyin.com/video/<id>`、`iesdouyin.com/share/video/<id>`、`?modal_id=<id>`）
+  或分享短链（`v.douyin.com`，先跟一次跳转）。图集、直播、命令行、桌面端没开时 MCP 和插件宿主自己读、手机端，照旧交给 yt-dlp。读取任务、插件的清晰度菜单（`/v1/probe`）、AI 助手都走 `probe_url`，不用分别改。
+- **看不见的网页**（`page_reader.rs`）：单独一个从不显示的窗口，一块 webview，和登录窗口的网站那块同一份存储（登录过、验证过的状态都在）、同样的 User-Agent 和拦截规则，什么命令都不能调。
+  打开 `https://www.douyin.com/video/<id>`，页面一开始挂的脚本（`webpage::init_script`）包住 fetch 和 XHR，接住详情接口的回应，跳到 `https://captae-page.invalid/r?u=<接口地址>#<回应 base64url>`，
+  桌面端在导航检查里认出这个地址、拦下（网页不动），取出回应。页面不能调 Tauri 命令，所以用跳转把内容交出来；`.invalid` 永远不会真的打开。
+- **出不了声**：Tauri 不让关自动播放（wry 默认开着），这块 webview 两层静音：脚本把 `HTMLMediaElement` 的 `muted` 锁成 true、`AudioContext` 一建好就挂起；
+  macOS 12 起再用 WKWebView 的 `setAllMediaPlaybackSuspended:` 把媒体播放整个停住，Windows 用 WebView2 的 `IsMuted`，Linux 用 WebKitGTK 的 `is-muted`，每次开始载入都再来一次。
+  实测（本机测试页每秒都试着取消静音、重新播放）：媒体一直是静音、停住的，WebAudio 一直是 suspended。后台不限流（`background_throttling` Disabled，macOS 14 起生效），窗口从不显示网页也照常跑。
+- **一次只读一个网页**，读完先在页面里执行 `webpage::STOP_SCRIPT`（不再往外交）、换成空白页，等空白页载入完才读下一个：网页排着要交的回应也是跳转，会顶掉紧接着发的导航（实测过）。
+  窗口建好以后留到退出 Captae（macOS 上 wry 销毁 webview 会泄漏一块，见 5.1「关窗先卸掉网页」）。
+- **被抖音拦下**：网页自己的详情请求有时回 `Blocked by ArgusSecurityPlugin Sign Invalid`（网页改播推荐流）。同一个网页里被拦 3 次就不等了，重新打开，最多开 3 次，每次最多等 20 秒；
+  都不行报 `need_verify`（在登录窗口里打开一次抖音网页，读取用的是同一份存储）。实测读一次一般 2–4 秒；离屏连开 8 次被拦 3 次，重开一次都拿到了。
+- **换成 yt-dlp 的信息 JSON**（`douyin::to_info`）：格式表照 yt-dlp `_parse_aweme_video_app`：每档 `bit_rate` 一个格式，h265 照标，字节自家的 bytevc2（h266）不要，
+  带水印的 `download_addr`（720×720 方块）不要；镜像地址先用 CDN 的。码率比最好的 h264 还低的 h265 也不要：抖音的 2160p、1440p 多半是低码率 h265（4K 只有 2.4 Mbps，1080p 的 h264 有 5.8 Mbps），
+  存成 MP4 时又优先 h264，留着的话清晰度菜单最前面是「2160p」、选了下到的却是 1080p。格式只带 `Referer`，User-Agent 交给 yt-dlp（带登录状态时它按 `--impersonate` / `--user-agent` 定）。
+  标题取简介里第一个话题（#）、@人 之前的部分，完整的放进简介。之后选清晰度、下载、转格式、入库都照旧走 `--load-info-json`。详情说视频没了（`aweme_detail` 是 null）报 `unavailable`，是图集报图片帖。
+- **信息过期**：直链几小时后失效，下载前信息超过 30 分钟（排队、暂停久了）时 yt-dlp 自己重新解析会失败，所以抖音的任务这时从网页重新读一次（`queue.rs` 下载那一步）。
+- Windows、Linux 编译通过，没在真系统上跑过：网页那块用登录存储的目录（`<数据目录>/login-store`），设置和登录窗口那块一样（WebView2 同一个用户数据目录的几块 webview 设置必须一致）。
+
 ## 5. 登录和人机验证
 
 原则：用户自己登录、自己点验证，Captae 只是把登录状态交给下载引擎。不自动破解验证码，不绕过 DRM。登录状态有三个来源，按这个顺序用：
@@ -207,6 +231,9 @@ Captae 自己的 HTTP 请求、aria2c（`--all-proxy`）、ffmpeg 和 yt-dlp（`
   测试版（设了 `CAPTAE_HOME`）的存储标识由数据目录算出来，碰不到正式版的登录状态。`<数据目录>/logins.json` 只记登录过哪些网站和时间，没有 cookie。
 - **判断登录成功**：每秒读一次，这个网站的登录 cookie（YouTube `SAPISID`、B 站 `SESSDATA`、X `auth_token`、Instagram `sessionid`、抖音 / TikTok `sid_tt`……）出现或变了 → 记下、重试等着的任务、关窗。
   打开前就登录着的不自动关，等用户点「完成」；人机验证没有固定的 cookie，也等「完成」。「取消」、红色关闭按钮 = 关窗，任务留在失败。
+- **关窗先卸掉网页**：macOS 上 wry 销毁 webview 时会多 retain 一次，WKWebView 永远不释放，网页在看不见的地方接着跑（抖音验证窗口关了视频还在出声）。
+  所以关窗（完成、取消、红色按钮，红色按钮先 `prevent_close`）一律先藏起窗口、停掉页面里的声音和视频、两块 webview 跳到 `about:blank`，
+  等网站那块报告空白页载入完（实测十几毫秒，最多等 2 秒）再销毁。跳空白页和销毁紧挨着发不行：空白页没来得及载入，旧网页照样在跑。退出 Captae 时直接销毁。
 - **cookies 临时文件**：下载时把要用的 cookies 写成 Netscape 格式的临时文件（目录 700、文件建的时候就是 600），每个 yt-dlp / aria2 进程单独一份，进程结束就删；
   启动时删 10 分钟以前的残留。报错原文里的 cookie 值抹成 `***`。值里有制表符、换行的 cookie 跳过（yt-dlp 会把格式不对的整行打进报错）。
   登录窗口那条路给 yt-dlp 加 `--impersonate safari:macos`（这个 yt-dlp 支持时），插件那条路是 Chrome 一家的浏览器就只加 `--impersonate chrome:macos`、不另加 `--user-agent`（两个一起加 B 站会回空的格式列表）。
@@ -322,12 +349,14 @@ assets/               字体（Geist）、上手引导的剧照、站点图标
 - **只在调试版里有的开关和钩子**（`cfg(debug_assertions)`，正式版不编译这些代码）：
   - `CAPTAE_TEST_ONTOP`：主窗口和登录窗口浮在最上面、被挡住也照常画。台前调度开着时，从终端启动的窗口抢不到前台、会被收进侧边条，WebKit 也不画。
     **别人正用着电脑时不要开**：窗口一旦被显示出来就盖在最上面。
-  - `CAPTAE_TEST_NO_SHOW`：插件、命令行要求打开窗口时（「在 Captae 里查看」「打开 Captae」、打开某条素材）只让页面跳过去，不把窗口拿到前面。
+  - `CAPTAE_TEST_NO_SHOW`：插件、命令行要求打开窗口时（「在 Captae 里查看」「打开 Captae」、打开某条素材）只让页面跳过去，不把窗口拿到前面；
+    登录窗口照常建好、照常打开网页，只是不显示（测关窗以后网页停没停：打开一个本机测试页，不静音地播一段全是零的音频、每秒向本机服务器报到，关窗后数还报到几次）。
   - `CAPTAE_TEST_NO_CLIPBOARD`：不写系统剪贴板（「发给 AI」、复制文字改成记一行日志）。实测「发给 AI」一律先打开它。
   - `CAPTAE_TEST_CLIPBOARD=<文件>`：用这个文件代替系统剪贴板（剪贴板提示、「粘贴」读它；改一次文件算复制一次），实测剪贴板提示不碰用户的剪贴板。
     `CAPTAE_TEST_CLIP_SECS=<秒>`：把剪贴板提示的「1 分钟内」改短。`<数据目录>/clip-test.json` 写 `{"focus": true}` / `{"focus": false}`：当作主窗口拿到 / 失去焦点（藏着的测试版拿不到真焦点）。
   - `<数据目录>/eval.js`：写进去的 JS 会在主窗口里执行一次（自动化走查界面用；结果用 `invoke('js_log', …)` 写进日志再读）。
-  - `<数据目录>/login-test.json`：登录窗口的测试钩子（在网站那块或工具条里执行 JS、往存储里放假的登录 cookie、列出 cookie 名字、改窗口大小、关窗……）。
+  - `<数据目录>/login-test.json`：登录窗口的测试钩子（在网站那块或工具条里执行 JS、让网站那块跳到某个网址、往存储里放假的登录 cookie、列出 cookie 名字、改窗口大小、关窗……）。
+    `{"pageRead": "网址", "secs": 8}` 让看不见的读取网页（4.8）打开一个网址、等满几秒，测它出不出声、读完停没停。
     `{"paint": true}` 只让 WebKit 不管窗口被不被挡住都照常画；**不要写 `{"top": true}`**，它会先藏再显示主窗口、浮在最上面。
 - **在别人正用着的电脑上实测**（测试版的窗口要是浮到屏幕上，会被当成自己的 Captae 来用）：
   - 测试版放进自己的 .app 外壳（标识和编译时的一样），Info.plist 写 `LSUIElement`（不进程序坞，用户看不到也点不到）；入口脚本里设 `CAPTAE_HOME`、`CAPTAE_TEST_NO_SHOW`、`CAPTAE_TEST_NO_CLIPBOARD`，不设 `CAPTAE_TEST_ONTOP`。
