@@ -58,6 +58,8 @@ pub struct Inner {
     /// 点「重新打开」装 Captae 的更新之前停下来、等新版打开后接着下的任务（`hold_for_update`）。
     /// 写进 queue.json 那一条的 `held`：任务编号每次打开都重新排（恢复时逐条 `add`），所以记号跟着任务走，不记编号
     held: Mutex<std::collections::HashSet<JobId>>,
+    /// `held` 里从 queue.json 恢复出来的那些（恢复时省掉了「点继续接着下」，不接着下时 release_held 补上）
+    restored: Mutex<std::collections::HashSet<JobId>>,
     /// 每个任务结束时通知等待者（agent 的同步下载调用）
     done: Mutex<HashMap<JobId, Vec<tokio::sync::oneshot::Sender<Job>>>>,
     /// 登录窗口的存储（桌面端接上；命令行、MCP 自己起的进程没有）
@@ -159,6 +161,7 @@ impl Core {
             owns_queue: o.restore,
             restoring: AtomicBool::new(false),
             held: Mutex::new(std::collections::HashSet::new()),
+            restored: Mutex::new(std::collections::HashSet::new()),
             done: Mutex::new(HashMap::new()),
             login_store: RwLock::new(None),
             logins: Mutex::new(logins),
@@ -591,15 +594,19 @@ impl Core {
     }
 
     /// 去掉 `hold_for_update` 做的记号。`resume`：其中还暂停着的接着下（新版打开后确认真的更新过了；或者没装成、留在这个进程里继续）。
-    /// 返回接着下的任务
+    /// 不接着下的（版本没变的重新打开）照平时一样暂停着，补上恢复队列时为它省掉的那句「点继续接着下」。返回接着下的任务
     pub fn release_held(&self, resume: bool) -> Vec<JobId> {
         let ids: Vec<JobId> = self.held.lock().unwrap().drain().collect();
         let mut out = vec![];
         for id in ids {
-            if resume && self.job(id).is_some_and(|j| j.state == JobState::Pause && !j.choose) && self.act(id, JobAction::Resume).is_ok() {
+            let paused = self.job(id).is_some_and(|j| j.state == JobState::Pause && !j.choose);
+            if resume && paused && self.act(id, JobAction::Resume).is_ok() {
                 out.push(id);
+            } else if paused && self.restored.lock().unwrap().contains(&id) {
+                self.handle(id).update(|j| j.log(tr!("Captae 重新打开，任务已恢复，点继续接着下")));
             }
         }
+        self.restored.lock().unwrap().clear();
         self.persist_queue();
         out
     }
@@ -1612,6 +1619,9 @@ impl Core {
             if let Ok(j) = self.add(req) {
                 let title = x["title"].as_str().map(str::to_string);
                 let saved = &x["job"];
+                // 点「重新打开」装更新之前停下来的（hold_for_update）：恢复成暂停，但不写「点继续接着下」，桌面端确认更新过以后马上接着下
+                // （记录里接着就是「继续」，写了反倒前后矛盾）；没接着下的由 release_held 补上这一句
+                let held = x["held"].as_bool() == Some(true);
                 let st = saved["state"].as_str().unwrap_or("");
                 self.handle(j.id).update(|j| {
                     j.boost = false;
@@ -1689,12 +1699,15 @@ impl Core {
                         j.path = saved["path"].as_str().map(PathBuf::from).filter(|p| p.exists());
                         // 已经进了素材库的（退出时正在执行预设里下载之后的步骤）也记回来：取消时靠它知道 path 是素材、不能删（cleanup_partial）
                         j.asset_id = saved["assetId"].as_i64();
-                        j.log(tr!("Captae 重新打开，任务已恢复，点继续接着下"));
+                        if !held {
+                            j.log(tr!("Captae 重新打开，任务已恢复，点继续接着下"));
+                        }
                     }
                 });
-                // 点「重新打开」装更新之前停下来的（hold_for_update）：记号跟着新编号走，桌面端确认更新过以后接着下
-                if x["held"].as_bool() == Some(true) && self.job(j.id).is_some_and(|j| j.state == JobState::Pause) {
+                // 记号跟着新编号走（任务号每次打开都重新排）
+                if held && self.job(j.id).is_some_and(|j| j.state == JobState::Pause) {
                     self.held.lock().unwrap().insert(j.id);
+                    self.restored.lock().unwrap().insert(j.id);
                 }
             }
         }
@@ -2074,8 +2087,15 @@ mod tests {
         std::fs::write(p2.data.join("queue.json"), serde_json::to_vec(&q2).unwrap()).unwrap();
         let core2 = Core::open(Options { paths: p2.clone(), sidecar_dir: None, restore: true }).await.unwrap();
         assert_ne!(by(&core2, "下载中").id, by(&core, "下载中").id, "编号换过了");
+        // 记录的最后一句：带记号的还是「先停下，新版打开后接着下」（恢复时不写「点继续接着下」，接着就是「继续」，写了前后矛盾）
+        let last = |c: &Core, t: &str| by(c, t).log.last().map(|l| l.1.clone()).unwrap_or_default();
+        let restore_line = tr!("Captae 重新打开，任务已恢复，点继续接着下");
+        let hold_line = tr!("重新打开 Captae 装更新：先停下，新版打开后接着下");
+        assert_eq!(last(&core2, "下载中"), hold_line);
+        assert_eq!(last(&core2, "用户暂停的"), restore_line, "没记号的照平时写");
         let resumed = core2.release_held(true);
         assert_eq!(resumed.len(), 2);
+        assert_eq!(last(&core2, "下载中"), tr!("继续§任务记录"));
         assert_eq!(by(&core2, "下载中").state, JobState::Queue);
         assert_eq!(by(&core2, "排队").state, JobState::Queue);
         assert_eq!(by(&core2, "用户暂停的").state, JobState::Pause, "用户自己暂停的照旧暂停着");
@@ -2092,6 +2112,7 @@ mod tests {
         let core3 = Core::open(Options { paths: p3.clone(), sidecar_dir: None, restore: true }).await.unwrap();
         assert!(core3.release_held(false).is_empty());
         assert_eq!(by(&core3, "下载中").state, JobState::Pause);
+        assert_eq!(last(&core3, "下载中"), restore_line, "照旧暂停着的补上「点继续接着下」");
     }
 
     #[tokio::test]
