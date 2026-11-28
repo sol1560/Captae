@@ -8,6 +8,10 @@ license.workspace = true
 name = "captae"
 path = "src/main.rs"
 
+[build-dependencies]
+# Windows 上给 captae.exe 写版本资源（build.rs）。桌面端的 tauri-build 已经用着它，不是新加的依赖
+tauri-winres = "0.3"
+
 [dependencies]
 captae-core = { path = "../captae-core" }
 anyhow.workspace = true

@@ -751,6 +751,7 @@ dependencies = [
  "captae-core",
  "serde",
  "serde_json",
+ "tauri-winres",
  "tokio",
  "tracing",
  "tracing-subscriber",
