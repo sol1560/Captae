@@ -512,8 +512,10 @@ Linux 的附带程序不放 `/usr/bin`：会和系统的 ffmpeg、aria2c 冲突�
   WebKitGTK 放不了 asset 协议给的视频（一律 FormatError），素材库详情里的 `<video>`、`<audio>` 在 Linux 上改用桌面端起的本机小服务
   （`media_server.rs`：只听 127.0.0.1、地址带每次启动随机的令牌、只给 asset 协议放行范围里页面要过的文件、支持 Range），
   `tauri.linux.conf.json` 的 CSP 为它在 `media-src` 里加了 `http://127.0.0.1:*`（改主配置的 CSP 时这里要跟着改）。AppImage 分两步打：先让 Tauri / linuxdeploy 打不带附带程序的（linuxdeploy 处理不了 yt-dlp 目录版里的库），再解开、放进附带程序、用原来的 runtime 重新拼。
-  AppImage 随带的系统库清单在 `licenses/linux-appimage-libs.md`，换了打包机器的系统或 Tauri 版本要在打包机上跑 `scripts/gen-appimage-libs.sh` 重新生成
+  AppImage 随带的系统库清单在 `licenses/linux-appimage-libs.md`，换了打包机器的系统或 Tauri 版本要在 Ubuntu 22.04 上跑 `scripts/gen-appimage-libs.sh` 重新生成
   （0.3.0 升 Tauri 2.12 时忘了，打包检查第 7 项没过；脚本找库属于哪个包时不算打包机上装着的 Captae 自己的 deb）。
+  随带哪些看打包机器上装了什么，发版的包在 GitHub 的机器上打、和本机打的不一样（0.2.0 的 Release 包带 libwayland-client.so.0，Devin 那台打的不带、多 5 个 GIO 模块），
+  所以把本机新打的和上一版 Release 上的 AppImage 一起给脚本，列两边的并集（`gen-appimage-libs.sh local.AppImage v<上一版>.AppImage`）。
 - 两边都和 macOS 一样去掉本机路径（`--remap-path-prefix`；Windows 另加 `/PDBALTPATH:%_PDB%`）。
 - 许可证（`licenses/`）：aria2 在链接 OpenSSL 3 的 macOS、Linux 构建上按 GPL-3.0-or-later 分发（OpenSSL 3 是 Apache-2.0，和 GPLv2 不兼容），Windows 构建用 WinTLS 按 GPLv2+。
   `scripts/gen-licenses.py` 按三个平台汇总 Rust 依赖（「平台」一列），跑之前要 `cargo fetch --locked`。
