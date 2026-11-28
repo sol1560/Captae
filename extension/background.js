@@ -305,7 +305,9 @@ function browserName() {
 async function connState() {
   let r;
   try {
-    const h = await native('hello', { version: VERSION, browser: browserName() }, 4000);
+    // 最多等 10 秒：Captae 开着但正忙时，宿主要问它几次（native_host.rs 的 connect_patient，最多约 7 秒）才回话。
+    // 原来只等 4 秒，机器很忙时开着的 Captae 会被当成「没有打开」，跟着换版本（followApp）也要拖到下一分钟。Captae 真没开时宿主马上就回
+    const h = await native('hello', { version: VERSION, browser: browserName() }, 10000);
     r = { conn: h.app ? 'ok' : 'off', clipboardApp: !!h.clipboard, hostVersion: h.version || '', appVersion: h.appVersion || '' };
     syncLang(h.lang).catch(() => {});
     followApp(h.appVersion || h.version || '').catch(() => {});

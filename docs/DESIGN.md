@@ -594,7 +594,7 @@ Linux 的附带程序不放 `/usr/bin`：会和系统的 ffmpeg、aria2c 冲突�
 - 宿主：桌面端的 `/v1/hello` 回复带上自己的版本，宿主的 `hello` 回复里给插件 `appVersion`。宿主发现桌面端比自己新时，回完手头的消息就退出（`native_host.rs` 的 `stale`），
   插件下次连接时浏览器起的是新程序。只在桌面端比宿主新时退出，不会来回重启。
 - 插件（`background.js` 的 `followApp`）：Captae 比插件新、插件又是「加载已解压」装的（`management.getSelf().installType === "development"`）时，`chrome.runtime.reload()` 从文件夹重新读一次；
-  同一个版本只试一次（`storage.local` 的 `reloadedFor`）。重新加载后还是旧的（用户是从别的文件夹装的），记下 `stale`，工具栏面板里说「插件比 Captae 旧，到扩展程序页面点「重新加载」」并能打开那个页面，
+  同一个版本只试一次（`storage.local` 的 `reloadedFor`）。插件等 hello 的回话最多 10 秒（原来 4 秒：Captae 正忙时宿主要问几次、最多约 7 秒才回，机器很忙时开着的 Captae 会被当成没开，换版本也跟着晚一分钟）。重新加载后还是旧的（用户是从别的文件夹装的），记下 `stale`，工具栏面板里说「插件比 Captae 旧，到扩展程序页面点「重新加载」」并能打开那个页面，
   桌面端「浏览器插件」页也这么说。网页里的旧部件在插件重新加载后自己拆掉（`content.js` 的 teardown，原来就有）。
 - Linux 的 AppImage：给用户「加载已解压」的插件文件夹原来在 AppImage 的临时挂载点里（`/tmp/.mount_xxx/…`），Captae 一退出就没了。
   改成和宿主一样拷一份到数据目录的 `extension/`（`ext_cmds::stable_extension_dir`），内容变了才重拷，插件从这里重新加载自己。
