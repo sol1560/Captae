@@ -360,5 +360,6 @@
   "读不了 {browser} 里的登录状态：{browser} 开着时不让别的程序读。关掉 {browser} 再试，或者在 Captae 里登录这个网站": "Can't read sign-in from {browser}: other apps can't read it while {browser} is open. Quit {browser} and try again, or sign in to this site in Captae",
   "读不了 {browser} 里的登录状态：系统的密钥环（GNOME Keyring / KWallet）里取不到解密用的密钥。确认密钥环已经解锁，或者在 Captae 里登录这个网站": "Can't read sign-in from {browser}: couldn't get its key from the system keyring (GNOME Keyring / KWallet). Make sure the keyring is unlocked, or sign in to this site in Captae",
   "没找到 {browser} 的登录信息：{browser} 没装，或者装在了 yt-dlp 找不到的地方（Flatpak、Snap 版）": "Couldn't find sign-in data for {browser}: it isn't installed, or it's installed where yt-dlp can't find it (Flatpak or Snap)",
-  "{reason}。这次先不带它的登录状态再读一次": "{reason}. Trying again this time without that browser's sign-in"
+  "{reason}。这次先不带它的登录状态再读一次": "{reason}. Trying again this time without that browser's sign-in",
+  "重新打开 Captae 装更新：先停下，新版打开后接着下": "Paused to relaunch Captae for the update. It continues once the new version opens"
 }

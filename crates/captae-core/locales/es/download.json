@@ -360,5 +360,6 @@
   "读不了 {browser} 里的登录状态：{browser} 开着时不让别的程序读。关掉 {browser} 再试，或者在 Captae 里登录这个网站": "No se puede leer la sesión de {browser}: {browser} no deja que otros programas la lean mientras está abierto. Cierra {browser} y vuelve a intentarlo, o inicia sesión en este sitio en Captae",
   "读不了 {browser} 里的登录状态：系统的密钥环（GNOME Keyring / KWallet）里取不到解密用的密钥。确认密钥环已经解锁，或者在 Captae 里登录这个网站": "No se puede leer la sesión de {browser}: no se pudo obtener la clave de descifrado del llavero del sistema (GNOME Keyring / KWallet). Comprueba que el llavero esté desbloqueado o inicia sesión en este sitio en Captae",
   "没找到 {browser} 的登录信息：{browser} 没装，或者装在了 yt-dlp 找不到的地方（Flatpak、Snap 版）": "No se encontraron los datos de sesión de {browser}: {browser} no está instalado o está instalado donde yt-dlp no lo encuentra (versión Flatpak o Snap)",
-  "{reason}。这次先不带它的登录状态再读一次": "{reason}. Volviendo a intentarlo, esta vez sin la sesión de ese navegador"
+  "{reason}。这次先不带它的登录状态再读一次": "{reason}. Volviendo a intentarlo, esta vez sin la sesión de ese navegador",
+  "重新打开 Captae 装更新：先停下，新版打开后接着下": "En pausa para reiniciar Captae y actualizarlo. Continuará cuando se abra la nueva versión"
 }

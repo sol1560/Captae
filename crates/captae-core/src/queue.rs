@@ -55,6 +55,9 @@ pub struct Inner {
     owns_queue: bool,
     /// 正在从 queue.json 恢复：这期间不写盘（见 restore_queue）
     restoring: AtomicBool,
+    /// 点「重新打开」装 Captae 的更新之前停下来、等新版打开后接着下的任务（`hold_for_update`）。
+    /// 写进 queue.json 那一条的 `held`：任务编号每次打开都重新排（恢复时逐条 `add`），所以记号跟着任务走，不记编号
+    held: Mutex<std::collections::HashSet<JobId>>,
     /// 每个任务结束时通知等待者（agent 的同步下载调用）
     done: Mutex<HashMap<JobId, Vec<tokio::sync::oneshot::Sender<Job>>>>,
     /// 登录窗口的存储（桌面端接上；命令行、MCP 自己起的进程没有）
@@ -155,6 +158,7 @@ impl Core {
             tasks: crate::tasks::Tasks::default(),
             owns_queue: o.restore,
             restoring: AtomicBool::new(false),
+            held: Mutex::new(std::collections::HashSet::new()),
             done: Mutex::new(HashMap::new()),
             login_store: RwLock::new(None),
             logins: Mutex::new(logins),
@@ -397,21 +401,7 @@ impl Core {
                 if self.job(id).is_some_and(|j| j.recording() || j.rec.as_ref().is_some_and(|r| r.stopping)) {
                     return Err(anyhow!(tr!("录直播不能暂停：点「停止并保存」把录到的部分放进素材库，或者「取消」")));
                 }
-                self.stop(id);
-                h.update(|j| {
-                    j.state = JobState::Pause;
-                    j.speed = 0.0;
-                    j.boost = false;
-                    for s in j.segs.iter_mut() {
-                        if matches!(s, SegState::Loading | SegState::Retrying) {
-                            *s = SegState::Wait;
-                        }
-                    }
-                    if j.phase == Phase::Pick {
-                        j.pick_until = None;
-                    }
-                    j.log(tr!("已暂停§任务记录"));
-                });
+                self.pause_now(id, tr!("已暂停§任务记录"));
             }
             JobAction::Resume if st == JobState::Pause => {
                 h.update(|j| {
@@ -562,6 +552,58 @@ impl Core {
         }
     }
 
+    /// 停下一个正在下载 / 排队的任务，记成「暂停」（和用户点暂停一样：下到一半的文件留着，继续时接着下）
+    fn pause_now(&self, id: JobId, log: String) {
+        self.stop(id);
+        self.handle(id).update(|j| {
+            j.state = JobState::Pause;
+            j.speed = 0.0;
+            j.boost = false;
+            for s in j.segs.iter_mut() {
+                if matches!(s, SegState::Loading | SegState::Retrying) {
+                    *s = SegState::Wait;
+                }
+            }
+            if j.phase == Phase::Pick {
+                j.pick_until = None;
+            }
+            j.log(log);
+        });
+    }
+
+    /// 点「重新打开」装 Captae 的更新之前（桌面端 app_update.rs）：正在下载、排队的任务停下来记成「暂停」、做上记号，马上写进 queue.json；
+    /// 新版打开后桌面端调 `release_held(true)` 把它们接着下。录直播的不停（重新打开后整理录到的部分），等选播放列表条目的不动。
+    /// 不先停下来的话，退出前结束 aria2c、yt-dlp 会被当成下载出错：Windows 上更新插件先收拾（结束附带程序）再去运行安装程序，
+    /// 中间这段时间里任务被记成「失败」写进 queue.json，新版打开后就不会接着下（Devin 的 Windows U4）。返回停下来的任务数
+    pub fn hold_for_update(&self) -> usize {
+        let ids: Vec<JobId> = self
+            .jobs()
+            .into_iter()
+            .filter(|j| matches!(j.state, JobState::Run | JobState::Queue) && j.rec.is_none() && !j.choose)
+            .map(|j| j.id)
+            .collect();
+        for &id in &ids {
+            self.pause_now(id, tr!("重新打开 Captae 装更新：先停下，新版打开后接着下"));
+        }
+        self.held.lock().unwrap().extend(ids.iter().copied());
+        self.persist_queue();
+        ids.len()
+    }
+
+    /// 去掉 `hold_for_update` 做的记号。`resume`：其中还暂停着的接着下（新版打开后确认真的更新过了；或者没装成、留在这个进程里继续）。
+    /// 返回接着下的任务
+    pub fn release_held(&self, resume: bool) -> Vec<JobId> {
+        let ids: Vec<JobId> = self.held.lock().unwrap().drain().collect();
+        let mut out = vec![];
+        for id in ids {
+            if resume && self.job(id).is_some_and(|j| j.state == JobState::Pause && !j.choose) && self.act(id, JobAction::Resume).is_ok() {
+                out.push(id);
+            }
+        }
+        self.persist_queue();
+        out
+    }
+
     fn stop(&self, id: JobId) {
         if let Some(r) = self.running.lock().unwrap().remove(&id) {
             r.cancel.cancel();
@@ -697,6 +739,12 @@ impl Core {
                 _ = cancel.cancelled() => None,
             };
             let Some(r) = r else { return };
+            // Captae 正在退出（`tools::kill_all` 已经开始结束附带程序）：aria2c、yt-dlp、ffmpeg 是被结束的，不是下载出错，
+            // 不记成失败、不写 queue.json，留着开始下载时存的「下载中」，下次打开恢复成暂停（录直播的照旧整理录到的部分）。
+            // Windows 上装更新时尤其要紧：更新插件先收拾再运行安装程序，这段时间里任务会被记成失败（Devin 的 Windows U4）
+            if r.is_err() && crate::tools::quitting() {
+                return;
+            }
             core.running.lock().unwrap().remove(&id);
             let h = core.handle(id);
             match r {
@@ -1525,6 +1573,7 @@ impl Core {
             return;
         }
         let jobs = self.jobs();
+        let held = self.held.lock().unwrap().clone();
         // 未完成的全部保留；已完成的只留最近 30 个，让「已完成」页签重开后不是空的
         let done: Vec<_> = jobs.iter().filter(|j| j.state == JobState::Done).rev().take(30).collect();
         let v: Vec<serde_json::Value> = jobs
@@ -1532,7 +1581,13 @@ impl Core {
             .filter(|j| j.state.is_active() || j.state == JobState::Failed)
             .chain(done.into_iter().rev())
             // 登录状态（插件带来的 cookies、Cookie 请求头）不写进 queue.json
-            .map(|j| serde_json::json!({"req": j.req.without_secrets(), "title": j.title, "pri": j.pri, "err": j.err, "job": j}))
+            .map(|j| {
+                let mut x = serde_json::json!({"req": j.req.without_secrets(), "title": j.title, "pri": j.pri, "err": j.err, "job": j});
+                if held.contains(&j.id) {
+                    x["held"] = true.into();
+                }
+                x
+            })
             .collect();
         let _ = std::fs::write(self.queue_file(), serde_json::to_vec(&v).unwrap_or_default());
     }
@@ -1637,6 +1692,10 @@ impl Core {
                         j.log(tr!("Captae 重新打开，任务已恢复，点继续接着下"));
                     }
                 });
+                // 点「重新打开」装更新之前停下来的（hold_for_update）：记号跟着新编号走，桌面端确认更新过以后接着下
+                if x["held"].as_bool() == Some(true) && self.job(j.id).is_some_and(|j| j.state == JobState::Pause) {
+                    self.held.lock().unwrap().insert(j.id);
+                }
             }
         }
     }
@@ -1975,6 +2034,64 @@ mod tests {
         assert!(lines[2].contains("-J") && lines[2].contains("player_client"));
         assert!(!lines[3].contains("-J") && lines[3].contains("player_client"));
         assert!(file.exists());
+    }
+
+    /// 点「重新打开」装更新：正在下载、排队的停下来做记号，新版打开后按记号接着下。
+    /// 任务编号每次打开都重新排（Devin 的 Linux D5：caf2129 记的是旧编号，新版里对不上，任务一直暂停着）
+    #[tokio::test]
+    async fn held_for_update_follows_jobs_across_restart() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::portable(dir.path());
+        paths.ensure().unwrap();
+        std::fs::write(paths.settings(), br#"{"autoUpdate": false, "ytdlpPath": "/nonexistent/captae-test/yt-dlp", "aria2Path": "/nonexistent/captae-test/aria2c"}"#).unwrap();
+        let saved = serde_json::json!([
+            {"req": {"url": "https://example.invalid/a.mp4"}, "title": "下载中", "job": {"state": "run", "phase": "dl", "log": []}},
+            {"req": {"url": "https://example.invalid/b"}, "title": "排队", "job": {"state": "pause", "phase": "probe", "log": []}},
+            {"req": {"url": "https://example.invalid/c.mp4"}, "title": "用户暂停的", "job": {"state": "pause", "phase": "dl", "log": []}}
+        ]);
+        std::fs::write(paths.data.join("queue.json"), serde_json::to_vec(&saved).unwrap()).unwrap();
+        // 调度器要等这个测试让出线程才会跑：下面一直是同步调用，任务不会真的开始
+        let core = Core::open(Options { paths: paths.clone(), sidecar_dir: None, restore: true }).await.unwrap();
+        let by = |c: &Core, t: &str| c.jobs().into_iter().find(|j| j.title == t).unwrap();
+        core.act(by(&core, "下载中").id, JobAction::Resume).unwrap();
+        core.act(by(&core, "排队").id, JobAction::Resume).unwrap();
+        assert_eq!(core.hold_for_update(), 2, "下载中、排队的停下来；用户自己暂停的不算");
+        for t in ["下载中", "排队", "用户暂停的"] {
+            assert_eq!(by(&core, t).state, JobState::Pause);
+        }
+        let q: Vec<serde_json::Value> = serde_json::from_slice(&std::fs::read(paths.data.join("queue.json")).unwrap()).unwrap();
+        let held: Vec<&str> = q.iter().filter(|x| x["held"] == true).filter_map(|x| x["title"].as_str()).collect();
+        assert_eq!(held.len(), 2);
+        assert!(held.contains(&"下载中") && held.contains(&"排队"));
+
+        // 新版打开：前面多一条完成的任务，编号全都变了
+        let dir2 = tempfile::tempdir().unwrap();
+        let p2 = Paths::portable(dir2.path());
+        p2.ensure().unwrap();
+        std::fs::copy(paths.settings(), p2.settings()).unwrap();
+        let mut q2 = vec![serde_json::json!({"req": {"url": "https://example.invalid/done.mp4"}, "title": "完成的", "job": {"state": "done", "phase": "done", "log": []}})];
+        q2.extend(q);
+        std::fs::write(p2.data.join("queue.json"), serde_json::to_vec(&q2).unwrap()).unwrap();
+        let core2 = Core::open(Options { paths: p2.clone(), sidecar_dir: None, restore: true }).await.unwrap();
+        assert_ne!(by(&core2, "下载中").id, by(&core, "下载中").id, "编号换过了");
+        let resumed = core2.release_held(true);
+        assert_eq!(resumed.len(), 2);
+        assert_eq!(by(&core2, "下载中").state, JobState::Queue);
+        assert_eq!(by(&core2, "排队").state, JobState::Queue);
+        assert_eq!(by(&core2, "用户暂停的").state, JobState::Pause, "用户自己暂停的照旧暂停着");
+        assert!(core2.release_held(true).is_empty(), "记号只用一次");
+        let q3: Vec<serde_json::Value> = serde_json::from_slice(&std::fs::read(p2.data.join("queue.json")).unwrap()).unwrap();
+        assert!(q3.iter().all(|x| x.get("held").is_none()), "接着下以后 queue.json 里不再有记号");
+
+        // 没更新成（版本没变）：去掉记号，照旧暂停着
+        let dir3 = tempfile::tempdir().unwrap();
+        let p3 = Paths::portable(dir3.path());
+        p3.ensure().unwrap();
+        std::fs::copy(paths.settings(), p3.settings()).unwrap();
+        std::fs::write(p3.data.join("queue.json"), serde_json::to_vec(&q2).unwrap()).unwrap();
+        let core3 = Core::open(Options { paths: p3.clone(), sidecar_dir: None, restore: true }).await.unwrap();
+        assert!(core3.release_held(false).is_empty());
+        assert_eq!(by(&core3, "下载中").state, JobState::Pause);
     }
 
     #[tokio::test]

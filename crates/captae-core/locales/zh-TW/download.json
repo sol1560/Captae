@@ -300,5 +300,6 @@
   "读不了 {browser} 里的登录状态：{browser} 开着时不让别的程序读。关掉 {browser} 再试，或者在 Captae 里登录这个网站": "無法讀取 {browser} 裡的登入狀態：{browser} 開著時不讓其他程式讀取。關掉 {browser} 再試，或者在 Captae 裡登入這個網站",
   "读不了 {browser} 里的登录状态：系统的密钥环（GNOME Keyring / KWallet）里取不到解密用的密钥。确认密钥环已经解锁，或者在 Captae 里登录这个网站": "無法讀取 {browser} 裡的登入狀態：系統的金鑰圈（GNOME Keyring / KWallet）裡取不到解密用的金鑰。確認金鑰圈已經解鎖，或者在 Captae 裡登入這個網站",
   "没找到 {browser} 的登录信息：{browser} 没装，或者装在了 yt-dlp 找不到的地方（Flatpak、Snap 版）": "沒找到 {browser} 的登入資訊：{browser} 沒裝，或者裝在了 yt-dlp 找不到的地方（Flatpak、Snap 版）",
-  "{reason}。这次先不带它的登录状态再读一次": "{reason}。這次先不帶它的登入狀態再讀取一次"
+  "{reason}。这次先不带它的登录状态再读一次": "{reason}。這次先不帶它的登入狀態再讀取一次",
+  "重新打开 Captae 装更新：先停下，新版打开后接着下": "重新開啟 Captae 安裝更新：先停下，新版開啟後接著下載"
 }

@@ -823,9 +823,18 @@ pub async fn output(c: &mut Command) -> std::io::Result<std::process::Output> {
     spawn(c)?.output().await
 }
 
+/// 进程正在退出：`kill_all` 开始结束附带程序以后为真。下载队列据此不把被结束的 aria2c、yt-dlp 当成下载出错（queue.rs 的 `start`）
+static QUITTING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn quitting() -> bool {
+    QUITTING.load(std::sync::atomic::Ordering::SeqCst)
+}
+
 /// 结束所有还在跑的外部工具和它们的子孙（进程要退出时调用），再删掉它们没写完的输出文件（转换、剪辑到一半的，见 `tasks::Partial`）。
-/// 下载的断点续传文件、录直播录到的部分不在里面（下次打开接着下、整理好）
+/// 下载的断点续传文件、录直播录到的部分不在里面（下次打开接着下、整理好）。
+/// 调了它就算开始退出（`quitting`）：之后被结束的下载不记成失败
 pub fn kill_all() {
+    QUITTING.store(true, std::sync::atomic::Ordering::SeqCst);
     let pids: Vec<u32> = LIVE.lock().unwrap().iter().copied().collect();
     for p in pids {
         kill_tree(p);
