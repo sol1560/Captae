@@ -3,31 +3,44 @@
 # 生成 licenses/linux-appimage-libs.md（每个库属于哪个 Ubuntu 包、版本、源码包、许可证）和
 # licenses/linux-appimage-copyright.txt（这些包的 /usr/share/doc/<包>/copyright 原文，加上它们引用的 LGPL / GPL 全文）。
 #
-# 要在打出这个 AppImage 的那台 Ubuntu 上运行（用 dpkg 查库文件属于哪个包）。
+# 要在 Ubuntu 22.04 上运行（用 dpkg 查库文件属于哪个包，AppImage 里的库在这台机器上也要装着）。
 # 随带的库一般只在换打包机器的系统版本、换 Tauri 版本时才变；变了以后重新运行、把结果提交进仓库，再打一次包（licenses/ 会打进包里）。
-# scripts/check-bundle-linux.sh 会核对 AppImage 里的库和 linux-appimage-libs.md 列的是不是同一批。
+# scripts/check-bundle-linux.sh 会核对 AppImage 里的库都列在 linux-appimage-libs.md 里。
 #
-# 用法：scripts/gen-appimage-libs.sh <Captae_*.AppImage>
+# 可以一次给几个 AppImage，列的是它们随带的库的并集：随带哪些看打包机器上装了什么（GTK 插件把整个 GIO 模块目录拷进去，
+# GStreamer 插件看装了哪几个插件包），发版的包在 GitHub 的机器上打，和本机打的不一定一样。0.3.0 起把本机打的和上一版 Release 上的
+# AppImage 一起给（上一版是 GitHub 的机器打的；0.2.0 那份带着 libwayland-client.so.0，Devin 那台 Ubuntu 打的没有，
+# 那台打的又多 5 个 GIO 模块），两边都盖住，发版时 GitHub 上的检查才过得去。多列了几个包里没有的库不要紧（多给了许可证）。
+#
+# 用法：scripts/gen-appimage-libs.sh <Captae_*.AppImage> [<另一个 AppImage> …]
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-APPIMAGE="${1:?用法：scripts/gen-appimage-libs.sh <AppImage>}"
-APPIMAGE="$(cd "$(dirname "$APPIMAGE")" && pwd)/$(basename "$APPIMAGE")"
+[[ $# -ge 1 ]] || { echo "用法：scripts/gen-appimage-libs.sh <AppImage> [<另一个 AppImage> …]" >&2; exit 2; }
 command -v dpkg >/dev/null || { echo "要在 Ubuntu / Debian 上运行（用 dpkg 查库属于哪个包）" >&2; exit 2; }
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/appimage-libs.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
-(cd "$WORK" && "$APPIMAGE" --appimage-extract >/dev/null)
-R="$WORK/squashfs-root"
 
-# AppImage 里不是 Captae 自己的 ELF 文件（库、GTK / WebKit 的辅助程序和模块）
+# AppImage 里不是 Captae 自己的 ELF 文件（库、GTK / WebKit 的辅助程序和模块），路径相对 AppImage 的根
 list_bundled() {
-  (cd "$R" && find . -type f ! -path './usr/lib/Captae/*' ! -path './usr/bin/captae-desktop' ! -name 'AppRun*' -print0 |
+  (cd "$1" && find . -type f ! -path './usr/lib/Captae/*' ! -path './usr/bin/captae-desktop' ! -name 'AppRun*' -print0 |
     while IFS= read -r -d '' f; do
       # 用 if 不用 &&：最后一个文件不是 ELF 时 && 让循环以非 0 结束，set -e 加 pipefail 下整个脚本就退出了
       if head -c 4 "$f" 2>/dev/null | grep -q $'\x7fELF'; then echo "${f#./}"; fi
-    done) | LC_ALL=C sort
+    done)
 }
-list_bundled >"$WORK/files"
+n=0
+for a in "$@"; do
+  n=$((n + 1))
+  a="$(cd "$(dirname "$a")" && pwd)/$(basename "$a")"
+  [[ -x "$a" ]] || chmod +x "$a"
+  mkdir -p "$WORK/x$n"
+  (cd "$WORK/x$n" && "$a" --appimage-extract >/dev/null)
+  list_bundled "$WORK/x$n/squashfs-root" >"$WORK/files$n"
+  echo "$(basename "$a")：随带 $(wc -l <"$WORK/files$n") 个"
+  rm -rf "$WORK/x$n"
+done
+cat "$WORK"/files[0-9]* | LC_ALL=C sort -u >"$WORK/files"
 
 # 每个文件找回打包机器上的原件属于哪个包（按文件名找；找不到的列成「未知」）。
 # 不算 Captae 自己的 deb：打包机器上装过 Captae 时，yt-dlp 目录版自带的 libcrypto.so.3、libzstd.so.1 也叫这个名字，
@@ -49,7 +62,8 @@ os="$(. /etc/os-release && echo "$PRETTY_NAME")"
   echo "# Linux AppImage 里随带的系统库"
   echo
   echo "由 \`scripts/gen-appimage-libs.sh\` 生成（不要手改）。AppImage 要在不同的发行版上直接运行，打包时 linuxdeploy 和它的 GTK 插件"
-  echo "把下面这些库和辅助程序从打包机器（${os}）拷进了 AppImage，原样、没有改动，都是动态链接。"
+  echo "把下面这些库和辅助程序从打包机器（${os}）拷进了 AppImage，原样、没有改动，都是动态链接。随带哪些看打包机器上装了什么，"
+  echo "表里是几台打包机器打的 AppImage 合起来的（发版的包不一定每个都带）；「版本」是生成这份清单的机器上装的版本，发版的打包机器上可能差一个小版本（同一个 Ubuntu 发行版）。"
   echo ".deb 不带这些，用系统自己的。"
   echo
   echo "AppImage 的启动部分不在表里：开头的 runtime 和根目录的 AppRun / AppRun.wrapped 来自 AppImage 项目（MIT，"
