@@ -168,8 +168,6 @@
   "测试数据目录下不自动更新": "Sin actualizaciones automáticas con una carpeta de datos de prueba",
   "这个版本的 Captae 不能自动更新": "Esta copia de Captae no puede actualizarse sola",
   "没有打开网页": "No se pudo abrir la página",
-  "没有检查成": "No se pudo comprobar",
-  "已经是最新的": "Ya está actualizado",
   "有新版本 {version}": "La versión {version} está disponible",
   "没有下载成": "No se pudo descargar",
   "没有更新成": "No se pudo actualizar",
@@ -187,5 +185,8 @@
   "正在录的{n}个直播会停止，录到的部分在重新打开后保存好。": {
     "one": "Se detendrá {n} grabación de directo. Lo grabado hasta ahora se guardará cuando Captae se reinicie.",
     "other": "Se detendrán {n} grabaciones de directos. Lo grabado hasta ahora se guardará cuando Captae se reinicie."
-  }
+  },
+  "没有检查成": "No se pudo comprobar",
+  "已经是最新的": "Ya está actualizado",
+  "打开": "Abrir"
 }

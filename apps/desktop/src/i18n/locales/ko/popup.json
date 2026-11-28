@@ -89,6 +89,5 @@
   "运行 Captae 的安装程序。": "Captae 설치 프로그램을 실행하세요.",
   "安装 Captae（.deb 包或 AppImage）。": "Captae를 설치하세요(.deb 패키지 또는 AppImage).",
   "下载 Captae": "Captae 다운로드",
-  "插件比 Captae {version} 旧，到扩展程序页面点「重新加载」": "확장 프로그램이 Captae {version}보다 오래되었습니다. 확장 프로그램 페이지에서 ‘새로고침’을 클릭하세요",
-  "打开": "열기"
+  "插件比 Captae {version} 旧，到扩展程序页面点「重新加载」": "확장 프로그램이 Captae {version}보다 오래되었습니다. 확장 프로그램 페이지에서 ‘새로고침’을 클릭하세요"
 }
