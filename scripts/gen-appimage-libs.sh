@@ -29,13 +29,15 @@ list_bundled() {
 }
 list_bundled >"$WORK/files"
 
-# 每个文件找回打包机器上的原件属于哪个包（按文件名找；找不到的列成「未知」）
+# 每个文件找回打包机器上的原件属于哪个包（按文件名找；找不到的列成「未知」）。
+# 不算 Captae 自己的 deb：打包机器上装过 Captae 时，yt-dlp 目录版自带的 libcrypto.so.3、libzstd.so.1 也叫这个名字，
+# 原来会排在前面被当成「captae 包里的库」（0.2.0 的清单第一行就是这样）
 : >"$WORK/map"
 while read -r f; do
   name="$(basename "$f")"
-  pkg="$(dpkg -S "/$name" 2>/dev/null | grep -v '^diversion' | head -1 | cut -d: -f1 || true)"
+  pkg="$(dpkg -S "/$name" 2>/dev/null | grep -v -e '^diversion' -e '^captae[:,]' | head -1 | cut -d: -f1 || true)"
   if [[ -z "$pkg" ]]; then
-    pkg="$(dpkg -S "*/$name" 2>/dev/null | grep -v '^diversion' | head -1 | cut -d: -f1 || true)"
+    pkg="$(dpkg -S "*/$name" 2>/dev/null | grep -v -e '^diversion' -e '^captae[:,]' | head -1 | cut -d: -f1 || true)"
   fi
   printf '%s\t%s\n' "${pkg:-未知}" "$f" >>"$WORK/map"
 done <"$WORK/files"
