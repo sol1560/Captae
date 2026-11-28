@@ -45,9 +45,6 @@ struct Saved {
     last_run: Option<String>,
     /// 下载好、验过签的更新包
     ready: Option<Ready>,
-    /// 点「重新打开」装更新那一刻正在下载、排队的任务。Captae 重新打开时下到一半的任务会恢复成「暂停」（queue.rs 的 restore，平时退出再打开就是这样），
-    /// 这几个在新版打开后自动继续：确认弹窗说的是「重新打开后会接着下」。退出时装的不记（用户自己退出的，照平时一样暂停着）
-    resume: Vec<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -337,10 +334,13 @@ pub fn init(app: &AppHandle, data: &Path) {
         tracing::info!("Captae 已从 {} 更新到 {cur}", updated_from.as_deref().unwrap_or(""));
     }
     saved.last_run = Some(cur.clone());
-    // 点「重新打开」装更新之前正在下载的任务：真的更新过了才接着下（没装成、或者版本没变就当普通的重新打开，照旧暂停着）
-    let resume = std::mem::take(&mut saved.resume);
-    if updated_from.is_some() {
-        resume_jobs(app, &resume);
+    // 点「重新打开」装更新之前停下来的任务（核心库 hold_for_update 在 queue.json 里做了记号）：真的更新过了才接着下，
+    // 没装成、或者版本没变就当普通的重新打开，记号去掉、照旧暂停着
+    if let Some(a) = app.try_state::<crate::App>() {
+        let resumed = a.core.release_held(updated_from.is_some());
+        if !resumed.is_empty() {
+            tracing::info!("Captae 更新：更新前在下载的 {} 个任务接着下", resumed.len());
+        }
     }
     // 下好的包已经不比现在的新（装好了，或者用户自己装了新版）：删掉
     if saved.ready.as_ref().is_some_and(|r| !newer(&r.version, &cur) || !dir.join(&r.file).is_file()) {
@@ -374,26 +374,6 @@ pub fn init(app: &AppHandle, data: &Path) {
     app.manage(me);
     let h = app.clone();
     tauri::async_runtime::spawn(async move { daily(h).await });
-}
-
-/// 新版打开后，把更新前正在下载的任务接着下（只动现在还是「暂停」的：恢复时已经自动重读、或者在整理录到的直播的不用管）
-fn resume_jobs(app: &AppHandle, ids: &[u64]) {
-    let Some(a) = app.try_state::<crate::App>() else { return };
-    for &id in ids {
-        if a.core.job(id).is_some_and(|j| j.state == captae_core::JobState::Pause && !j.choose) {
-            match a.core.act(id, captae_core::JobAction::Resume) {
-                Ok(()) => tracing::info!("Captae 更新：更新前在下载的任务 {id} 接着下"),
-                Err(e) => tracing::warn!("Captae 更新：任务 {id} 没能接着下：{e}"),
-            }
-        }
-    }
-}
-
-/// 点「重新打开」装更新之前：记下正在下载、排队的任务（录直播的不算，它们重新打开后整理录到的部分）
-fn remember_running(app: &AppHandle) -> Vec<u64> {
-    use captae_core::JobState;
-    let Some(a) = app.try_state::<crate::App>() else { return vec![] };
-    a.core.jobs().into_iter().filter(|j| matches!(j.state, JobState::Run | JobState::Queue) && j.rec.is_none() && !j.choose).map(|j| j.id).collect()
 }
 
 /// 打开 1 分钟后查一次，之后每 10 分钟看一眼离上次检查满没满 24 小时（电脑睡眠醒来也能赶上）
@@ -688,13 +668,13 @@ pub async fn restart(app: &AppHandle) -> Result<(), String> {
         return Err(tr!("正在检查或下载更新，稍等一下"));
     }
     let version = u.ready_path().map(|(r, _)| r.version);
-    // 装之前就记下来：Windows 上插件运行安装程序后直接结束进程，没有「装好以后」
-    {
-        let mut i = u.inner.lock().unwrap();
-        i.saved.resume = remember_running(app);
-        let s = i.saved.clone();
-        drop(i);
-        u.save(&s);
+    // 装之前先把正在下载、排队的任务停下来记成「暂停」、在 queue.json 里做上记号，新版打开后接着下（核心库的 hold_for_update，init 里接着下）。
+    // Windows 上插件运行安装程序后直接结束进程，没有「装好以后」；不先停下来，插件收拾时结束 aria2c 会被记成下载失败（Devin 的 Windows U4）
+    if let Some(a) = app.try_state::<crate::App>() {
+        let n = a.core.hold_for_update();
+        if n > 0 {
+            tracing::info!("Captae 更新：{n} 个任务先停下，新版打开后接着下");
+        }
     }
     u.set_state(app, "installing");
     let h = app.clone();
@@ -711,8 +691,10 @@ pub async fn restart(app: &AppHandle) -> Result<(), String> {
             app.restart();
         }
         Err(e) => {
-            // 没装成：任务还在这个进程里接着下，记下的不要了
-            u.inner.lock().unwrap().saved.resume.clear();
+            // 没装成：停下来的任务在这个进程里接着下
+            if let Some(a) = app.try_state::<crate::App>() {
+                a.core.release_held(true);
+            }
             let back = if u.ready_path().is_some() { "ready" } else { "available" };
             u.fail(app, "install", version.as_deref(), &e, back);
             u.busy.store(false, Ordering::SeqCst);
