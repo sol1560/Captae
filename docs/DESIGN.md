@@ -501,7 +501,10 @@ Linux 的附带程序不放 `/usr/bin`：会和系统的 ffmpeg、aria2c 冲突�
 
 - Windows：`scripts/build-release-windows.ps1`（PowerShell 5.1 也能跑；三个 ps1 存成带 BOM 的 UTF-8）→ `fetch-sidecars-windows.ps1`（yt-dlp 目录版验签、deno、BtbN 的 GPL ffmpeg 9.0.2、aria2 官方 1.37.0，校验值写死）
   → `cargo tauri build --bundles nsis` → `check-bundle-windows.ps1`。NSIS：当前用户、WebView2 缺了静默下载、中英文；
-  安装钩子 `src-tauri/windows/installer-hooks.nsh`：装和卸之前结束安装目录里的附带程序（浏览器拉起的 captae.exe 不是桌面端的子进程），卸载删三个注册表键，勾了「删除应用程序数据」再删数据目录。
+  安装钩子 `src-tauri/windows/installer-hooks.nsh`：装和卸之前结束安装目录里的附带程序（浏览器拉起的 captae.exe 不是桌面端的子进程；`stop-helpers.ps1`，
+  安装程序是 32 位的，要运行 Sysnative 下的 64 位 PowerShell、进程列表从 WMI 取，32 位的 PowerShell 读不到 64 位进程的路径），装的时候再把旧的 captae.exe 挪开
+  （结束以后到写新文件之间浏览器可能又拉起宿主），卸载删三个注册表键，勾了「删除应用程序数据」再删数据目录。
+  `captae.exe` 自己的版本资源（文件属性里的版本号）由 `crates/captae-cli/build.rs` 写（tauri-winres，和桌面端同一套），桌面端的由 tauri-build 写。
   安装程序不签名（2026-11-24 定：这一版是测试版），第一次打开会被 SmartScreen 拦，点「仍要运行」。
 - Linux：`scripts/build-release-linux.sh`（在 Ubuntu 22.04 上，glibc 2.35）→ deb 和 AppImage → `check-bundle-linux.sh`。aria2 官方没有 Linux 版，脚本从源码静态编（OpenSSL 3.5、c-ares、zlib、Expat、SQLite）；
   ffmpeg 用 BtbN 的静态版。素材库里播放靠 WebKitGTK 经 GStreamer 解码：deb 依赖 `gstreamer1.0-plugins-good`、`gstreamer1.0-libav`（Ubuntu 默认不装 libav，H.264 / AAC 播不了），
@@ -509,7 +512,8 @@ Linux 的附带程序不放 `/usr/bin`：会和系统的 ffmpeg、aria2c 冲突�
   WebKitGTK 放不了 asset 协议给的视频（一律 FormatError），素材库详情里的 `<video>`、`<audio>` 在 Linux 上改用桌面端起的本机小服务
   （`media_server.rs`：只听 127.0.0.1、地址带每次启动随机的令牌、只给 asset 协议放行范围里页面要过的文件、支持 Range），
   `tauri.linux.conf.json` 的 CSP 为它在 `media-src` 里加了 `http://127.0.0.1:*`（改主配置的 CSP 时这里要跟着改）。AppImage 分两步打：先让 Tauri / linuxdeploy 打不带附带程序的（linuxdeploy 处理不了 yt-dlp 目录版里的库），再解开、放进附带程序、用原来的 runtime 重新拼。
-  AppImage 随带的系统库清单在 `licenses/linux-appimage-libs.md`，换了打包机器的系统或 Tauri 版本要在打包机上跑 `scripts/gen-appimage-libs.sh` 重新生成。
+  AppImage 随带的系统库清单在 `licenses/linux-appimage-libs.md`，换了打包机器的系统或 Tauri 版本要在打包机上跑 `scripts/gen-appimage-libs.sh` 重新生成
+  （0.3.0 升 Tauri 2.12 时忘了，打包检查第 7 项没过；脚本找库属于哪个包时不算打包机上装着的 Captae 自己的 deb）。
 - 两边都和 macOS 一样去掉本机路径（`--remap-path-prefix`；Windows 另加 `/PDBALTPATH:%_PDB%`）。
 - 许可证（`licenses/`）：aria2 在链接 OpenSSL 3 的 macOS、Linux 构建上按 GPL-3.0-or-later 分发（OpenSSL 3 是 Apache-2.0，和 GPLv2 不兼容），Windows 构建用 WinTLS 按 GPLv2+。
   `scripts/gen-licenses.py` 按三个平台汇总 Rust 依赖（「平台」一列），跑之前要 `cargo fetch --locked`。
@@ -541,9 +545,9 @@ Linux 的附带程序不放 `/usr/bin`：会和系统的 ffmpeg、aria2c 冲突�
 | 安装方式 | 键 | 更新包 | 怎么装 |
 |---|---|---|---|
 | macOS | `darwin-aarch64-app` | `Captae_<版本>_aarch64.app.tar.gz` | 换掉 `/Applications/Captae.app`；没写权限时系统弹管理员密码框 |
-| Windows | `windows-x86_64-nsis` | 安装程序本身 `Captae_<版本>_x64-setup.exe` | passive 模式运行（只有进度条，不用点）；装之前 `installer-hooks.nsh` 结束安装目录里的附带程序（浏览器拉起的 captae.exe 也算） |
+| Windows | `windows-x86_64-nsis` | 安装程序本身 `Captae_<版本>_x64-setup.exe` | passive 模式运行（只有进度条，不用点）；装之前 `installer-hooks.nsh` 结束安装目录里的附带程序（浏览器拉起的 captae.exe 也算）、把旧的 captae.exe 挪开（14.7） |
 | Linux AppImage | `linux-x86_64-appimage` | `.AppImage` 本身 | 换掉 `$APPIMAGE` 那个文件 |
-| Linux deb | `linux-x86_64-deb` | `.deb` | `pkexec dpkg -i`，系统弹密码框 |
+| Linux deb | `linux-x86_64-deb` | `.deb` | Captae 自己装（`app_update.rs` 的 `deb::install`）：`pkexec dpkg -i`，系统弹密码框；没有认证代理时退回 zenity / kdialog 问密码交给 `sudo -S`；用户取消就不装 |
 
 - 安装方式靠 Tauri 打包时写进程序的标记（`__TAURI_BUNDLE_TYPE_VAR_DEB` / `_APP` / `_NSS`），三个平台的检查脚本都核对。
   不是打包出来的程序（开发时直接运行的、macOS 上不在 .app 里的）不更新。
@@ -562,22 +566,33 @@ Linux 的附带程序不放 `/usr/bin`：会和系统的 ffmpeg、aria2c 冲突�
   latest.json 原文记在 `app-update/state.json` 的 `ready` 里：重新打开 Captae 后用 `Updater::restore_update` 不联网也能装，装之前 `Update::install` 再验一次签。
   关着：照样每天查，只在侧栏和设置里说有新版，用户点「下载并更新」才下（下好接着走「重新打开」）。
 - 装有两个时机：
-  - 点「重新打开」（`app_update_restart`）：有正在下载、正在录的任务时界面先问一句（重新打开后任务接着下，录到的直播下次打开时整理好）；装好后 `app.restart()`。
-    Captae 重新打开时，下到一半的任务平时恢复成「暂停」（4.1、`queue.rs` 的 restore），所以装之前把正在下载、排队的任务号记进 `state.json` 的 `resume`，
-    新版打开、确认真的更新过以后把其中还在暂停的接着下（`resume_jobs`）；没装成就清掉。退出时装的不记，下次打开照平时一样暂停着。
+  - 点「重新打开」（`app_update_restart`）：有正在下载、正在录的任务时界面先问一句（重新打开后任务接着下，录到的直播下次打开时整理好）；装好后重新打开。
+    Captae 重新打开时，下到一半的任务平时恢复成「暂停」（4.1、`queue.rs` 的 restore），所以装之前先把正在下载、排队的任务停下来记成「暂停」、
+    在 queue.json 那一条上做记号 `held`（核心库 `hold_for_update`，马上写盘），新版打开、确认真的更新过以后把有记号、还暂停着的接着下（`release_held(true)`）；
+    没装成就在这个进程里接着下，版本没变的重新打开只去掉记号。记号跟着任务走、不记任务号：任务号每次打开都重新排（原来记任务号，
+    新版里对不上，Devin 的 Linux D5）。不先停下来的话，Windows 上更新插件先收拾（结束附带程序）再运行安装程序，中间被结束的 aria2c 会被记成下载失败（Windows U4）；
+    另外核心库在 `tools::kill_all` 开始以后（`tools::quitting`）不再把出错结束的任务记成失败、不写 queue.json，正常退出时也一样。
+    录直播的不停（重新打开后整理录到的部分）。退出时装的不停，下次打开照平时一样暂停着。
     macOS 要输管理员密码时，插件把系统的密码框交给主线程弹，所以装的那一步放在 `spawn_blocking` 里，不占着主线程。
-    Tauri 的 `restart` 在 macOS 上经 LaunchServices（`open -n -g`）重新打开，新进程拿不到启动它的进程的环境变量；设了 `CAPTAE_HOME`（测试数据目录）时改成自己重新打开
-    （`relaunch_keeping_env`：一个 sh 等这个进程号没了再 exec，环境变量、参数原样，报错输出写进 `<数据目录>/relaunch.log`），不然测试版会去读写正式的数据、改浏览器里插件宿主的登记。
+    装好后不用 Tauri 的 `restart`，自己重新打开（`relaunch_after_exit`：一个 sh 等这个进程号没了再 exec，报错输出写进 `<数据目录>/relaunch.log`）：
+    macOS 正式版 exec `open -n Captae.app`（Tauri 用 `open -n -g`，-g 不到前台，新进程自己去抢也抢不到：macOS 14 起不许从别的程序手里抢前台，Devin 的 macOS M2；
+    本机实测用的测试版窗口一直藏着，没看出来）；设了 `CAPTAE_HOME`（测试数据目录）时直接运行程序，环境变量、参数原样（经 LaunchServices 打开的新进程拿不到 `CAPTAE_HOME`，
+    测试版会去读写正式的数据、改浏览器里插件宿主的登记）。Windows 是安装程序装完自己打开；其余用 Tauri 的 `restart`。
   - 正常退出时（`RunEvent::Exit`，退出时的收拾做完以后）装上，装完不打开，下次打开就是新版。这些情况退出时不装：收到结束信号（退出流程只有 5 秒）、
     Windows 正在关机或注销（`GetSystemMetrics(SM_SHUTTINGDOWN)`）、deb（要输密码）、macOS 要输管理员密码的（主线程正在退出，弹不了密码框）、同一个版本已经失败 3 次。
+  - deb 不交给更新插件装：插件在 pkexec 失败（包括用户在系统的认证窗口里点了「取消」）以后还会弹 zenity / kdialog 的密码框，那个也取消了就直接 `sudo dpkg -i`，
+    sudo 不要密码的电脑上用户取消了照样装上（Devin 的 Linux D4）。Captae 自己装：pkexec 退出码 126（用户关了认证窗口）就不装；127（没有认证代理、没能认证）
+    退回 zenity / kdialog 问密码交给 `sudo -S`，在那里点取消也不装；都弹不出来算失败。取消不算这个版本的失败（不影响自动下载），Captae 不关，
+    设置里说「已下载好，上次没装成：取消了输入密码」。
     macOS 算「要输管理员密码」的：「应用程序」文件夹不能写，或者 Captae.app 本身不是这个账号的、没有写权限（另一个管理员拖进去的；换掉 .app 要把它挪到别的父目录下，只有父目录能写不够）。
 - Windows：插件运行安装程序后直接结束进程，结束之前 `on_before_exit` 做退出时的收拾（`main.rs` 的 `cleanup_on_exit`：删 control.json、关给手机的服务、结束附带程序）。
-- 失败：记在 `state.json` 的 `error`（查 / 下载 / 装哪一步出的错）和 `fails`（每个版本连着失败几次），继续用现在的版本；同一个版本失败 3 次后不再自动下载、退出时不再自动装，等用户自己点。
+- 失败：记在 `state.json` 的 `error`（查 / 下载 / 装哪一步出的错）和 `fails`（每个版本连着失败几次，用户取消输密码的不算），继续用现在的版本；同一个版本失败 3 次后不再自动下载、退出时不再自动装，等用户自己点。
   下载的包验签不对就删掉，下次重新下。
 - 更新后第一次打开：`state.json` 里记的上一次运行的版本比现在的旧，界面提示一次「已更新到 x.y.z」，带「看看改了什么」（这一版的 Release 页）；失败记录清掉。
-  主窗口拿到前面（`main.rs` setup 的最后，带 `--background` 的不动）：macOS 上 Tauri 的 restart 用 `open -n -g`（不到前台），旧窗口一关、新窗口却在别的窗口后面。
+  主窗口拿到前面（`main.rs` setup 的最后，带 `--background` 的不动）。macOS 上光靠这个不够（新进程抢不到前台），主要靠上面不带 -g 的 `open -n`。
 - 装不了（`blocked`）：`dmg`（在只读的磁盘映像里打开的）、`translocated`（从下载文件夹直接打开、被系统转移运行的）、`readonly`（AppImage 所在的文件夹不能写）、
-  `no_pkexec`（deb 版没有 pkexec / zenity / kdialog）、`unsupported`、`test`（设了 `CAPTAE_HOME` 又用正式地址：测试版的标识不同，装上去就把测试版换成了正式版）。
+  `no_pkexec`（deb 版没有 pkexec / zenity / kdialog）、`unsupported`、`test`（设了 `CAPTAE_HOME` 又用 GitHub 上的正式地址：测试版的标识不同，装上去就把测试版换成了正式版。
+  程序里只看地址开头是不是 `https://github.com/`，不写完整的正式地址：三个平台的打包检查在程序里搜完整地址来确认编进去的是正式地址，写了常量测试包里也搜得到，Devin 的 Windows B1 / B2）。
   这些情况不下载，设置里说原因、给「去下载页」。
 
 ### 15.3 界面
@@ -594,7 +609,7 @@ Linux 的附带程序不放 `/usr/bin`：会和系统的 ffmpeg、aria2c 冲突�
 - 宿主：桌面端的 `/v1/hello` 回复带上自己的版本，宿主的 `hello` 回复里给插件 `appVersion`。宿主发现桌面端比自己新时，回完手头的消息就退出（`native_host.rs` 的 `stale`），
   插件下次连接时浏览器起的是新程序。只在桌面端比宿主新时退出，不会来回重启。
 - 插件（`background.js` 的 `followApp`）：Captae 比插件新、插件又是「加载已解压」装的（`management.getSelf().installType === "development"`）时，`chrome.runtime.reload()` 从文件夹重新读一次；
-  同一个版本只试一次（`storage.local` 的 `reloadedFor`）。插件等 hello 的回话最多 10 秒（原来 4 秒：Captae 正忙时宿主要问几次、最多约 7 秒才回，机器很忙时开着的 Captae 会被当成没开，换版本也跟着晚一分钟）。重新加载后还是旧的（用户是从别的文件夹装的），记下 `stale`，工具栏面板里说「插件比 Captae 旧，到扩展程序页面点「重新加载」」并能打开那个页面，
+  同一个版本只试一次（`storage.local` 的 `reloadedFor`；换到这一版以后记号清掉，装回旧版再更新一次照样跟）。插件等 hello 的回话最多 10 秒（原来 4 秒：Captae 正忙时宿主要问几次、最多约 7 秒才回，机器很忙时开着的 Captae 会被当成没开，换版本也跟着晚一分钟）。重新加载后还是旧的（用户是从别的文件夹装的），记下 `stale`，工具栏面板里说「插件比 Captae 旧，到扩展程序页面点「重新加载」」并能打开那个页面，
   桌面端「浏览器插件」页也这么说。网页里的旧部件在插件重新加载后自己拆掉（`content.js` 的 teardown，原来就有）。
 - Linux 的 AppImage：给用户「加载已解压」的插件文件夹原来在 AppImage 的临时挂载点里（`/tmp/.mount_xxx/…`），Captae 一退出就没了。
   改成和宿主一样拷一份到数据目录的 `extension/`（`ext_cmds::stable_extension_dir`），内容变了才重拷，插件从这里重新加载自己。

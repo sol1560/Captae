@@ -224,6 +224,9 @@ scripts/render-dmg-background.sh              # 改了安装包窗口的背景�
 - 跟着做的：tauri 升到 2.12（插件要求）；浏览器插件和宿主跟着 Captae 换版本；AppImage 的插件文件夹拷到数据目录；自带的 yt-dlp 比自动更新装的新时用自带的。
 - 签名私钥 `keys/updater.key`（`keys/` 不进仓库），密码在维护者的钥匙串里（服务名「Captae updater signing key」）。**私钥丢了，已经装上的 Captae 再也收不到更新**，要另外备份。
 - 0.2.0 没有这个功能：0.2.0 的用户要手动下载一次 0.3.0（README 写明）。
+- Devin 三台真机实测（2026-11-28）查出、修了的：Windows 安装钩子一个进程都没结束（安装程序是 32 位的，32 位 PowerShell 读不到 64 位进程的路径），浏览器拉起的插件宿主占着 captae.exe，
+  更新装不上；captae.exe 文件属性里没有版本号；点「重新打开」时在下的任务新版里没接着下（Windows 被记成失败，各平台的任务号重新打开后对不上）；
+  macOS 更新后新窗口不到前台；deb 在密码框点取消照样装上；AppImage 随带的系统库清单没跟着 Tauri 2.12 重新生成。做法见 DESIGN 14.7、15.2，记录在 `work/updater/PROGRESS.md`。
 
 ## 许可证和商业模式（已定）
 
