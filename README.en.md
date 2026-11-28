@@ -80,6 +80,16 @@ If something reads awkwardly, Issues and PRs are welcome (how to write translati
 - Data is stored in `~/.local/share/captae`, and downloads go to Videos › Captae (your XDG videos folder) by default.
 - Reading sign-ins from Chrome-based browsers needs the system keyring (GNOME Keyring / KWallet) to be unlocked. Flatpak and Snap browsers can't be read.
 
+## Updates
+
+- From 0.3.0, Captae updates itself: once a day it asks GitHub whether there's a new version (it only checks the version number and sends no personal information). When there is one, it downloads it in the background and checks its signature,
+  and “Update to x.y.z” appears in the sidebar. Click “Relaunch” to switch to the new version; if you don't, it's installed the next time you quit Captae. In Settings › About Captae you can check for updates by hand or turn off “Update Captae automatically” (it still checks every day, but you click “Download and update” yourself).
+- **0.2.0 doesn't update itself**: download and install 0.3.0 or later once from [Releases](https://github.com/sol1560/Captae/releases/latest), and in-app updates work from then on.
+- macOS: drag Captae into Applications and open it from there (a copy opened straight from the disk image can't update itself). Accounts that aren't administrators are asked for an administrator password when updating.
+- Windows: updating runs the new installer, which only shows a progress bar and opens Captae when it's done.
+- Linux: the deb version asks for your password (`pkexec`) when you click “Relaunch”, so it isn't installed automatically when you quit; the AppImage version replaces the `.AppImage` file itself (its folder needs to be writable).
+- The browser extension follows along: after Captae updates, the extension reloads itself from the extension folder once. If you installed it from a different folder, the toolbar panel tells you; click “Reload” on the extensions page.
+
 ## Install the browser extension
 
 On macOS, 16 browsers are supported: Chrome (including Beta, Dev, Canary and Chrome for Testing), Chromium, Edge (including Beta, Dev and Canary), Brave, Vivaldi, Opera, Opera GX, Arc and Aside.
@@ -88,7 +98,7 @@ The extension isn't in the stores yet, so load it in developer mode:
 
 1. Open Captae, go to the “Browser extension” page in the sidebar (or page 2 of the Welcome tour), choose your browser and click “Install”. This opens that browser's extensions page and shows the extension folder in Finder (File Explorer on Windows, your file manager on Linux).
 2. Turn on “Developer mode” in the top-right corner of the extensions page.
-3. Click “Load unpacked” and choose the extension folder (`Captae.app/Contents/Resources/extension` on macOS, `extension` in the install folder on Windows, `/usr/lib/Captae/extension` on Linux; you can copy the location on the “Browser extension” page).
+3. Click “Load unpacked” and choose the extension folder (`Captae.app/Contents/Resources/extension` on macOS, `extension` in the install folder on Windows, `/usr/lib/Captae/extension` for the Linux deb and `~/.local/share/captae/extension` for the AppImage; you can copy the location on the “Browser extension” page).
 4. Back in Captae, once you see “Connected”, you're done. Each time Captae starts, it registers the connector the extension needs with the browsers you have installed, so there's nothing to set up by hand.
 
 ## Connect an AI assistant

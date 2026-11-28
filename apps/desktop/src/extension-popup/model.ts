@@ -70,6 +70,8 @@ export type Page = { title: string; url: string; favIconUrl: string };
 export type State = {
   conn: Conn;
   reason?: string;
+  /** Captae 已经是这个版本、插件还是旧的（从文件夹重新加载也没换过来，background.js 的 followApp） */
+  stale?: string;
   /** 面板开关「带上这个网站的登录状态」：site 是这个网页的主域名（不是网页时是空的） */
   login?: { site: string; on: boolean };
   items: Item[];

@@ -13,6 +13,8 @@
 - README 有中文 `README.md` 和英文 `README.en.md` 两份，改一份就同步改另一份（界面上的名字照 `docs/I18N.md` 第 8 节的术语表）。
 - Windows / Linux（`docs/DESIGN.md` 第 14 节）：改了 Rust 要过 `cargo check --target x86_64-pc-windows-gnu -p captae-core -p captae-cli -p captae-desktop --tests`（只查编译）和 Docker 里 Ubuntu 22.04 的 `cargo test`；
   真窗口、安装包、插件宿主这些只在真系统上看得出的，在 Devin 的 Windows / Linux 虚拟机上测，不在这台 Mac 上起测试版。打包：`scripts/build-release-windows.ps1`（Windows 上）、`scripts/build-release-linux.sh`（Ubuntu 22.04 上）。
+- 应用内更新（`docs/DESIGN.md` 第 15 节）：签名私钥 `keys/updater.key`（密码在维护者的钥匙串里），只在维护者的 Mac 上签，不要放进 CI。
+  实测更新时把更新地址换成本机测试服务（`work/updater/tools/build-test.sh` 的做法），测试版照样一定设 `CAPTAE_HOME`；不要让测试版用正式的更新地址。
 - 依赖变了跑 `python3 scripts/gen-licenses.py` 更新 `licenses/`；打包用 `scripts/build-release.sh`（编译时去掉本机路径，最后自动运行 `scripts/check-bundle.sh`）。
 
 ## UI 库

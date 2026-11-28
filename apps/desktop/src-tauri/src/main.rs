@@ -18,6 +18,7 @@ use std::path::PathBuf;
 use tauri::{Emitter, Manager, State};
 
 mod agent_cmds;
+mod app_update;
 mod asset_scope;
 mod clip_ask;
 mod ext_cmds;
@@ -121,6 +122,11 @@ async fn install_whisper(st: State<'_, App>, model: Option<String>) -> R<Value> 
 /// 仓库的位置是编译时写进程序的绝对路径（里面有编译人的用户名），只在调试版里编译，正式版只认安装包里的（scripts/build-release.sh）
 fn extension_dir(app: &tauri::AppHandle) -> Option<PathBuf> {
     let bundled = app.path().resource_dir().ok().map(|d| d.join("extension"));
+    // Linux 的 AppImage：用拷到数据目录里的那份（ext_cmds::stable_extension_dir）
+    let bundled = match (bundled, app.try_state::<App>()) {
+        (Some(b), Some(a)) if b.join("manifest.json").exists() => Some(ext_cmds::stable_extension_dir(b, &a.core.paths.data)),
+        (b, _) => b,
+    };
     #[cfg(debug_assertions)]
     let dev = Some(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../extension"));
     #[cfg(not(debug_assertions))]
@@ -550,6 +556,8 @@ fn main() {
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_main(app)))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        // Captae 自己的更新（app_update.rs）：只在 Rust 里用，页面不直接调插件（没给 updater:* 权限）
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(move |app| {
             let paths = data_paths()?;
             let sidecar = std::env::current_exe().ok().and_then(|p| captae_core::tools::sidecar_dir_of(&p));
@@ -618,6 +626,11 @@ fn main() {
                 }
             });
             app.manage(App { core });
+            // AppImage：启动时就把插件文件夹拷到数据目录（换了新版的 AppImage 时更新它），插件从这里重新加载自己
+            #[cfg(target_os = "linux")]
+            let _ = extension_dir(app.handle());
+            // Captae 自己的更新：读记录、算装不装得了，打开 1 分钟后查一次，之后每 24 小时一次（app_update.rs）
+            app_update::init(app.handle(), &paths.data);
             // 被 kill（SIGTERM）、终端关掉（SIGHUP）、终端里按 Ctrl-C（SIGINT）时也和 ⌘Q 一样收拾再退出
             quit_on_signals(app.handle().clone());
             // --page library：页面还没加载，直接把地址换成 index.html#/library（单页应用按 # 选页面）
@@ -713,13 +726,21 @@ fn main() {
             // 在这个回调返回之前做完（返回以后系统才结束进程），见 docs/DESIGN.md 第 11 节「退出」
             // 录直播的原始数据是边写边能读的格式，留在原处，下次打开时整理好（queue.rs 的 recover_recording）
             if let tauri::RunEvent::Exit = ev {
-                if let Some(a) = app.try_state::<App>() {
-                    captae_core::api::clear(&a.core);
-                }
-                remote_cmds::shutdown(app);
-                captae_core::tools::kill_all();
+                cleanup_on_exit(app);
+                // 有下好的新版：正常退出时装上，下次打开就是新版（收到结束信号、关机时不装，见 app_update::on_exit）
+                app_update::on_exit(app, QUITTING.load(std::sync::atomic::Ordering::SeqCst));
             }
         });
+}
+
+/// 退出时要做的收拾：删 control.json（命令行、MCP、插件靠它找桌面端）、关掉给手机的服务、结束还在跑的 yt-dlp、ffmpeg、aria2c 连同子进程。
+/// Windows 上装更新时插件会直接结束进程，运行安装程序之前也调它（app_update.rs 的 on_before_exit）
+fn cleanup_on_exit(app: &tauri::AppHandle) {
+    if let Some(a) = app.try_state::<App>() {
+        captae_core::api::clear(&a.core);
+    }
+    remote_cmds::shutdown(app);
+    captae_core::tools::kill_all();
 }
 
 /// 已经开始退出了（收到过一个结束信号）
@@ -829,7 +850,8 @@ fn invoke_handler() -> impl Fn(tauri::ipc::Invoke) -> bool + Send + Sync + 'stat
             login::login_open, login::login_close, login::login_sites, login::login_logout,
             login::login_bar_state, login::login_done, login::login_cancel,
             task_cmds::task_cancel,
-            remote_cmds::remote_status, remote_cmds::remote_enable, remote_cmds::remote_pairing, remote_cmds::remote_revoke
+            remote_cmds::remote_status, remote_cmds::remote_enable, remote_cmds::remote_pairing, remote_cmds::remote_revoke,
+            app_update::app_update_status, app_update::app_update_check, app_update::app_update_download, app_update::app_update_restart
         ]);
     move |invoke| {
         let (label, cmd) = (invoke.message.webview_ref().label().to_string(), invoke.message.command().to_string());

@@ -27,6 +27,7 @@ import { AGENT_TOOLS, agentHandlers, DEMO_PRESETS, demoCalls } from "./mock-agen
 import { extensionHandlers } from "./mock-extension";
 import { libraryHandlers } from "./mock-library";
 import { remoteHandlers } from "./mock-remote";
+import { updateHandlers } from "./mock-update";
 import bbb from "./img/bbb-frank.jpg";
 import edEmo from "./img/ed-emo-proog.jpg";
 import edPlat from "./img/ed-platform.jpg";
@@ -99,6 +100,8 @@ const SETTINGS: Settings = {
   browser: "chrome",
   jsRuntimePath: "",
   autoUpdate: true,
+  // &upd=available：自动更新 Captae 关着（mock-update.ts）
+  appAutoUpdate: q.get("upd") !== "available",
   proxyMode: "system",
   proxyUrl: "",
   cookiesFromBrowser: "",
@@ -997,7 +1000,7 @@ export function createMock() {
     window_ctl: () => undefined,
   };
 
-  const tables = [core, libraryHandlers, agentHandlers, extensionHandlers, remoteHandlers];
+  const tables = [core, libraryHandlers, agentHandlers, extensionHandlers, remoteHandlers, updateHandlers];
 
   // 等界面画出来、下载页订阅了事件再发（截图时也要等一下）
   if (q.has("wait")) setTimeout(() => void core.login_open({ jobId: 27, kind: "login" }, ctx), STILL ? 400 : 1200);

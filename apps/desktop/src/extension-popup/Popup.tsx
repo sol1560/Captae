@@ -9,6 +9,7 @@
 // 取消会删掉录到的，先在这一行里问一句（照桌面端的说法），再点一次「取消录制」才生效。
 import {
   AiBrain01Icon,
+  AlertCircleIcon,
   ArrowDown01Icon,
   ArrowRight01Icon,
   CheckmarkCircle02Icon,
@@ -343,6 +344,15 @@ export function Popup() {
               {t("Captae 已连上，现在可以下载了")}
             </div>
           )}
+          {st.stale && (
+            <div className="xp-hello xp-stale" role="status">
+              <Icon icon={AlertCircleIcon} size={15} />
+              <span>{t("插件比 Captae {version} 旧，到扩展程序页面点「重新加载」", { version: st.stale })}</span>
+              <button type="button" className="xp-link" onClick={openExtensionsPage}>
+                {t("打开")}
+              </button>
+            </div>
+          )}
           <section className="xp-page" aria-label={t("这个网页")}>
             <strong title={title}>{title}</strong>
             <span>
@@ -432,6 +442,12 @@ export function Popup() {
       )}
     </Shell>
   );
+}
+
+/** 打开这个浏览器的扩展程序页面、定位到 Captae 插件（Edge、Brave 等也认 chrome:// 的写法） */
+function openExtensionsPage() {
+  if (typeof chrome === "undefined" || !chrome.runtime?.id) return;
+  chrome.tabs.create({ url: `chrome://extensions/?id=${chrome.runtime.id}` }).catch(() => undefined);
 }
 
 /** 面板外框：顶上 logo + 状态 + 设置，底下「打开 Captae」 */

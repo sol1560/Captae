@@ -143,6 +143,8 @@ if ! version_is "$OUT/yt-dlp.version" "$YTDLP_VER" || [[ ! -x "$OUT/yt-dlp/$YTDL
   chmod 755 "$OUT/yt-dlp/$YTDLP_EXE"
   echo "$YTDLP_VER" >"$OUT/yt-dlp.version"
 fi
+# 安装包里也记一份版本（/usr/lib/Captae/yt-dlp/version.txt），见 tools.rs 的 bundled_ytdlp_version
+echo "$YTDLP_VER" >"$OUT/yt-dlp/version.txt"
 
 # ---------- deno ----------
 if ! version_is "$OUT/deno.version" "$DENO_VER" || [[ ! -x "$OUT/bin/deno" ]]; then

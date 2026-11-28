@@ -157,6 +157,9 @@ pub struct Settings {
     pub js_runtime_path: String,
     /// 每天自动检查一次下载引擎（yt-dlp）有没有新版
     pub auto_update: bool,
+    /// 自动更新 Captae 本身（桌面端 app_update.rs）：查到新版就在后台下载、验签，下次正常退出时装上。
+    /// 关掉以后照样每天查，只是不自动下载，要用户自己点。和上面 yt-dlp 的 `auto_update` 是两回事
+    pub app_auto_update: bool,
     /// 代理：system 跟随系统 / none 不用代理 / manual 手动指定
     pub proxy_mode: String,
     /// 手动代理地址，如 http://127.0.0.1:7890、socks5://127.0.0.1:1080（proxy_mode 为 manual 时用）
@@ -191,6 +194,7 @@ impl Default for Settings {
             browser: "chrome".into(),
             js_runtime_path: String::new(),
             auto_update: true,
+            app_auto_update: true,
             proxy_mode: "system".into(),
             proxy_url: String::new(),
             cookies_from_browser: String::new(),

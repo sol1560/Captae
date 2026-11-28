@@ -144,6 +144,8 @@ try {
     [IO.Compression.ZipFile]::ExtractToDirectory($zip, $dst)
     Set-Content -LiteralPath (Join-Path $Win 'yt-dlp.version') -Value $YtdlpVer -Encoding ASCII
   }
+  # 安装包里也记一份版本（安装目录的 yt-dlp\version.txt），见 tools.rs 的 bundled_ytdlp_version
+  Set-Content -LiteralPath (Join-Path $Win 'yt-dlp\version.txt') -Value $YtdlpVer -Encoding ASCII
 
   # ---------- deno ----------
   $denoExe = Join-Path $Bin "deno-$Triple.exe"

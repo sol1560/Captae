@@ -176,5 +176,14 @@
   "没能移到回收站：{err}。外置盘、网络盘上可能没有回收站，可以在文件管理器里直接删除": "Impossible de placer dans la corbeille : {err}. Les disques externes et réseau n’ont pas toujours de corbeille. Vous pouvez supprimer le fichier directement dans le gestionnaire de fichiers",
   "Captae 还没启动好，请稍后再试": "Captae est encore en cours de démarrage. Réessayez dans un instant",
   "读登录存储用的窗口没建好": "Impossible d’ouvrir la fenêtre servant à lire les données de connexion",
-  "登录存储没有回应": "Les données de connexion ne répondent pas"
+  "登录存储没有回应": "Les données de connexion ne répondent pas",
+  "在磁盘映像里打开的 Captae 不能自动更新，先把它拖进「应用程序」文件夹": "Captae ne peut pas se mettre à jour tant qu’il s’exécute depuis l’image disque. Faites-le d’abord glisser dans le dossier « Applications »",
+  "先把 Captae 拖进「应用程序」文件夹再打开，才能自动更新": "Faites glisser Captae dans le dossier « Applications » et ouvrez-le depuis cet emplacement pour recevoir les mises à jour automatiques",
+  "Captae 所在的文件夹不能写入，不能自动更新": "Captae ne peut pas se mettre à jour, car son dossier n’est pas accessible en écriture",
+  "系统里没有输入密码用的 pkexec，不能自动更新": "Captae ne peut pas se mettre à jour, car pkexec, qui demande votre mot de passe, n’est pas installé",
+  "测试数据目录下不自动更新": "Pas de mises à jour automatiques avec un dossier de données de test",
+  "这个版本的 Captae 不能自动更新": "Cette copie de Captae ne peut pas se mettre à jour",
+  "还没有下载好的新版本": "Aucune mise à jour n’a encore été téléchargée",
+  "下载好的版本已经不比现在的新": "La version téléchargée n’est pas plus récente que celle-ci",
+  "正在检查或下载更新，稍等一下": "Recherche ou téléchargement d’une mise à jour en cours. Réessayez dans un instant"
 }

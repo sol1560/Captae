@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { loadLang, parseLang, setLang, loadAndSetLang, t, type Lang } from "@/i18n";
 import { errText, invoke, listenEvents } from "./bridge";
-import type { AddRequest, Boot, CallRecord, CaptaeEvent, DepStatus, Job, McpClient, Preset, Settings, Sniffed, TaskStatus } from "./types";
+import type { AddRequest, AppUpdateStatus, Boot, CallRecord, CaptaeEvent, DepStatus, Job, McpClient, Preset, Settings, Sniffed, TaskStatus } from "./types";
 import { notify } from "./notify";
 
 export type AppState = {
@@ -29,6 +29,8 @@ export type AppState = {
   tasks: Record<number, TaskStatus>;
   /** 界面语言（词表已经加载好的）。变了以后整个界面重新挂一次（main.tsx） */
   lang: Lang;
+  /** Captae 自己的更新；null = 还不知道（后端没有这个命令时一直是 null，界面不显示） */
+  appUpdate: AppUpdateStatus | null;
 };
 
 let state: AppState = {
@@ -47,6 +49,7 @@ let state: AppState = {
   mcpClients: null,
   tasks: {},
   lang: "zh-CN",
+  appUpdate: null,
 };
 
 const subs = new Set<() => void>();
@@ -138,6 +141,9 @@ function handle(ev: CaptaeEvent) {
     case "task":
       setState((s) => ({ tasks: { ...s.tasks, [ev.task.id]: ev.task } }));
       break;
+    case "app_update":
+      setState({ appUpdate: ev.status });
+      break;
   }
   bus.get(ev.type)?.forEach((f) => {
     try {
@@ -213,6 +219,9 @@ export async function boot() {
   setInterval(() => {
     if (!document.hidden) pollMcp();
   }, 30000);
+  invoke<AppUpdateStatus>("app_update_status")
+    .then((st) => setState({ appUpdate: st }))
+    .catch(() => undefined);
 }
 
 /** AI 助手的连接状态：MCP 进程写的状态文件，30 秒看一次 */

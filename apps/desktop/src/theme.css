@@ -448,6 +448,24 @@ button {
   background: var(--accent);
   flex: none;
 }
+/* 侧栏「更新到 x.y.z」（shell/AppUpdate.tsx）：和上手清单同一种白底小卡片，图标和右边的按钮字用强调色 */
+.cp-side-update {
+  margin: 8px 0 2px;
+  padding: 3px 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.52);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+.cp-side-update .cp-side-row {
+  padding: 0 9px 0 10px;
+}
+.cp-side-update .glyph,
+.cp-side-update .trail {
+  color: var(--accent);
+}
+.cp-side-update .trail {
+  font-weight: 500;
+}
 .cp-side-foot {
   display: flex;
   align-items: center;

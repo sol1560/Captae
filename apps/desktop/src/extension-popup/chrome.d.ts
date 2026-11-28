@@ -9,5 +9,6 @@ declare namespace chrome {
     type Tab = { id?: number; url?: string; title?: string; favIconUrl?: string };
     function query(q: { active?: boolean; currentWindow?: boolean }): Promise<Tab[]>;
     function sendMessage(tabId: number, message: unknown): Promise<unknown>;
+    function create(p: { url: string }): Promise<Tab>;
   }
 }

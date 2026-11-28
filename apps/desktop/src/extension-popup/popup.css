@@ -87,6 +87,15 @@ body {
 .xp-hello svg {
   color: var(--ok);
 }
+/* 插件比 Captae 旧（background.js 的 followApp 没能换过来）：同一种小卡片，图标用提醒色，右边一个「打开」 */
+.xp-stale svg {
+  color: var(--warn);
+  flex: none;
+}
+.xp-stale span {
+  flex: 1;
+  min-width: 0;
+}
 
 .xp-seg {
   padding: 12px 10px 6px;

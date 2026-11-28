@@ -14,6 +14,7 @@ import { errText, invoke, platform } from "@/lib/bridge";
 import { normalizeUrl } from "@/lib/detect";
 import { bare, dayLabel, etaText, home, whenLabel } from "@/lib/format";
 import { notify } from "@/lib/notify";
+import { blockedText, checkUpdate, downloadUpdate, openRelease, requestRestart } from "@/lib/appUpdate";
 import { effectiveLang, getSystemLang, loadDeps, onEvent, setSettings, useApp } from "@/lib/store";
 import type { EngineReport, EngineStatus, LoginSite, ProxyStatus, Settings } from "@/lib/types";
 import { installWhisper, modelInfo, useWhisper, WHISPER_MODELS } from "@/lib/whisper";
@@ -125,6 +126,8 @@ function Body({ s, open }: { s: Settings; open: boolean }) {
       </div>
 
       <Phones open={open} />
+
+      <AboutCaptae s={s} />
 
       <h3 className="cp-set-h">{t("帮助")}</h3>
       <div className="cp-group">
@@ -423,6 +426,93 @@ function Proxy({ s, open }: { s: Settings; open: boolean }) {
           />
         </div>
       </Collapse>
+    </>
+  );
+}
+
+/* ---------------- 关于 Captae：版本和 Captae 自己的更新（lib/appUpdate.ts，后端 src-tauri/src/app_update.rs） ---------------- */
+
+function AboutCaptae({ s }: { s: Settings }) {
+  const st = useApp((x) => x.appUpdate);
+  // 后端没有这个命令（演示数据没开、老版本）时整组不显示
+  if (!st) return null;
+  const v = st.latest ?? "";
+  const failed = st.error && st.state !== "checking" && st.state !== "downloading" && st.state !== "installing";
+  let sub: ReactNode;
+  let action: ReactNode = null;
+  const pill = (label: string, run: () => void, loading = false) => (
+    <Button variant="secondary" size="sm" className="cp-pill" loading={loading} onClick={run}>
+      {label}
+    </Button>
+  );
+  if (st.state === "checking") {
+    sub = t("正在检查…");
+    action = pill(t("检查更新"), checkUpdate, true);
+  } else if (st.state === "downloading") {
+    sub = t("正在下载 {version}", { version: v });
+  } else if (st.state === "installing") {
+    sub = t("正在安装 {version}…", { version: v });
+  } else if (st.state === "ready") {
+    sub = st.error?.step === "install" ? t("{version} 已下载好，上次没装成：{error}", { version: v, error: st.error.message }) : t("{version} 已下载好，重新打开就是新版", { version: v });
+    action = pill(t("重新打开§装上新版、重新打开 Captae 的按钮，要短"), requestRestart);
+  } else if (st.blocked && st.blocked !== "unsupported" && st.state === "available") {
+    sub = `${t("有新版本 {version}", { version: v })} · ${blockedText(st.blocked)}`;
+    action = pill(t("去下载页"), () => openRelease(v));
+  } else if (st.state === "available") {
+    sub = failed && st.error?.step !== "check" ? t("有新版本 {version} · 上次没更新成：{error}", { version: v, error: st.error!.message }) : t("有新版本 {version}", { version: v });
+    action = pill(failed ? t("再试一次") : t("下载并更新"), () => void downloadUpdate());
+  } else if (st.blocked) {
+    // 装不了的版本：只说现在是什么版本、为什么不能自动更新，检查和下载交给 Release 页
+    sub = blockedText(st.blocked);
+    action = pill(t("去下载页"), () => openRelease(null));
+  } else {
+    sub =
+      st.error?.step === "check"
+        ? t("上次没检查成：{error}", { error: st.error.message })
+        : st.lastCheck
+          ? t("已经是最新的 · 上次检查：{when}", { when: whenLabel(st.lastCheck) })
+          : t("还没有检查过更新");
+    action = pill(t("检查更新"), checkUpdate);
+  }
+  return (
+    <>
+      <h3 className="cp-set-h">{t("关于 Captae")}</h3>
+      <div className="cp-group">
+        <div className="cp-set-row">
+          <div>
+            <b>Captae {st.current}</b>
+            <small>{sub}</small>
+            {st.state === "downloading" && (
+              <div className="cp-tprog">
+                <ProgressBar p={st.progress ?? 0} indeterminate={st.progress == null} tick={250} label={t("下载新版本")} />
+                <span className="num">{st.progress != null ? `${Math.round(st.progress * 100)}%` : ""}</span>
+              </div>
+            )}
+          </div>
+          {action ?? <span />}
+        </div>
+        {st.blocked !== "unsupported" && st.blocked !== "test" && (
+          <div className="cp-set-sw">
+            <Switch
+              placement="end"
+              label={t("自动更新 Captae")}
+              description={
+                st.kind === "deb"
+                  ? t("有新版本时在后台下载好，点「重新打开」装上（要输入密码）。只连接 GitHub 查版本，不发送任何个人信息")
+                  : t("有新版本时在后台下载好，下次打开 Captae 就是新版。只连接 GitHub 查版本，不发送任何个人信息")
+              }
+              checked={s.appAutoUpdate ?? true}
+              onChange={(e) => {
+                const on = e.target.checked;
+                // 打开时已经知道有新版：设置存好以后马上开始下载（后端按 settings.json 里的开关决定下不下）
+                void setSettings({ appAutoUpdate: on }).then(() => {
+                  if (on && st.state === "available" && !st.blocked) void checkUpdate();
+                });
+              }}
+            />
+          </div>
+        )}
+      </div>
     </>
   );
 }

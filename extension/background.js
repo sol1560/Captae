@@ -306,8 +306,9 @@ async function connState() {
   let r;
   try {
     const h = await native('hello', { version: VERSION, browser: browserName() }, 4000);
-    r = { conn: h.app ? 'ok' : 'off', clipboardApp: !!h.clipboard, hostVersion: h.version || '' };
+    r = { conn: h.app ? 'ok' : 'off', clipboardApp: !!h.clipboard, hostVersion: h.version || '', appVersion: h.appVersion || '' };
     syncLang(h.lang).catch(() => {});
+    followApp(h.appVersion || h.version || '').catch(() => {});
   } catch (e) {
     if (e.code === 'HOST_MISSING') r = { conn: 'nohost' };
     else if (e.code === 'HOST_BROKEN') r = { conn: 'broken', reason: e.reason || connReason };
@@ -316,6 +317,31 @@ async function connState() {
   connReason = r.reason || '';
   setConn(r.conn);
   return r;
+}
+
+/* 「1.10.2」比「1.9.0」新：按点分开逐段比数字 */
+function newerVersion(a, b) {
+  const x = String(a).split('.').map(n => parseInt(n, 10) || 0), y = String(b).split('.').map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+  return false;
+}
+
+/* Captae 更新以后插件跟着换（docs/DESIGN.md 第 15 节）：插件是「加载已解压」装的，文件夹在 Captae 的安装包里，
+ * Captae 换成新版以后文件夹里已经是新文件，但浏览器里跑的还是旧代码。Captae 比插件新时从文件夹重新加载一次；
+ * 同一个版本只试一次：重新加载以后还是旧的（从别的文件夹装的），记下 stale，工具栏面板里说明怎么更新 */
+async function followApp(appVersion) {
+  if (!appVersion || !newerVersion(appVersion, VERSION)) {
+    await chrome.storage.local.remove('stale');
+    return;
+  }
+  const self = chrome.management && chrome.management.getSelf ? await chrome.management.getSelf().catch(() => null) : null;
+  const { reloadedFor } = await chrome.storage.local.get('reloadedFor');
+  if (self && self.installType === 'development' && reloadedFor !== appVersion) {
+    await chrome.storage.local.set({ reloadedFor: appVersion });
+    chrome.runtime.reload();
+    return;
+  }
+  await chrome.storage.local.set({ stale: appVersion });
 }
 
 /* 浏览器开着就每分钟打一次招呼：桌面端据此显示「插件已连上」，工具栏图标也跟着变 */
@@ -636,7 +662,9 @@ chrome.runtime.onMessage.addListener((m, sender, reply) => {
         if (media) { await withTab(tabId, t => addFromDom(t, media)); badge(tabId); }
         const [c, t, s] = await Promise.all([connState(), getTab(tabId), settings()]);
         const tab = await tabInfo(tabId);
-        return { ...c, items: t.items, dl: t.dl, qual: t.qual, settings: s, login: await loginSetting(tabId), page: { title: tab.title || t.title, url: tab.url || t.url, favIconUrl: tab.favIconUrl || '' } };
+        // stale：Captae 比插件新、重新加载也没换过来（插件是从别的文件夹装的），面板里提示
+        const { stale } = await chrome.storage.local.get('stale');
+        return { ...c, stale: stale || '', version: VERSION, items: t.items, dl: t.dl, qual: t.qual, settings: s, login: await loginSetting(tabId), page: { title: tab.title || t.title, url: tab.url || t.url, favIconUrl: tab.favIconUrl || '' } };
       }
       case 'login': return setLogin(tabId, m.on !== false);
       case 'page': {

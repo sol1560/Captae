@@ -9,7 +9,9 @@
 #   5. 没有调试钩子（CAPTAE_TEST_、login-test.json、clip-test.json、eval.js），没有打包那台电脑的主目录路径和 PDB 路径
 #   6. 插件文件夹在、popup/ 是构建产物、和仓库里的 extension/ 一样
 #   7. licenses/、THIRD_PARTY_NOTICES.md 在、和仓库一样
-#   8. 只在 -Install 时：卸载干净（安装目录、开始菜单、卸载登记都没了）
+#   8. 应用内更新：桌面端里记着的安装方式是 NSIS（更新插件据此在 latest.json 里找 windows-x86_64-nsis）、更新公钥和 tauri.conf.json 一致、
+#      更新地址是 GitHub 上的正式地址；自带的 yt-dlp 旁边有 version.txt（docs/DESIGN.md 第 15 节）
+#   9. 只在 -Install 时：卸载干净（安装目录、开始菜单、卸载登记都没了）
 #
 # 拿到安装目录的三种办法：
 #   -InstallDir <目录>   检查已经装好的目录（例如 %LOCALAPPDATA%\Captae）
@@ -213,9 +215,20 @@ try {
     Pass '和仓库里的 licenses\、THIRD_PARTY_NOTICES.md 一样'
   } else { Warn '和仓库里的 licenses\ 或 THIRD_PARTY_NOTICES.md 不一样（打包以后又改过？或者 git 换了行尾）' }
 
-  # ---------- 8. 卸载（只在 -Install 时） ----------
+  # ---------- 8. 应用内更新 ----------
+  Section '8. 应用内更新'
+  $t = Bytes-Text $mainExe
+  $marks = @([regex]::Matches($t, '__TAURI_BUNDLE_TYPE_VAR_[A-Z]+') | ForEach-Object { $_.Value } | Sort-Object -Unique)
+  if ($marks.Count -eq 1 -and $marks[0] -eq '__TAURI_BUNDLE_TYPE_VAR_NSS') { Pass '桌面端记着安装方式 NSIS，更新时找对的包' } else { Fail "桌面端里的安装方式标记是 $($marks -join ' ')，应该是 __TAURI_BUNDLE_TYPE_VAR_NSS（更新会找错包）" }
+  $pub = (Get-Content -Raw -LiteralPath (Join-Path $Root 'apps\desktop\src-tauri\tauri.conf.json') | ConvertFrom-Json).plugins.updater.pubkey
+  if ($pub -and $t.Contains($pub)) { Pass '桌面端里的更新公钥和 tauri.conf.json 一致' } else { Fail '桌面端里没有 tauri.conf.json 里的更新公钥' }
+  if ($t.Contains('https://github.com/sol1560/Captae/releases/latest/download/latest.json')) { Pass '更新地址是 GitHub 上的正式地址' } else { Fail '桌面端里没有正式的更新地址' }
+  $ytv = Join-Path $D 'yt-dlp\version.txt'
+  if ((Test-Path -LiteralPath $ytv) -and (Get-Content -Raw -LiteralPath $ytv).Trim() -eq $wantYtdlp) { Pass "自带的 yt-dlp 旁边记着版本 $wantYtdlp（version.txt）" } else { Fail "自带的 yt-dlp 旁边没有 version.txt，或者版本不是 $wantYtdlp" }
+
+  # ---------- 9. 卸载（只在 -Install 时） ----------
   if ($installedHere) {
-    Section '8. 卸载'
+    Section '9. 卸载'
     $un = Join-Path $D 'uninstall.exe'
     if (-not (Test-Path -LiteralPath $un)) { Fail '安装目录里没有 uninstall.exe' }
     else {

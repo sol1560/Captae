@@ -175,7 +175,7 @@ fn exe_in(dir: &Path) -> PathBuf {
     std::iter::once(EXE).chain(alt.iter().copied()).map(|n| dir.join(n)).find(|p| p.is_file()).unwrap_or_else(|| dir.join(EXE))
 }
 
-fn exe_as(dir: &Path, f: Flavor) -> PathBuf {
+pub(crate) fn exe_as(dir: &Path, f: Flavor) -> PathBuf {
     dir.join(f.exe)
 }
 

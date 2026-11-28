@@ -89,6 +89,9 @@ if [[ $FORCE == 1 || ! -x "$BIN/yt-dlp/yt-dlp_macos" || "$(cat "$BIN/yt-dlp.vers
   unzip -q -o "$TMP/yt-dlp.zip" -d "$BIN/yt-dlp"
   echo "$YTDLP_VER" > "$BIN/yt-dlp.version"
 fi
+# 安装包里也记一份版本（Contents/Resources/yt-dlp/version.txt）：Captae 不运行 yt-dlp 就知道自带的是哪一版，
+# 比自动更新装的新时用自带的（tools.rs 的 bundled_ytdlp_version）
+echo "$YTDLP_VER" > "$BIN/yt-dlp/version.txt"
 
 # ---------- deno（JS 运行时） ----------
 if [[ $FORCE == 1 || ! -x "$BIN/deno-$TRIPLE" || "$(cat "$BIN/deno.version" 2>/dev/null)" != "$DENO_VER" ]]; then

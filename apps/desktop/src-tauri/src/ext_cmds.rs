@@ -39,6 +39,75 @@ fn copy_host(exe: &Path, dir: &Path) -> std::io::Result<PathBuf> {
     Ok(dst)
 }
 
+/// Linux 的 AppImage：给用户「加载已解压」的插件文件夹不能在 /tmp/.mount_xxx/ 里（Captae 一退出就没了，浏览器下次启动时找不到插件）。
+/// 和宿主一样拷一份到数据目录的 `extension/`，AppImage 换了新版（内容变了）才重拷，插件发现 Captae 更新了会从这里重新加载自己。
+/// 不是 AppImage 时原样返回安装包里的那份
+pub fn stable_extension_dir(bundled: PathBuf, data: &Path) -> PathBuf {
+    #[cfg(target_os = "linux")]
+    if let Some(mount) = std::env::var_os("APPDIR").map(PathBuf::from).filter(|_| std::env::var_os("APPIMAGE").is_some()) {
+        if bundled.starts_with(&mount) {
+            return match copy_extension(&bundled, &data.join("extension")) {
+                Ok(p) => p,
+                Err(e) => {
+                    tracing::warn!("没能把插件文件夹拷到数据目录：{e}");
+                    bundled
+                }
+            };
+        }
+    }
+    let _ = data;
+    bundled
+}
+
+/// 一个文件夹里所有文件的相对路径和内容，按路径排好（插件文件夹只有几 MB，整个比一遍）
+#[cfg(target_os = "linux")]
+fn tree(dir: &Path) -> std::io::Result<Vec<(PathBuf, Vec<u8>)>> {
+    fn walk(root: &Path, d: &Path, out: &mut Vec<(PathBuf, Vec<u8>)>) -> std::io::Result<()> {
+        for e in std::fs::read_dir(d)? {
+            let e = e?;
+            let p = e.path();
+            if e.file_type()?.is_dir() {
+                walk(root, &p, out)?;
+            } else {
+                out.push((p.strip_prefix(root).unwrap_or(&p).to_path_buf(), std::fs::read(&p)?));
+            }
+        }
+        Ok(())
+    }
+    let mut out = vec![];
+    walk(dir, dir, &mut out)?;
+    out.sort_by(|a, b| a.0.cmp(&b.0));
+    Ok(out)
+}
+
+/// 内容不一样才重拷：先拷进临时文件夹，再换掉原来的
+#[cfg(target_os = "linux")]
+fn copy_extension(src: &Path, dst: &Path) -> std::io::Result<PathBuf> {
+    let new = tree(src)?;
+    if tree(dst).ok().as_ref() == Some(&new) {
+        return Ok(dst.to_path_buf());
+    }
+    let parent = dst.parent().unwrap_or(Path::new("."));
+    let tmp = parent.join(".extension.tmp");
+    let old = parent.join(".extension.old");
+    let _ = std::fs::remove_dir_all(&tmp);
+    let _ = std::fs::remove_dir_all(&old);
+    for (rel, bytes) in &new {
+        let p = tmp.join(rel);
+        if let Some(d) = p.parent() {
+            std::fs::create_dir_all(d)?;
+        }
+        std::fs::write(p, bytes)?;
+    }
+    if dst.exists() {
+        std::fs::rename(dst, &old)?;
+    }
+    std::fs::rename(&tmp, dst)?;
+    let _ = std::fs::remove_dir_all(&old);
+    tracing::info!("插件文件夹已更新：{}", dst.display());
+    Ok(dst.to_path_buf())
+}
+
 fn install_opts(data: &Path) -> Option<Install> {
     let mut o = Install::new(cli(data)?, data.to_path_buf());
     // 便携模式：宿主也要用同一个数据目录，才找得到这个桌面端
@@ -139,4 +208,29 @@ async fn talk(wrapper: &Path) -> Result<Value, String> {
         return Err(v["error"].as_str().map(str::to_string).unwrap_or_else(|| tr!("宿主回了错误")));
     }
     Ok(v["data"].clone())
+}
+
+#[cfg(all(test, target_os = "linux"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extension_copy_follows_new_bundle() {
+        let d = tempfile::tempdir().unwrap();
+        let (src, dst) = (d.path().join("mount/extension"), d.path().join("data/extension"));
+        std::fs::create_dir_all(src.join("lib")).unwrap();
+        std::fs::write(src.join("manifest.json"), br#"{"version":"0.2.0"}"#).unwrap();
+        std::fs::write(src.join("lib/a.js"), b"1").unwrap();
+        assert_eq!(copy_extension(&src, &dst).unwrap(), dst);
+        assert_eq!(std::fs::read(dst.join("lib/a.js")).unwrap(), b"1");
+        // 新版：改了一个文件、删了一个文件
+        std::fs::write(src.join("manifest.json"), br#"{"version":"0.3.0"}"#).unwrap();
+        std::fs::remove_file(src.join("lib/a.js")).unwrap();
+        std::fs::write(src.join("b.js"), b"2").unwrap();
+        copy_extension(&src, &dst).unwrap();
+        assert_eq!(std::fs::read_to_string(dst.join("manifest.json")).unwrap(), r#"{"version":"0.3.0"}"#);
+        assert!(!dst.join("lib/a.js").exists());
+        assert!(dst.join("b.js").exists());
+        assert!(!d.path().join("data/.extension.tmp").exists() && !d.path().join("data/.extension.old").exists());
+    }
 }

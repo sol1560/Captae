@@ -29,6 +29,13 @@ tauri = { version = "2", features = ["protocol-asset", "unstable"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2"
+# Captae 自己的更新（src/app_update.rs）：查 GitHub Release 上的 latest.json、minisign 验签、按安装方式装（macOS 换整个 .app、Windows 跑 NSIS 安装程序、
+# AppImage 换文件、deb 用 pkexec dpkg -i）。2.14 要 tauri 2.12 以上。MIT OR Apache-2.0
+tauri-plugin-updater = "2.14"
+# 更新插件用的是 reqwest 0.13：这里只为了给它打开 socks 特性（同一个版本的特性会合并），设置里手动填 socks5 代理时查更新、下载也走代理
+reqwest13 = { package = "reqwest", version = "0.13", default-features = false, features = ["socks"] }
+# 看安装位置能不能写（app_update.rs 建一个临时文件再删）；单元测试也用。更新插件本来就在用，MIT OR Apache-2.0
+tempfile = "3"
 clipboard-rs = "0.3"
 trash = "5"
 # Linux 上素材库播放用的本机小服务（src/media_server.rs）：都是核心库已经在用的包和版本（axum 0.8、tokio-util 0.7、rand 0.9），MIT / MIT OR Apache-2.0
@@ -52,9 +59,9 @@ objc2-app-kit = { version = "0.3", default-features = false, features = ["std", 
 windows-sys = { version = "0.61", features = ["Win32_System_DataExchange", "Win32_UI_WindowsAndMessaging"] }
 winreg = "0.55"
 # 登录存储（子任务 D，src/login_win.rs）：直接调 WebView2 的 CookieManager 读删 cookie、摘掉网站那块的协议过滤器。
-# wry 本来就在用这两个包，版本跟着它（webview2-com 0.38、windows-core 0.61），都是 MIT / MIT OR Apache-2.0
-webview2-com = "0.38"
-windows-core = "0.61"
+# wry 本来就在用这两个包，版本跟着它（webview2-com 0.39、windows-core 0.62，2026-11-28 跟着 tauri 2.12 / wry 0.57 升），都是 MIT / MIT OR Apache-2.0
+webview2-com = "0.39"
+windows-core = "0.62"
 
 # Linux：剪贴板提示用 X11 的 XFixes 事件数剪贴板换了几次主人（见 src/clip_ask.rs）。clipboard-rs 本来就在用这个包和这个特性，MIT OR Apache-2.0
 [target.'cfg(target_os = "linux")'.dependencies]
@@ -65,5 +72,4 @@ webkit2gtk = { version = "2.0", features = ["v2_38"] }
 soup3 = "0.5"
 
 [dev-dependencies]
-tempfile = "3"
 reqwest = { version = "0.12", default-features = false }

@@ -151,5 +151,32 @@
   "连着": "Verbunden",
   "视频§Windows、Linux 的用户文件夹": "Videos",
   "音乐§Windows、Linux 的用户文件夹": "Musik",
-  "图片§Windows、Linux 的用户文件夹": "Bilder"
+  "图片§Windows、Linux 的用户文件夹": "Bilder",
+  "在磁盘映像里打开的 Captae 不能自动更新，先把它拖进「应用程序」文件夹": "Captae kann sich nicht selbst aktualisieren, solange es aus dem Disk-Image läuft. Zieh es zuerst in den Ordner „Programme“",
+  "先把 Captae 拖进「应用程序」文件夹再打开，才能自动更新": "Zieh Captae in den Ordner „Programme“ und öffne es von dort, um automatische Updates zu bekommen",
+  "Captae 所在的文件夹不能写入，不能自动更新": "Captae kann sich nicht selbst aktualisieren, weil sein Ordner schreibgeschützt ist",
+  "系统里没有输入密码用的 pkexec，不能自动更新": "Captae kann sich nicht selbst aktualisieren, weil pkexec (fragt nach deinem Passwort) nicht installiert ist",
+  "测试数据目录下不自动更新": "Keine automatischen Updates mit einem Testdatenordner",
+  "这个版本的 Captae 不能自动更新": "Diese Captae-Kopie kann sich nicht selbst aktualisieren",
+  "没有打开网页": "Seite konnte nicht geöffnet werden",
+  "没有检查成": "Prüfung fehlgeschlagen",
+  "已经是最新的": "Bereits aktuell",
+  "有新版本 {version}": "Version {version} ist verfügbar",
+  "没有下载成": "Download fehlgeschlagen",
+  "没有更新成": "Update fehlgeschlagen",
+  "已更新到 {version}": "Auf {version} aktualisiert",
+  "看看改了什么": "Neuerungen ansehen",
+  "更新到 {version}": "Auf {version} aktualisieren",
+  "重新打开§装上新版、重新打开 Captae 的按钮，要短": "Neu starten",
+  "更新§侧栏里有新版本时右边的按钮，要短": "Updaten",
+  "重新打开 Captae 并更新？": "Captae neu starten und aktualisieren?",
+  "以后再说": "Später",
+  "还有{n}个任务在下载，重新打开后会接着下。": {
+    "one": "{n} Download läuft noch. Er wird nach dem Neustart fortgesetzt.",
+    "other": "{n} Downloads laufen noch. Sie werden nach dem Neustart fortgesetzt."
+  },
+  "正在录的{n}个直播会停止，录到的部分在重新打开后保存好。": {
+    "one": "{n} Livestream-Aufnahme wird gestoppt. Das bisher Aufgenommene wird nach dem Neustart gespeichert.",
+    "other": "{n} Livestream-Aufnahmen werden gestoppt. Das bisher Aufgenommene wird nach dem Neustart gespeichert."
+  }
 }

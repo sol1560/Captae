@@ -115,6 +115,8 @@ export type Settings = {
   browser: string;
   jsRuntimePath?: string;
   autoUpdate?: boolean;
+  /** 自动更新 Captae 本身（和上面下载引擎的 autoUpdate 是两回事，后端 app_update.rs） */
+  appAutoUpdate?: boolean;
   proxyMode?: "system" | "none" | "manual";
   proxyUrl?: string;
   /** 也读取浏览器里的登录状态（yt-dlp --cookies-from-browser）：空 = 不读；chrome / safari / edge / brave / firefox / vivaldi / opera / chromium */
@@ -210,7 +212,30 @@ export type CaptaeEvent =
   /** 只提示一次的事（比如第一次用 YouTube 账号下载） */
   | { type: "notice"; key: string; title: string; text: string }
   /** 「设置 › 手机」有变化：配对了、撤销了、手机连上 / 断开、开关变了（src-tauri/src/remote_cmds.rs）。页面收到后再调 remote_status */
-  | { type: "remote" };
+  | { type: "remote" }
+  /** Captae 自己的更新状态变了（src-tauri/src/app_update.rs） */
+  | { type: "app_update"; status: AppUpdateStatus };
+
+/** Captae 自己的更新（app_update_status / app_update_check / app_update_download，src-tauri/src/app_update.rs 的 Status） */
+export type AppUpdateStatus = {
+  current: string;
+  state: "idle" | "checking" | "downloading" | "ready" | "available" | "installing";
+  /** 查到的新版本 */
+  latest?: string | null;
+  /** 下载进度 0–1，不知道总大小时为空 */
+  progress?: number | null;
+  lastCheck?: number | null;
+  /** 上一次出错：查（check）、下载（download）、装（install）哪一步 */
+  error?: { step: "check" | "download" | "install"; message: string; at: number } | null;
+  /** 装不了的原因；为空就是能装 */
+  blocked?: "dmg" | "translocated" | "readonly" | "no_pkexec" | "unsupported" | "test" | null;
+  kind: "app" | "nsis" | "appimage" | "deb" | "unknown";
+  /** 刚从哪个版本更新过来（更新后第一次打开） */
+  updatedFrom?: string | null;
+  /** 下好以后正常退出时会不会自动装 */
+  installOnQuit: boolean;
+  auto: boolean;
+};
 
 /** 一台配对过的手机（captae-remote server::DeviceView） */
 export type RemoteDevice = { id: string; name: string; platform: "ios" | "android" | "other"; pairedAt: number; lastSeen?: number; online: boolean };

@@ -315,11 +315,22 @@ impl Toolbox {
         crate::updater::active_engine_as(self.data_dir.as_deref()?, crate::updater::flavor_of(self.runner.kind()))
     }
 
+    /// 桌面端用不用自动更新装的那份：有，而且不比安装包自带的旧。
+    /// Captae 更新带来了更新的 yt-dlp、而 yt-dlp 的自动更新关着（或者还没来得及查）时，用安装包自带的
+    fn managed_ytdlp_in_use(&self) -> Option<PathBuf> {
+        let (v, p) = self.managed_ytdlp()?;
+        let bundled = self.bundled_ytdlp().as_deref().and_then(bundled_ytdlp_version);
+        match bundled {
+            Some(b) if crate::updater::newer(&b, &v) => None,
+            _ => Some(p),
+        }
+    }
+
     /// yt-dlp 从哪来：custom / managed / bundled / system
     pub fn ytdlp_source(&self) -> &'static str {
         if self.override_of("yt-dlp").is_some() {
             "custom"
-        } else if self.managed_ytdlp().is_some() {
+        } else if self.managed_ytdlp_in_use().is_some() {
             "managed"
         } else if self.bundled_ytdlp().is_some() {
             "bundled"
@@ -348,7 +359,7 @@ impl Toolbox {
             return Ok(p);
         }
         if t == Tool::YtDlp {
-            if let Some((_, p)) = self.managed_ytdlp() {
+            if let Some(p) = self.managed_ytdlp_in_use() {
                 return Ok(p);
             }
             if let Some(p) = self.bundled_ytdlp() {
@@ -534,6 +545,13 @@ impl Toolbox {
 /// - Linux：.deb 的程序在 `/usr/bin/`、资源在 `/usr/lib/<productName>/`，AppImage 里也是 `usr/bin` 和 `usr/lib/<productName>`；
 ///   官方 `yt-dlp_linux.zip` 解开是 yt-dlp_linux 加 `_internal/`
 /// - 最后：可执行文件旁边的单文件版 yt-dlp（开发时、只放了单文件版的打包）
+/// 安装包自带的 yt-dlp 是哪一版：打包时写在它旁边的 `version.txt`（fetch-sidecars 三个脚本），不用运行它
+pub fn bundled_ytdlp_version(exe: &Path) -> Option<String> {
+    let v = std::fs::read_to_string(exe.parent()?.join("version.txt")).ok()?;
+    let v = v.trim();
+    crate::updater::valid_version(v).then(|| v.to_string())
+}
+
 fn bundled_ytdlp_candidates(dir: &Path) -> Vec<PathBuf> {
     let mut v = vec![];
     if cfg!(target_os = "macos") {
@@ -1500,6 +1518,37 @@ mod tests {
         assert_eq!(probe("/x/FFmpeg.exe"), Path::new("/x/ffprobe.exe"));
         assert_eq!(probe("/x/ffmpeg-9"), Path::new("/x/ffprobe-9"));
         assert_eq!(probe("/x/fake.cmd"), Path::new("/x").join(exe_name("ffprobe")));
+    }
+
+    /// 自动更新装的 yt-dlp 比安装包自带的旧（Captae 更新带来了更新的 yt-dlp、yt-dlp 的自动更新关着）时用自带的
+    #[test]
+    fn newer_bundled_ytdlp_wins() {
+        let dir = tempfile::tempdir().unwrap();
+        let data = tempfile::tempdir().unwrap();
+        let bin = dir.path().join("bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        let bundled = bundled_ytdlp_candidates(&bin).remove(0);
+        std::fs::create_dir_all(bundled.parent().unwrap()).unwrap();
+        std::fs::write(&bundled, b"").unwrap();
+        let tb = Toolbox { sidecar_dir: Some(bin.clone()), data_dir: Some(data.path().to_path_buf()), ..Default::default() };
+        // 自动更新装了 2026.11.23
+        let f = crate::updater::flavor_of(tb.runner.kind());
+        let managed = crate::updater::exe_as(&crate::updater::engine_dir(data.path()).join("2026.11.23"), f);
+        std::fs::create_dir_all(managed.parent().unwrap()).unwrap();
+        std::fs::write(&managed, b"").unwrap();
+        std::fs::write(crate::updater::engine_dir(data.path()).join("state.json"), br#"{"active":"2026.11.23"}"#).unwrap();
+        // 自带的没写版本（老的安装包）：照旧用自动更新装的
+        assert_eq!((tb.path(Tool::YtDlp).unwrap(), tb.ytdlp_source()), (managed.clone(), "managed"));
+        // 自带的更旧：还是自动更新装的
+        std::fs::write(bundled.parent().unwrap().join("version.txt"), "2026.10.26\n").unwrap();
+        assert_eq!(bundled_ytdlp_version(&bundled).as_deref(), Some("2026.10.26"));
+        assert_eq!(tb.ytdlp_source(), "managed");
+        // 自带的更新：用自带的
+        std::fs::write(bundled.parent().unwrap().join("version.txt"), "2026.12.24\n").unwrap();
+        assert_eq!((tb.path(Tool::YtDlp).unwrap(), tb.ytdlp_source()), (bundled.clone(), "bundled"));
+        // 版本号乱写的不认
+        std::fs::write(bundled.parent().unwrap().join("version.txt"), "../x").unwrap();
+        assert_eq!(bundled_ytdlp_version(&bundled), None);
     }
 
     #[test]

@@ -245,7 +245,8 @@ async fn hello(State(s): State<AppState>, h: HeaderMap, Json(b): Json<HelloBody>
     authed(&s, &h)?;
     let browser = b.detected.filter(|d| !d.is_empty()).or(b.browser);
     s.core.note_extension(b.version, browser);
-    Ok(Json(json!({"ok": true})))
+    // 带上桌面端的版本：Captae 更新以后，浏览器还开着的旧宿主据此知道自己该退出了（native_host.rs 的 stale）
+    Ok(Json(json!({"ok": true, "version": env!("CARGO_PKG_VERSION")})))
 }
 
 async fn task(State(s): State<AppState>, h: HeaderMap, AxPath(id): AxPath<u64>) -> Result<Json<Value>, StatusCode> {

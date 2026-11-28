@@ -80,6 +80,16 @@ Claude、Cursor 这些 AI 助手也能通过 MCP 让它下载、找素材、转�
 - 数据在 `~/.local/share/captae`，下载默认存到「视频 › Captae」（XDG 的视频目录）。
 - 读浏览器里的登录状态时，Chrome 系浏览器要系统的密钥环（GNOME Keyring / KWallet）解锁；Flatpak、Snap 版浏览器读不到。
 
+## 更新
+
+- 0.3.0 起 Captae 能在应用里更新自己：每天向 GitHub 查一次有没有新版本（只查版本号，不发送任何个人信息）。有新版本时在后台下载、核对签名，
+  侧栏会出现「更新到 x.y.z」，点「重新打开」就是新版；不点的话，下次退出 Captae 时装上。「设置 › 关于 Captae」里能手动检查更新，也能关掉「自动更新 Captae」（关掉以后照样每天查，只是要你自己点「下载并更新」）。
+- **0.2.0 不会自己更新**：从 [Releases](https://github.com/sol1560/Captae/releases/latest) 手动下载、装一次 0.3.0 或更新的版本，之后就能在应用里更新了。
+- macOS：要把 Captae 拖进「应用程序」文件夹再打开（在磁盘映像里直接打开的不能自动更新）。不是管理员的账号更新时系统会要管理员密码。
+- Windows：更新时会运行新版的安装程序，只显示一个进度条，装完自动打开。
+- Linux：deb 版点「重新打开」时系统会要密码（`pkexec`），所以退出时不自动装；AppImage 版直接换掉那个 `.AppImage` 文件（它所在的文件夹要能写）。
+- 浏览器插件跟着更新：Captae 更新以后，插件会自己从插件文件夹重新加载一次。插件是从别的文件夹装的话，工具栏面板会提示，到扩展程序页面点「重新加载」就行。
+
 ## 装浏览器插件
 
 macOS 上支持 Chrome（含 Beta、Dev、Canary、Chrome for Testing）、Chromium、Edge（含 Beta、Dev、Canary）、Brave、Vivaldi、Opera、Opera GX、Arc、Aside，共 16 家；
@@ -88,7 +98,7 @@ Windows 上支持 Chrome、Chromium、Edge 各渠道、Brave、Vivaldi、Opera�
 
 1. 打开 Captae，到侧栏的「浏览器插件」页（或者上手引导第 2 页），选你用的浏览器，点「安装插件」：它会打开这个浏览器的扩展程序页，并在访达（Windows 是文件资源管理器，Linux 是文件管理器）里显示插件文件夹。
 2. 在扩展程序页右上角打开「开发者模式」。
-3. 点「加载已解压的扩展程序」，选中插件文件夹（macOS 是 `Captae.app/Contents/Resources/extension`，Windows 是安装目录里的 `extension`，Linux 是 `/usr/lib/Captae/extension`；「浏览器插件」页上能复制位置）。
+3. 点「加载已解压的扩展程序」，选中插件文件夹（macOS 是 `Captae.app/Contents/Resources/extension`，Windows 是安装目录里的 `extension`，Linux 的 deb 是 `/usr/lib/Captae/extension`、AppImage 是 `~/.local/share/captae/extension`；「浏览器插件」页上能复制位置）。
 4. 回到 Captae，看到「已连上」就好了。Captae 每次启动会给装了的浏览器登记插件要用的连接程序，不用手动设置。
 
 ## 连接 AI 助手

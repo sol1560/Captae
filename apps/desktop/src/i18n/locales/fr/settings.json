@@ -135,5 +135,18 @@
   "{time} 后换新的": "Nouveau code dans {time}",
   "换一个§换一个新的配对码": "Nouveau code",
   "配对用的二维码": "Code QR de jumelage",
-  "如果 macOS 问要不要允许 Captae 接受传入连接，选允许，手机才连得上": "Si macOS vous demande d’autoriser Captae à accepter les connexions entrantes, choisissez « Autoriser » pour que votre téléphone puisse se connecter"
+  "如果 macOS 问要不要允许 Captae 接受传入连接，选允许，手机才连得上": "Si macOS vous demande d’autoriser Captae à accepter les connexions entrantes, choisissez « Autoriser » pour que votre téléphone puisse se connecter",
+  "关于 Captae": "À propos de Captae",
+  "正在下载 {version}": "Téléchargement de {version}",
+  "正在安装 {version}…": "Installation de {version}…",
+  "{version} 已下载好，上次没装成：{error}": "{version} est téléchargée. La dernière installation a échoué : {error}",
+  "{version} 已下载好，重新打开就是新版": "{version} est téléchargée. Relancez pour l’utiliser",
+  "去下载页": "Ouvrir la page de téléchargement",
+  "有新版本 {version} · 上次没更新成：{error}": "La version {version} est disponible · La dernière mise à jour a échoué : {error}",
+  "下载并更新": "Télécharger et mettre à jour",
+  "还没有检查过更新": "Mises à jour pas encore recherchées",
+  "下载新版本": "Téléchargement de la nouvelle version",
+  "自动更新 Captae": "Mettre à jour Captae automatiquement",
+  "有新版本时在后台下载好，点「重新打开」装上（要输入密码）。只连接 GitHub 查版本，不发送任何个人信息": "Télécharge les nouvelles versions en arrière-plan. Cliquez sur « Relancer » pour les installer (votre mot de passe vous sera demandé). Se connecte uniquement à GitHub pour vérifier la version et n’envoie aucune donnée personnelle",
+  "有新版本时在后台下载好，下次打开 Captae 就是新版。只连接 GitHub 查版本，不发送任何个人信息": "Télécharge les nouvelles versions en arrière-plan : la prochaine fois que vous ouvrirez Captae, il sera à jour. Se connecte uniquement à GitHub pour vérifier la version et n’envoie aucune donnée personnelle"
 }

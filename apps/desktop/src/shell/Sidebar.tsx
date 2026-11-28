@@ -24,6 +24,7 @@ import { isActive, useApp } from "@/lib/store";
 import { CaptaeLogo, Icon, MiniRing, type HugeIcon } from "@/parts";
 import { Checklist } from "@/dialogs/Onboarding";
 import { downloadSniffed, openDialog } from "./actions";
+import { UpdateRow } from "./AppUpdate";
 
 const SNIFF_ICON: Record<string, HugeIcon> = { list: PlayListIcon, film: FileVideoIcon, music: MusicNote01Icon, image: Image01Icon };
 /** 侧栏「浏览器里发现的」最多放几条 */
@@ -172,6 +173,7 @@ export function Sidebar({ onToggle }: { onToggle: () => void }) {
       </div>
 
       <Checklist />
+      <UpdateRow />
 
       <div className="cp-side-foot">
         <button className="cp-side-row" title={mcpTip} onClick={() => go("agent")}>

@@ -2,7 +2,9 @@
 // 和旧界面（ui/js/page-extension.js）逐条对照；浏览器列表以 core native_host.rs 的 browsers() 为准（第一阶段加到 16 个）。
 import { FileVideoIcon, Image01Icon, MusicNote01Icon, PlayListIcon } from "@hugeicons/core-free-icons";
 import { joinList, t } from "@/i18n";
+import { newerVersion } from "@/lib/appUpdate";
 import { whenLabel } from "@/lib/format";
+import { getState } from "@/lib/store";
 import type { Sniffed } from "@/lib/types";
 import type { HugeIcon, Step } from "@/parts";
 
@@ -77,9 +79,18 @@ export function extLine(st: ExtStatus | null): { text: string; live: boolean } {
 export function extCard(st: ExtStatus | null): { title: string; desc: string } {
   if (!st) return { title: t("正在看看插件在不在…"), desc: "" };
   if (st.connected) {
+    // Captae 更新过、插件还是旧的（插件会自己从文件夹重新加载；从别的文件夹装的换不过来，要用户自己点）
+    const app = getState().appUpdate?.current;
+    const old = !!(app && st.version && newerVersion(app, st.version));
     return {
       title: t("插件已连上"),
-      desc: [seenBrowser(st.browser), st.version ? t("版本 {version}", { version: st.version }) : "", t("{when}打过招呼", { when: whenLabel(st.lastSeen) })].filter(Boolean).join(" · "),
+      desc: [
+        seenBrowser(st.browser),
+        st.version ? t("版本 {version}", { version: st.version }) : "",
+        old ? t("比 Captae 旧，到扩展程序页面点「重新加载」") : t("{when}打过招呼", { when: whenLabel(st.lastSeen) }),
+      ]
+        .filter(Boolean)
+        .join(" · "),
     };
   }
   if (st.lastSeen) return { title: t("插件还没连上"), desc: t("上次见到是{when}，浏览器关着或者插件被停用了", { when: whenLabel(st.lastSeen) }) };

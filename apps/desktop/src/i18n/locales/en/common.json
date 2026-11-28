@@ -151,5 +151,32 @@
   "连着": "Connected",
   "视频§Windows、Linux 的用户文件夹": "Videos",
   "音乐§Windows、Linux 的用户文件夹": "Music",
-  "图片§Windows、Linux 的用户文件夹": "Pictures"
+  "图片§Windows、Linux 的用户文件夹": "Pictures",
+  "在磁盘映像里打开的 Captae 不能自动更新，先把它拖进「应用程序」文件夹": "Captae can't update itself while it runs from the disk image. Drag it to the “Applications” folder first",
+  "先把 Captae 拖进「应用程序」文件夹再打开，才能自动更新": "Drag Captae to the “Applications” folder and open it from there to get automatic updates",
+  "Captae 所在的文件夹不能写入，不能自动更新": "Captae can't update itself because its folder isn't writable",
+  "系统里没有输入密码用的 pkexec，不能自动更新": "Captae can't update itself because pkexec, which asks for your password, isn't installed",
+  "测试数据目录下不自动更新": "No automatic updates with a test data folder",
+  "这个版本的 Captae 不能自动更新": "This copy of Captae can't update itself",
+  "没有打开网页": "Couldn't open the page",
+  "没有检查成": "Couldn't check",
+  "已经是最新的": "Already up to date",
+  "有新版本 {version}": "Version {version} is available",
+  "没有下载成": "Couldn't download",
+  "没有更新成": "Couldn't update",
+  "已更新到 {version}": "Updated to {version}",
+  "看看改了什么": "See what's new",
+  "更新到 {version}": "Update to {version}",
+  "重新打开§装上新版、重新打开 Captae 的按钮，要短": "Relaunch",
+  "更新§侧栏里有新版本时右边的按钮，要短": "Update",
+  "重新打开 Captae 并更新？": "Relaunch Captae to update?",
+  "以后再说": "Later",
+  "还有{n}个任务在下载，重新打开后会接着下。": {
+    "one": "{n} download is in progress. It continues after Captae relaunches.",
+    "other": "{n} downloads are in progress. They continue after Captae relaunches."
+  },
+  "正在录的{n}个直播会停止，录到的部分在重新打开后保存好。": {
+    "one": "{n} live stream recording will stop. What's recorded so far is saved after Captae relaunches.",
+    "other": "{n} live stream recordings will stop. What's recorded so far is saved after Captae relaunches."
+  }
 }

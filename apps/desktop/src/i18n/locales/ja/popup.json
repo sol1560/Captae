@@ -88,5 +88,7 @@
   "打开 Captae（在应用列表里）。": "Captae を開きます（アプリ一覧内）。",
   "运行 Captae 的安装程序。": "Captae のインストーラを実行します。",
   "安装 Captae（.deb 包或 AppImage）。": "Captae をインストールします（.deb パッケージまたは AppImage）。",
-  "下载 Captae": "Captae をダウンロード"
+  "下载 Captae": "Captae をダウンロード",
+  "插件比 Captae {version} 旧，到扩展程序页面点「重新加载」": "拡張機能が Captae {version} より古いです。拡張機能ページで「再読み込み」をクリックしてください",
+  "打开": "開く"
 }

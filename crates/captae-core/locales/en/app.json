@@ -176,5 +176,14 @@
   "没能移到回收站：{err}。外置盘、网络盘上可能没有回收站，可以在文件管理器里直接删除": "Couldn't move to the Trash: {err}. External and network drives may not have a Trash. You can delete the file in your file manager instead",
   "Captae 还没启动好，请稍后再试": "Captae is still starting. Try again in a moment",
   "读登录存储用的窗口没建好": "Couldn't open the window used to read sign-in data",
-  "登录存储没有回应": "Sign-in data didn't respond"
+  "登录存储没有回应": "Sign-in data didn't respond",
+  "在磁盘映像里打开的 Captae 不能自动更新，先把它拖进「应用程序」文件夹": "Captae can't update itself while it runs from the disk image. Drag it to the “Applications” folder first",
+  "先把 Captae 拖进「应用程序」文件夹再打开，才能自动更新": "Drag Captae to the “Applications” folder and open it from there to get automatic updates",
+  "Captae 所在的文件夹不能写入，不能自动更新": "Captae can't update itself because its folder isn't writable",
+  "系统里没有输入密码用的 pkexec，不能自动更新": "Captae can't update itself because pkexec, which asks for your password, isn't installed",
+  "测试数据目录下不自动更新": "No automatic updates with a test data folder",
+  "这个版本的 Captae 不能自动更新": "This copy of Captae can't update itself",
+  "还没有下载好的新版本": "No update has been downloaded yet",
+  "下载好的版本已经不比现在的新": "The downloaded version isn't newer than this one",
+  "正在检查或下载更新，稍等一下": "Checking for or downloading an update. Try again in a moment"
 }

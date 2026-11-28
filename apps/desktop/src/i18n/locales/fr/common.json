@@ -154,5 +154,32 @@
   "连着": "Connecté",
   "视频§Windows、Linux 的用户文件夹": "Vidéos",
   "音乐§Windows、Linux 的用户文件夹": "Musique",
-  "图片§Windows、Linux 的用户文件夹": "Images"
+  "图片§Windows、Linux 的用户文件夹": "Images",
+  "在磁盘映像里打开的 Captae 不能自动更新，先把它拖进「应用程序」文件夹": "Captae ne peut pas se mettre à jour tant qu’il s’exécute depuis l’image disque. Faites-le d’abord glisser dans le dossier « Applications »",
+  "先把 Captae 拖进「应用程序」文件夹再打开，才能自动更新": "Faites glisser Captae dans le dossier « Applications » et ouvrez-le depuis cet emplacement pour recevoir les mises à jour automatiques",
+  "Captae 所在的文件夹不能写入，不能自动更新": "Captae ne peut pas se mettre à jour, car son dossier n’est pas accessible en écriture",
+  "系统里没有输入密码用的 pkexec，不能自动更新": "Captae ne peut pas se mettre à jour, car pkexec, qui demande votre mot de passe, n’est pas installé",
+  "测试数据目录下不自动更新": "Pas de mises à jour automatiques avec un dossier de données de test",
+  "这个版本的 Captae 不能自动更新": "Cette copie de Captae ne peut pas se mettre à jour",
+  "没有打开网页": "Impossible d’ouvrir la page",
+  "没有检查成": "Vérification impossible",
+  "已经是最新的": "Déjà à jour",
+  "有新版本 {version}": "La version {version} est disponible",
+  "没有下载成": "Téléchargement impossible",
+  "没有更新成": "Mise à jour impossible",
+  "已更新到 {version}": "Mis à jour vers {version}",
+  "看看改了什么": "Voir les nouveautés",
+  "更新到 {version}": "Passer à {version}",
+  "重新打开§装上新版、重新打开 Captae 的按钮，要短": "Relancer",
+  "更新§侧栏里有新版本时右边的按钮，要短": "Mettre à jour",
+  "重新打开 Captae 并更新？": "Relancer Captae pour mettre à jour ?",
+  "以后再说": "Plus tard",
+  "还有{n}个任务在下载，重新打开后会接着下。": {
+    "one": "{n} téléchargement est en cours. Il reprendra après le redémarrage de Captae.",
+    "other": "{n} téléchargements sont en cours. Ils reprendront après le redémarrage de Captae."
+  },
+  "正在录的{n}个直播会停止，录到的部分在重新打开后保存好。": {
+    "one": "{n} enregistrement de direct va s’arrêter. Ce qui a déjà été enregistré sera sauvegardé après le redémarrage de Captae.",
+    "other": "{n} enregistrements de directs vont s’arrêter. Ce qui a déjà été enregistré sera sauvegardé après le redémarrage de Captae."
+  }
 }

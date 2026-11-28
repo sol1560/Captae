@@ -15,6 +15,8 @@
 #   7. 许可证：LICENSE、licenses/ 和 THIRD_PARTY_NOTICES.md 在不在、每个附带程序有没有自己的目录；和仓库对照
 #   8. 安装包窗口：卷名、根目录只有 Captae.app 和 Applications 快捷方式（指向「应用程序」文件夹，名字用英文）、背景图（1 倍 + 2 倍）、
 #      .DS_Store 里的窗口大小和图标位置和 apps/desktop/src-tauri/dmg/layout.json 一致（读 .DS_Store 要 target/dmgbuild-venv）
+#   9. 应用内更新：桌面端里的更新公钥和 tauri.conf.json 一致、更新地址是 GitHub 上的正式地址、没有允许 http 的测试配置；
+#      自带的 yt-dlp 旁边有 version.txt（Captae 据此判断自带的和自动更新装的哪个新）。更新包本身由 scripts/check-update-package.sh 检查
 #
 # 用法：scripts/check-bundle.sh [dmg 路径]
 #   不给路径时检查 target/release/bundle/dmg/ 里最新的 .dmg。
@@ -366,6 +368,17 @@ PY
 else
   warn "没有 target/dmgbuild-venv（scripts/build-release.sh 会装），跳过 .DS_Store 的核对"
 fi
+
+# ---------- 9. 应用内更新 ----------
+section "9. 应用内更新（docs/DESIGN.md 第 15 节）"
+want_pub="$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1]))["plugins"]["updater"]["pubkey"])' "$ROOT/apps/desktop/src-tauri/tauri.conf.json" 2>/dev/null)"
+main_strs="$(strings -a "$main")"
+if [[ -n "$want_pub" ]] && grep -qF -- "$want_pub" <<<"$main_strs"; then pass "桌面端里的更新公钥和 tauri.conf.json 一致"; else fail "桌面端里没有 tauri.conf.json 里的更新公钥"; fi
+if grep -qF "https://github.com/sol1560/Captae/releases/latest/download/latest.json" <<<"$main_strs"; then pass "更新地址是 GitHub 上的正式地址"; else fail "桌面端里没有正式的更新地址"; fi
+if grep -qE 'http://(127\.0\.0\.1|localhost)[^ ]*latest\.json' <<<"$main_strs"; then fail "测试用的本机更新地址混进了正式包"; else pass "没有测试用的本机更新地址"; fi
+ytv="$C/Resources/yt-dlp/version.txt"
+want_yt="$(sed -n 's/^YTDLP_VER="\{0,1\}\([0-9.]*\)"\{0,1\}.*/\1/p' "$ROOT/scripts/fetch-sidecars.sh" | head -1)"
+if [[ -f "$ytv" && "$(tr -d '[:space:]' <"$ytv")" == "$want_yt" ]]; then pass "自带的 yt-dlp 旁边记着版本 ${want_yt}（version.txt）"; else fail "自带的 yt-dlp 旁边没有 version.txt，或者版本不是 ${want_yt:-读不到}"; fi
 
 echo
 if [[ $FAILS == 0 ]]; then

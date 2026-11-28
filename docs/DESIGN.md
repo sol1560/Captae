@@ -11,7 +11,7 @@ Captae 是 macOS 上的本地媒体获取和管理工具。它分成四块：桌
 ```
 crates/captae-core        核心库：下载引擎、队列、素材库、转换、字幕、预设、登录状态、发给 AI、MCP、本地控制接口、插件宿主
 crates/captae-cli         命令行 captae：MCP stdio、Native Messaging 宿主、probe / download / update / engine / status 等
-apps/desktop/src-tauri    桌面端的 Rust 外壳（Tauri 2）：窗口、登录窗口、各页面用的命令
+apps/desktop/src-tauri    桌面端的 Rust 外壳（Tauri 2）：窗口、登录窗口、各页面用的命令、Captae 自己的更新（第 15 节）
 apps/desktop/src          桌面端界面（React 19 + Vite），也是插件工具栏面板的源码（extension-popup/）
 extension                 Chrome 插件（Manifest V3）：网页里的部件是原生 JS + CSS，工具栏面板是 popup/ 里的构建产物
 skills/captae             给 AI 助手的 Skill
@@ -119,7 +119,7 @@ yt-dlp、aria2、ffmpeg、HTTP 状态码、io、网络库的报错都先归类�
   原因：从访达打开时 PATH 里只有系统目录，yt-dlp 找不到 JS 运行时，解不了 YouTube 的验证。找运行时的顺序：设置里指定的 → 安装包自带的 → PATH / Homebrew 的 deno、node、bun。
 - **yt-dlp 用官方目录版**（`Contents/Resources/yt-dlp/`）：单文件版每次启动都把自己解压成新文件，macOS 每次都要重新做安全检查；目录版只在第一次。
   桌面端启动时在后台把各个外部工具先跑一次（预热），用户第一次下载不用等安全检查。yt-dlp 的查找顺序：设置里指定的 → 自动更新装的 → 安装包自带的 → PATH。
-- **自动更新**（`updater.rs`，设置里可以关）：每天查一次 GitHub 官方 release（走 Captae 的代理设置）。有新版时：用编译进程序的 yt-dlp 官方公钥（钉死指纹）验证 `SHA2-256SUMS.sig` →
+- **自动更新**（`updater.rs`，设置里可以关；这是 yt-dlp 的，Captae 自己的更新见第 15 节）：每天查一次 GitHub 官方 release（走 Captae 的代理设置）。有新版时：用编译进程序的 yt-dlp 官方公钥（钉死指纹）验证 `SHA2-256SUMS.sig` →
   核对 `yt-dlp_macos.zip` 的 SHA256 和签过名的清单一致 → 版本号只许数字和点 → 解压到 `<数据目录>/engines/yt-dlp/<版本>/` → 检查代码签名（没有就加本地签名）→
   自检（`--version` 对得上，再读一个固定的公开视频）→ 通过了才切换，保留上一个版本。新版在使用中出「组件 / 未知」错误时当场体检，确认是新版的问题就退回并记下坏版本（每日检查不再装它）。
   任何一步失败都只记进 `engines/yt-dlp/state.json`，继续用原来的版本。设置 › 关于里能看版本、上次检查时间，能手动「检查更新」。命令行 `captae update` / `captae engine` 也行。
@@ -519,3 +519,101 @@ Linux 的附带程序不放 `/usr/bin`：会和系统的 ffmpeg、aria2c 冲突�
 - 本机：Windows 用 `cargo check --target x86_64-pc-windows-gnu`（mingw）只查编译；Linux 用 Docker 里的 Ubuntu 22.04 跑测试（arm64 也行）。
   单元测试的假程序：unix 是 sh 脚本，Windows 是 `.cmd` 调同名 `.ps1`（`tools::testkit`）。录直播那几组、几个假 yt-dlp 写成大段 sh 的测试只在 unix 跑；Windows 的 Ctrl-C 送达由 `interrupt_lets_tool_finish` 测（要先 `cargo build -p captae-cli`）。
 - 真机：在 Devin 的 Windows Server 2022、Ubuntu 22.04 虚拟机上打包、安装、逐项实测（脚本和记录只在维护者本机 `work/winlinux/`）。不在别人正用着的电脑上起测试版（第 11 节）的规矩一样适用。
+
+## 15. Captae 自己的更新（`apps/desktop/src-tauri/src/app_update.rs`）
+
+2026-11-28 加，0.3.0 起有（0.2.0 没有这个功能，0.2.0 的用户要手动下载一次新版）。下载引擎 yt-dlp 的每日更新是另一回事，见 4.3。
+手机端不在这里：iOS 走 App Store，Android 的 APK 版发布时另做。
+
+### 15.1 做法
+
+- 用 Tauri 官方的更新插件 tauri-plugin-updater（2.14）：minisign 验签、macOS 原子地换掉整个 .app（失败时放回旧版）、没有写权限时弹系统的管理员密码框、
+  Windows 运行 NSIS 安装程序、AppImage 换文件、deb 用 `pkexec dpkg -i`。它要 tauri 2.12 以上，2026-11-28 跟着把 tauri 从 2.11 升到 2.12（wry 0.57；
+  Windows 上直接调 WebView2 的 `webview2-com` 跟着到 0.39、`windows-core` 到 0.62，前端 `@tauri-apps/api` 到 2.12）。
+- 插件只在 Rust 里用，页面不直接调它（没给 `updater:*` 权限）：页面调 `app_update_status` / `_check` / `_download` / `_restart` 四个命令，状态变了收 `{type: "app_update"}` 事件。
+- 更新地址只有一个：`https://github.com/sol1560/Captae/releases/latest/download/latest.json`。草稿和预发布不算 latest，Release 点「发布」那一刻用户才查得到。
+- 走 Captae 的代理设置（`net::effective`），连「不走代理的主机」一起：插件自己的 `.proxy()` 用 `Proxy::all`、不认例外，所以先 `no_proxy()` 清空，
+  再用 `configure_client` 按算出来的代理加上（`app_update::with_proxy`，和 `net::build_with` 同一种写法）；读不出系统代理时什么都不设，交给插件自己读。
+  插件用的是 reqwest 0.13，桌面端的 Cargo.toml 只为它打开 `socks` 特性（手动填 socks5 时也能用）。请求里没有任何标识用户的东西。
+- latest.json 用 Tauri 的静态格式，四个键。插件先找「系统-架构-安装方式」，所以不写不带安装方式的 `linux-x86_64`，免得 deb 版拿到 AppImage：
+
+| 安装方式 | 键 | 更新包 | 怎么装 |
+|---|---|---|---|
+| macOS | `darwin-aarch64-app` | `Captae_<版本>_aarch64.app.tar.gz` | 换掉 `/Applications/Captae.app`；没写权限时系统弹管理员密码框 |
+| Windows | `windows-x86_64-nsis` | 安装程序本身 `Captae_<版本>_x64-setup.exe` | passive 模式运行（只有进度条，不用点）；装之前 `installer-hooks.nsh` 结束安装目录里的附带程序（浏览器拉起的 captae.exe 也算） |
+| Linux AppImage | `linux-x86_64-appimage` | `.AppImage` 本身 | 换掉 `$APPIMAGE` 那个文件 |
+| Linux deb | `linux-x86_64-deb` | `.deb` | `pkexec dpkg -i`，系统弹密码框 |
+
+- 安装方式靠 Tauri 打包时写进程序的标记（`__TAURI_BUNDLE_TYPE_VAR_DEB` / `_APP` / `_NSS`），三个平台的检查脚本都核对。
+  不是打包出来的程序（开发时直接运行的、macOS 上不在 .app 里的）不更新。
+- Tauri 读 latest.json 时先整体校验：一个平台的条目不完整，所有平台都查不到。生成它的脚本（15.6）缺一个就停。
+
+**签名钥匙**：minisign 私钥 `keys/updater.key`（`cargo tauri signer generate` 生成，`keys/` 不进仓库），私钥的密码在维护者的钥匙串里
+（服务名「Captae updater signing key」，账户 captae）；公钥写在 `tauri.conf.json` 的 `plugins.updater.pubkey`。
+签名里写上版本号（tauri-cli 2.12 起的 `--app-version`），Captae 开着 `requireSignedVersion`：latest.json 说的版本和签名里的对不上就不装，
+别人拿旧版本的包配一个新版本号骗不过去。只在维护者这台 Mac 上签，GitHub 的机器上不放私钥：GitHub 账号或某个 workflow 出了问题，别人也发不出能被装上的更新。
+**私钥丢了，已经装上的 Captae 再也收不到更新**（只能请用户手动下载），私钥和密码各在维护者自己的密码管理器里备份一份。
+
+### 15.2 什么时候查、下、装
+
+- 打开 1 分钟后查一次，之后每 10 分钟看一眼离上次检查满没满 24 小时（电脑睡眠醒来也赶得上）。调试版可以用 `CAPTAE_TEST_UPDATE_DELAY=<秒>` 改第一次的等待。
+- 「自动更新 Captae」（设置里的 `appAutoUpdate`，默认开）开着：查到新版就下载，插件下完先验签，存进 `<数据目录>/app-update/Captae_<版本>.<扩展名>`，
+  latest.json 原文记在 `app-update/state.json` 的 `ready` 里：重新打开 Captae 后用 `Updater::restore_update` 不联网也能装，装之前 `Update::install` 再验一次签。
+  关着：照样每天查，只在侧栏和设置里说有新版，用户点「下载并更新」才下（下好接着走「重新打开」）。
+- 装有两个时机：
+  - 点「重新打开」（`app_update_restart`）：有正在下载、正在录的任务时界面先问一句（重新打开后任务接着下，录到的直播下次打开时整理好）；装好后 `app.restart()`。
+    macOS 要输管理员密码时，插件把系统的密码框交给主线程弹，所以装的那一步放在 `spawn_blocking` 里，不占着主线程。
+    Tauri 的 `restart` 在 macOS 上经 LaunchServices（`open -n -g`）重新打开，新进程拿不到启动它的进程的环境变量；设了 `CAPTAE_HOME`（测试数据目录）时改成自己重新打开
+    （`relaunch_keeping_env`：一个 sh 等这个进程号没了再 exec，环境变量、参数原样，报错输出写进 `<数据目录>/relaunch.log`），不然测试版会去读写正式的数据、改浏览器里插件宿主的登记。
+  - 正常退出时（`RunEvent::Exit`，退出时的收拾做完以后）装上，装完不打开，下次打开就是新版。这些情况退出时不装：收到结束信号（退出流程只有 5 秒）、
+    Windows 正在关机或注销（`GetSystemMetrics(SM_SHUTTINGDOWN)`）、deb（要输密码）、macOS 要输管理员密码的（主线程正在退出，弹不了密码框）、同一个版本已经失败 3 次。
+    macOS 算「要输管理员密码」的：「应用程序」文件夹不能写，或者 Captae.app 本身不是这个账号的、没有写权限（另一个管理员拖进去的；换掉 .app 要把它挪到别的父目录下，只有父目录能写不够）。
+- Windows：插件运行安装程序后直接结束进程，结束之前 `on_before_exit` 做退出时的收拾（`main.rs` 的 `cleanup_on_exit`：删 control.json、关给手机的服务、结束附带程序）。
+- 失败：记在 `state.json` 的 `error`（查 / 下载 / 装哪一步出的错）和 `fails`（每个版本连着失败几次），继续用现在的版本；同一个版本失败 3 次后不再自动下载、退出时不再自动装，等用户自己点。
+  下载的包验签不对就删掉，下次重新下。
+- 更新后第一次打开：`state.json` 里记的上一次运行的版本比现在的旧，界面提示一次「已更新到 x.y.z」，带「看看改了什么」（这一版的 Release 页）；失败记录清掉。
+- 装不了（`blocked`）：`dmg`（在只读的磁盘映像里打开的）、`translocated`（从下载文件夹直接打开、被系统转移运行的）、`readonly`（AppImage 所在的文件夹不能写）、
+  `no_pkexec`（deb 版没有 pkexec / zenity / kdialog）、`unsupported`、`test`（设了 `CAPTAE_HOME` 又用正式地址：测试版的标识不同，装上去就把测试版换成了正式版）。
+  这些情况不下载，设置里说原因、给「去下载页」。
+
+### 15.3 界面
+
+- 设置 › 关于 Captae（`dialogs/Settings.tsx` 的 `AboutCaptae`）：版本和状态（已是最新 · 上次检查、正在下载和进度条、已下载好、有新版、装不了的原因、上次没更新成），
+  右边一个按钮（检查更新 / 重新打开 / 下载并更新 / 再试一次 / 去下载页），下面「自动更新 Captae」开关（deb 版的说明写明要输密码）。
+- 侧栏上手清单下面一行（`shell/AppUpdate.tsx`）：下好了是「更新到 x.y.z · 重新打开」，自动更新关着时是「有新版本 x.y.z · 更新」；装不了的不在这里出现。
+  和上手清单同一种白底小卡片，出现和消失用 `Collapse`（高度 270ms / 200ms，减少动效时只淡入淡出，第一次挂载不播；一个版本只出现一次，属于偶尔出现的东西）。
+- 重新打开前的确认用 affectUI 的 AlertDialog；更新后的提示用 Sonner。演示后端带 `&upd=idle|available|downloading|ready|failed|dmg|deb|updated` 看各种样子（`dev/mock-update.ts`）。
+
+### 15.4 浏览器插件和宿主跟着换
+
+插件是「加载已解压」装的，文件夹在安装包里。Captae 换成新版以后，文件夹里已经是新文件，但浏览器里跑的还是旧代码；浏览器先前拉起的宿主进程也还是旧程序。
+- 宿主：桌面端的 `/v1/hello` 回复带上自己的版本，宿主的 `hello` 回复里给插件 `appVersion`。宿主发现桌面端比自己新时，回完手头的消息就退出（`native_host.rs` 的 `stale`），
+  插件下次连接时浏览器起的是新程序。只在桌面端比宿主新时退出，不会来回重启。
+- 插件（`background.js` 的 `followApp`）：Captae 比插件新、插件又是「加载已解压」装的（`management.getSelf().installType === "development"`）时，`chrome.runtime.reload()` 从文件夹重新读一次；
+  同一个版本只试一次（`storage.local` 的 `reloadedFor`）。重新加载后还是旧的（用户是从别的文件夹装的），记下 `stale`，工具栏面板里说「插件比 Captae 旧，到扩展程序页面点「重新加载」」并能打开那个页面，
+  桌面端「浏览器插件」页也这么说。网页里的旧部件在插件重新加载后自己拆掉（`content.js` 的 teardown，原来就有）。
+- Linux 的 AppImage：给用户「加载已解压」的插件文件夹原来在 AppImage 的临时挂载点里（`/tmp/.mount_xxx/…`），Captae 一退出就没了。
+  改成和宿主一样拷一份到数据目录的 `extension/`（`ext_cmds::stable_extension_dir`），内容变了才重拷，插件从这里重新加载自己。
+
+### 15.5 yt-dlp 跟着换
+
+打包时在自带的 yt-dlp 旁边写一个 `version.txt`（三个 fetch-sidecars 脚本）。自动更新装的 yt-dlp 比自带的旧时用自带的（`tools.rs` 的 `managed_ytdlp_in_use`）：
+Captae 更新带来了更新的 yt-dlp、而 yt-dlp 的自动更新关着（或者还没来得及查）时，不再一直用旧的。老的安装包没有 `version.txt`，照旧用自动更新装的。
+
+### 15.6 发版（接第 12 节、14.7）
+
+- macOS：`scripts/build-release.sh` 在钉好公证结果以后，把 Captae.app 原样打成 `target/release/bundle/updater/Captae_<版本>_aarch64.app.tar.gz`
+  （Tauri 打包时自己生成的那份在重签之前，不能用；先查没有硬链接，插件用 Rust 的 tar 包解不开硬链接；`COPYFILE_DISABLE`、`--no-mac-metadata` 不打进 ._ 文件和扩展属性），
+  用 `scripts/sign-update.sh` 签名，`scripts/check-update-package.sh` 检查（签名；照插件的做法解开以后 codesign、Gatekeeper、公证结果、版本、符号链接数）。
+- Windows、Linux：`release-winlinux.yml` 照旧在 GitHub 的机器上打包、检查、挂到草稿 Release，只多在日志里打印每个安装包的 SHA256（`CAPTAE-SHA256` 开头）。
+- `scripts/release-sign-updates.sh <标签>`（维护者的 Mac 上）：下载草稿上的 Windows 安装程序、deb、AppImage，和 CI 日志里的 SHA256 对照，本机签名，
+  生成 latest.json（四个键缺一个就停），上传 macOS 的更新包、四个 `.sig`、latest.json，再下载 Release 上其余的文件重新生成 `SHA256SUMS.txt`。只认草稿 Release。
+- 发布前演练：`release-sign-updates.sh <标签> --no-upload --base-url http://127.0.0.1:<端口>` 生成一份指向本机的 latest.json，用本机测试服务和上一版的测试版更新过去。
+- `scripts/check-bundle.sh`、`check-bundle-linux.sh`、`check-bundle-windows.ps1` 各加一项：安装方式标记、更新公钥和 tauri.conf.json 一致、更新地址是正式地址、自带 yt-dlp 的 `version.txt`。
+
+### 15.7 测试
+
+- 单元测试：`app_update.rs`（文件名、版本比较、装不了的判断、记录的读写）、`ext_cmds.rs`（AppImage 插件文件夹拷贝，只在 Linux 跑）、
+  `tools.rs`（自带的和自动更新装的 yt-dlp 哪个新）、`native_host.rs`（hello 带上 Captae 的版本）。
+- 实测用的程序：测试标识、`LSUIElement`、窗口一开始就藏着，更新地址在编译配置里换成本机的 http 测试服务（`dangerousInsecureTransportProtocol` 只在测试编译里开），
+  维护者本机的脚本在 `work/updater/`。不在别人正用着的电脑上起会显示窗口的测试版（第 11 节）的规矩一样适用。

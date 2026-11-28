@@ -13,6 +13,8 @@
 #   6. 插件文件夹在、popup/ 是构建产物、和仓库里的 extension/ 一样
 #   7. licenses/、THIRD_PARTY_NOTICES.md 在、和仓库一样
 #   8. .desktop 文件（desktop-file-validate）和 AppStream 元数据（appstreamcli validate）
+#   9. 应用内更新：桌面端里记着的安装方式（deb / AppImage，更新插件据此选 latest.json 里的包）、更新公钥和 tauri.conf.json 一致、
+#      更新地址是 GitHub 上的正式地址；自带的 yt-dlp 旁边有 version.txt
 #
 # 用法：scripts/check-bundle-linux.sh [deb 或 AppImage 的路径 ...]
 #   不给路径时检查 $CARGO_TARGET_DIR（默认 target）/release/bundle/{deb,appimage}/ 里最新的各一个。
@@ -236,6 +238,22 @@ check_tree() {
   else
     warn "没有 appstreamcli（apt install appstream），跳过元数据检查"
   fi
+
+  section "9. 应用内更新（$label）"
+  # Tauri 打包时把安装方式写进程序（__TAURI_BUNDLE_TYPE_VAR_DEB / _APP），更新插件据此在 latest.json 里找 linux-x86_64-deb 还是 -appimage
+  local want_mark marks main_strs want_pub ytv
+  case "$label" in
+    deb) want_mark=__TAURI_BUNDLE_TYPE_VAR_DEB ;;
+    *) want_mark=__TAURI_BUNDLE_TYPE_VAR_APP ;;
+  esac
+  main_strs="$(strings -a "$main")"
+  marks="$(grep -o '__TAURI_BUNDLE_TYPE_VAR_[A-Z]*' <<<"$main_strs" | sort -u | tr '\n' ' ')"
+  if [[ "$marks" == "$want_mark " ]]; then pass "桌面端记着安装方式 ${label}（${want_mark}），更新时找对的包"; else fail "桌面端里的安装方式标记是 ${marks:-没有}，应该是 ${want_mark}（更新会找错包）"; fi
+  want_pub="$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1]))["plugins"]["updater"]["pubkey"])' "$ROOT/apps/desktop/src-tauri/tauri.conf.json" 2>/dev/null)"
+  if [[ -n "$want_pub" ]] && grep -qF -- "$want_pub" <<<"$main_strs"; then pass "桌面端里的更新公钥和 tauri.conf.json 一致"; else fail "桌面端里没有 tauri.conf.json 里的更新公钥"; fi
+  if grep -qF "https://github.com/sol1560/Captae/releases/latest/download/latest.json" <<<"$main_strs"; then pass "更新地址是 GitHub 上的正式地址"; else fail "桌面端里没有正式的更新地址"; fi
+  ytv="$L/yt-dlp/version.txt"
+  if [[ -f "$ytv" && "$(tr -d '[:space:]' <"$ytv")" == "$want_ytdlp" ]]; then pass "自带的 yt-dlp 旁边记着版本 ${want_ytdlp}（version.txt）"; else fail "自带的 yt-dlp 旁边没有 version.txt，或者版本不是 ${want_ytdlp}"; fi
 }
 
 for PKG in "${PKGS[@]}"; do

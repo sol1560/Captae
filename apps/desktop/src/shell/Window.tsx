@@ -18,6 +18,7 @@ import { Extension } from "@/pages/Extension";
 import { SettingsDialog } from "@/dialogs/Settings";
 import { OnboardingHost } from "@/dialogs/Onboarding";
 import { getDialog, openDialog, subscribeDialog } from "./actions";
+import { AppUpdateHost } from "./AppUpdate";
 import { Sidebar, WindowDots } from "./Sidebar";
 import { TitleBar } from "./WindowControls";
 
@@ -138,6 +139,7 @@ export function Window() {
       </div>
       <SettingsDialog open={dialog === "settings"} onClose={() => openDialog(null)} />
       <OnboardingHost open={dialog === "onboarding"} onClose={() => openDialog(null)} />
+      <AppUpdateHost />
       <ToastLayer offset={dockBelow ? 132 : 24} />
     </>
   );

@@ -214,7 +214,16 @@ scripts/render-dmg-background.sh              # 改了安装包窗口的背景�
 - 2026-11-27 发布了 v0.2.0：https://github.com/sol1560/Captae/releases/tag/v0.2.0 （dmg、Windows 安装程序、deb、AppImage、4 个 GPL 源码包、SHA256SUMS.txt）。
   三个平台的检查脚本都通过（Windows 两条提醒是没签名）；CI 通过。
 - 以后在本地分支 `public-main` 上开发（跟踪公开仓库的 `main`）。旧历史在本地 `round3` 等分支和远端 `archive`（`Captae-archive`），不要推到公开仓库。
-- 发新版：改四处版本号 → macOS 用 `scripts/build-release.sh` → 推标签、建草稿 Release 传 dmg 和源码包 → 手动运行 `release-winlinux.yml`（填标签、勾上传）→ 补 `SHA256SUMS.txt` → 发布。
+- 发新版：改四处版本号 → macOS 用 `scripts/build-release.sh`（也打出应用内更新用的 `.app.tar.gz` 和签名）→ 推标签、建草稿 Release 传 dmg 和源码包 → 手动运行 `release-winlinux.yml`（填标签、勾上传）
+  → `scripts/release-sign-updates.sh <标签>`（签 Windows / Linux 的更新签名、生成 `latest.json`、补 `SHA256SUMS.txt`，见 DESIGN 15.6）→ 发布。点「发布」那一刻，装着 0.3.0 以后版本的用户就会收到更新。
+
+## 应用内更新（2026-11-28，0.3.0 起）
+
+- Captae 能在应用里更新自己（macOS、Windows、Linux 的 deb 和 AppImage）：Tauri 官方更新插件，更新地址是 GitHub 上最新 Release 的 `latest.json`，minisign 签名，
+  签名里带版本号。做法、界面、发版、测试见 `docs/DESIGN.md` 第 15 节，计划和实测记录在维护者本机 `work/updater/`。
+- 跟着做的：tauri 升到 2.12（插件要求）；浏览器插件和宿主跟着 Captae 换版本；AppImage 的插件文件夹拷到数据目录；自带的 yt-dlp 比自动更新装的新时用自带的。
+- 签名私钥 `keys/updater.key`（`keys/` 不进仓库），密码在维护者的钥匙串里（服务名「Captae updater signing key」）。**私钥丢了，已经装上的 Captae 再也收不到更新**，要另外备份。
+- 0.2.0 没有这个功能：0.2.0 的用户要手动下载一次 0.3.0（README 写明）。
 
 ## 许可证和商业模式（已定）
 

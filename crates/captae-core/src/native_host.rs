@@ -926,9 +926,10 @@ pub async fn run(paths: Paths, sidecar_dir: Option<PathBuf>) -> Result<()> {
         Ok(())
     });
     // 是哪家浏览器启动了宿主：启动时认一次（一个宿主进程只对应一个浏览器）
-    let host = std::sync::Arc::new(Host { paths, sidecar_dir, browser: detect_browser() });
+    let host = std::sync::Arc::new(Host { paths, sidecar_dir, browser: detect_browser(), stale: Default::default(), busy: Default::default() });
     while let Some(msg) = rx.recv().await {
         let (host, out_tx) = (host.clone(), out_tx.clone());
+        host.busy.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         tokio::spawn(async move {
             let id = msg.get("id").cloned().unwrap_or(Value::Null);
             let ty = msg.get("type").and_then(Value::as_str).unwrap_or("");
@@ -946,6 +947,14 @@ pub async fn run(paths: Paths, sidecar_dir: Option<PathBuf>) -> Result<()> {
                 tracing::debug!("插件消息 {ty}（{id}）{ms}ms {}", if ok { "成功" } else { reply["error"].as_str().unwrap_or("失败") });
             }
             let _ = out_tx.send(reply);
+            // Captae 更新过了（hello 里发现的）：手头的消息都回完了就退出，留一点时间把回复写出去
+            if host.busy.fetch_sub(1, std::sync::atomic::Ordering::SeqCst) == 1 && host.stale.load(std::sync::atomic::Ordering::SeqCst) {
+                tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+                if host.busy.load(std::sync::atomic::Ordering::SeqCst) == 0 {
+                    tracing::info!("宿主退出，等插件用新版本重新连接");
+                    std::process::exit(0);
+                }
+            }
         });
     }
     drop(out_tx);
@@ -982,6 +991,10 @@ struct Host {
     sidecar_dir: Option<PathBuf>,
     /// 看父进程认出来的浏览器（`browsers()` 的 id），认不出是 None
     browser: Option<&'static str>,
+    /// Captae 已经更新到比这个宿主新的版本：手头的消息回完就退出
+    stale: std::sync::atomic::AtomicBool,
+    /// 正在处理的消息数
+    busy: std::sync::atomic::AtomicUsize,
 }
 
 fn not_running() -> anyhow::Error {
@@ -1002,13 +1015,22 @@ impl Host {
             // 浏览器：宿主认出来的（detected）为准，插件自己报的（browser）留作后备，桌面端选
             "hello" => {
                 let c = self.app().await;
+                let mut app_version: Option<String> = None;
                 if let (Some(c), false) = (&c, m["test"].as_bool().unwrap_or(false)) {
-                    let _ = c.hello(m["version"].as_str(), m["browser"].as_str(), self.browser).await;
+                    if let Ok(v) = c.hello(m["version"].as_str(), m["browser"].as_str(), self.browser).await {
+                        app_version = v["version"].as_str().map(String::from);
+                    }
+                }
+                // Captae 更新过了、这个宿主还是浏览器先前用旧的程序起的：回完手头的消息就退出，插件下次连接时浏览器起的是新版本（run 里看 stale）
+                if app_version.as_deref().is_some_and(|v| crate::updater::newer(v, env!("CARGO_PKG_VERSION"))) {
+                    tracing::info!("Captae 已经是 {}，这个宿主还是 {}：回完手头的消息就退出", app_version.as_deref().unwrap_or(""), env!("CARGO_PKG_VERSION"));
+                    self.stale.store(true, std::sync::atomic::Ordering::SeqCst);
                 }
                 let s = Settings::load(&paths.settings());
                 // 界面语言：langSet 是设置里写的（空 = 跟随系统），lang 是实际用的。插件在 Captae 里选了语言时跟着它，跟随系统时用浏览器的界面语言
                 let lang = crate::i18n::apply(&s.language);
-                Ok(json!({"app": c.is_some(), "version": env!("CARGO_PKG_VERSION"), "clipboard": s.clipboard, "lang": lang.code(), "langSet": s.language}))
+                // appVersion：正在运行的 Captae 的版本（没开时为空）。插件比它旧时从文件夹重新加载自己（background.js 的 followApp）
+                Ok(json!({"app": c.is_some(), "version": env!("CARGO_PKG_VERSION"), "appVersion": app_version, "clipboard": s.clipboard, "lang": lang.code(), "langSet": s.language}))
             }
             "sniffed" => {
                 let item: crate::sniff::Sniffed = serde_json::from_value(m["item"].clone())?;
@@ -1429,8 +1451,12 @@ mod tests {
         let core = crate::Core::open(crate::Options { paths: paths.clone(), sidecar_dir: None, restore: false }).await.unwrap();
         crate::api::serve(core.clone(), std::sync::Arc::new(|_| {})).await.unwrap();
         let hello = json!({"type": "hello", "version": "0.4.0", "browser": "chrome"});
-        let host = Host { paths: paths.clone(), sidecar_dir: None, browser: Some("arc") };
-        assert_eq!(host.handle("hello", &hello).await.unwrap()["app"], true);
+        let host = Host { paths: paths.clone(), sidecar_dir: None, browser: Some("arc"), stale: Default::default(), busy: Default::default() };
+        let r = host.handle("hello", &hello).await.unwrap();
+        assert_eq!(r["app"], true);
+        // 回复里带着正在运行的 Captae 的版本；和宿主同一个版本，宿主不用退出
+        assert_eq!(r["appVersion"], env!("CARGO_PKG_VERSION"));
+        assert!(!host.stale.load(std::sync::atomic::Ordering::SeqCst));
         let s = core.extension_status();
         assert!(s.connected);
         assert_eq!((s.browser.as_deref(), s.version.as_deref()), (Some("arc"), Some("0.4.0")));

@@ -173,6 +173,34 @@ if [[ "$identity" != "-" ]]; then
   fi
 fi
 
+# ---------- 应用内更新用的包（docs/DESIGN.md 第 15 节） ----------
+# 已经重签、公证、钉好的 app 原样打成 tar.gz（Tauri 打包时自己生成的那份在重签之前，不能用），用 keys/updater.key 签名。
+# Captae 的更新插件用 Rust 的 tar 包解开：符号链接（yt-dlp 的 Python.framework）照原样还原，硬链接解不开，所以先查有没有硬链接。
+# COPYFILE_DISABLE、--no-mac-metadata：不打进 ._ 文件和扩展属性（签名、公证结果都在 app 里面的普通文件里，不靠扩展属性）。
+# 没有更新签名私钥（别人从源码打包）时跳过这一步，照样能打出 dmg。
+updater_dir="$ROOT/target/release/bundle/updater"
+tgz="$updater_dir/Captae_${ver}_${arch}.app.tar.gz"
+if [[ -f "${CAPTAE_UPDATER_KEY:-$ROOT/keys/updater.key}" ]]; then
+  if [[ -n "$(find "$app" -type f -links +1 -print -quit)" ]]; then
+    echo "Captae.app 里有硬链接，更新插件解不开：" >&2
+    find "$app" -type f -links +1 >&2
+    exit 1
+  fi
+  mkdir -p "$updater_dir"
+  rm -f "$tgz" "$tgz.sig"
+  (cd "$(dirname "$app")" && COPYFILE_DISABLE=1 tar --no-mac-metadata -czf "$tgz" "$(basename "$app")")
+  "$ROOT/scripts/sign-update.sh" "$tgz" "$ver"
+  echo "更新包：${tgz}（$(du -h "$tgz" | cut -f1)）"
+else
+  echo "没有更新签名私钥（keys/updater.key），不打应用内更新用的包"
+fi
+
 echo
 echo "打好了：$dmg"
-"$ROOT/scripts/check-bundle.sh" "$dmg"
+# 两项检查都跑完再看结果（一项没过也要看到另一项的结果）
+rc=0
+"$ROOT/scripts/check-bundle.sh" "$dmg" || rc=1
+if [[ -f "$tgz" ]]; then
+  "$ROOT/scripts/check-update-package.sh" "$tgz" "$ver" || rc=1
+fi
+exit $rc

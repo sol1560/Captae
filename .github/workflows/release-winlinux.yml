@@ -35,6 +35,13 @@ jobs:
       - name: 打包并检查
         shell: powershell
         run: powershell -ExecutionPolicy Bypass -File scripts\build-release-windows.ps1 -InstallTauriCli
+      # 发版时 scripts/release-sign-updates.sh 在维护者的 Mac 上下载 Release 上的安装程序，拿这里打印的 SHA256 对照以后再签应用内更新的签名
+      # （GitHub 的机器上不放更新签名的私钥，docs/DESIGN.md 第 15 节）
+      - name: SHA256
+        shell: bash
+        run: |
+          cd target/release/bundle/nsis
+          for f in *.exe; do echo "CAPTAE-SHA256 $(sha256sum "$f" | cut -d' ' -f1)  $f"; done | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: captae-windows
@@ -60,6 +67,10 @@ jobs:
           node-version: 22
       - name: 打包并检查
         run: scripts/build-release-linux.sh --install-deps
+      # 同上：给 scripts/release-sign-updates.sh 对照
+      - name: SHA256
+        run: |
+          for f in target/release/bundle/deb/*.deb target/release/bundle/appimage/*.AppImage; do echo "CAPTAE-SHA256 $(sha256sum "$f" | cut -d' ' -f1)  $(basename "$f")"; done | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: captae-linux

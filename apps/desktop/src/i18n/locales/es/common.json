@@ -160,5 +160,32 @@
   "连着": "Conectado",
   "视频§Windows、Linux 的用户文件夹": "Vídeos",
   "音乐§Windows、Linux 的用户文件夹": "Música",
-  "图片§Windows、Linux 的用户文件夹": "Imágenes"
+  "图片§Windows、Linux 的用户文件夹": "Imágenes",
+  "在磁盘映像里打开的 Captae 不能自动更新，先把它拖进「应用程序」文件夹": "Captae no puede actualizarse solo mientras se ejecuta desde la imagen de disco. Arrástralo primero a la carpeta “Aplicaciones”",
+  "先把 Captae 拖进「应用程序」文件夹再打开，才能自动更新": "Arrastra Captae a la carpeta “Aplicaciones” y ábrelo desde allí para recibir actualizaciones automáticas",
+  "Captae 所在的文件夹不能写入，不能自动更新": "Captae no puede actualizarse solo porque no se puede escribir en su carpeta",
+  "系统里没有输入密码用的 pkexec，不能自动更新": "Captae no puede actualizarse solo porque pkexec, que pide tu contraseña, no está instalado",
+  "测试数据目录下不自动更新": "Sin actualizaciones automáticas con una carpeta de datos de prueba",
+  "这个版本的 Captae 不能自动更新": "Esta copia de Captae no puede actualizarse sola",
+  "没有打开网页": "No se pudo abrir la página",
+  "没有检查成": "No se pudo comprobar",
+  "已经是最新的": "Ya está actualizado",
+  "有新版本 {version}": "La versión {version} está disponible",
+  "没有下载成": "No se pudo descargar",
+  "没有更新成": "No se pudo actualizar",
+  "已更新到 {version}": "Actualizado a {version}",
+  "看看改了什么": "Ver novedades",
+  "更新到 {version}": "Actualizar a {version}",
+  "重新打开§装上新版、重新打开 Captae 的按钮，要短": "Reiniciar",
+  "更新§侧栏里有新版本时右边的按钮，要短": "Actualizar",
+  "重新打开 Captae 并更新？": "¿Reiniciar Captae para actualizar?",
+  "以后再说": "Más tarde",
+  "还有{n}个任务在下载，重新打开后会接着下。": {
+    "one": "Hay {n} descarga en curso. Continuará cuando Captae se reinicie.",
+    "other": "Hay {n} descargas en curso. Continuarán cuando Captae se reinicie."
+  },
+  "正在录的{n}个直播会停止，录到的部分在重新打开后保存好。": {
+    "one": "Se detendrá {n} grabación de directo. Lo grabado hasta ahora se guardará cuando Captae se reinicie.",
+    "other": "Se detendrán {n} grabaciones de directos. Lo grabado hasta ahora se guardará cuando Captae se reinicie."
+  }
 }
