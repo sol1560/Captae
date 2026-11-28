@@ -47,6 +47,30 @@ struct Saved {
     ready: Option<Ready>,
 }
 
+/// 装的时候出的错
+#[derive(Debug)]
+enum InstallError {
+    /// 用户在系统的密码框里点了「取消」：不装，不算这个版本的失败（现在只有 deb 认得出来，见 deb::install）
+    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+    Cancelled,
+    Failed(String),
+}
+
+impl From<String> for InstallError {
+    fn from(e: String) -> Self {
+        InstallError::Failed(e)
+    }
+}
+
+impl InstallError {
+    fn text(&self) -> String {
+        match self {
+            InstallError::Cancelled => tr!("取消了输入密码"),
+            InstallError::Failed(e) => e.clone(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Ready {
@@ -640,7 +664,7 @@ async fn download_update(app: &AppHandle, up: Update) -> Status {
 
 /// 装下好的更新包。`restart`：装好以后重新打开（点了「重新打开」）；false：正常退出时装，装完不打开。
 /// Windows 上插件运行安装程序后直接结束进程（之前由 on_before_exit 收拾），这个函数不会返回
-fn install(app: &AppHandle, restart: bool) -> Result<String, String> {
+fn install(app: &AppHandle, restart: bool) -> Result<String, InstallError> {
     let u = app.try_state::<AppUpdate>().ok_or_else(|| tr!("这个版本的 Captae 不能自动更新"))?;
     let (r, path) = u.ready_path().ok_or_else(|| tr!("还没有下载好的新版本"))?;
     let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
@@ -652,10 +676,20 @@ fn install(app: &AppHandle, restart: bool) -> Result<String, String> {
     // 验签不对：包坏了或者被换过，删掉，下次重新下
     if let Err(e) = up.verify(&bytes) {
         u.drop_ready();
-        return Err(e.to_string());
+        return Err(e.to_string().into());
     }
     tracing::info!("Captae 更新：开始装 {}", r.version);
-    up.install(&bytes).map_err(|e| e.to_string())?;
+    // deb 自己装（用户在密码框里点了取消就不装，见 deb::install）；其余交给插件（插件装之前会再验一次签）
+    #[cfg(target_os = "linux")]
+    let own = u.inner.lock().unwrap().kind == "deb";
+    #[cfg(not(target_os = "linux"))]
+    let own = false;
+    if own {
+        #[cfg(target_os = "linux")]
+        deb::install(&bytes)?;
+    } else {
+        up.install(&bytes).map_err(|e| e.to_string())?;
+    }
     // 装好了：包删掉，状态里不再说「已下载好」（这次运行的还是旧版本，重新打开才是新的）
     u.drop_ready();
     Ok(r.version)
@@ -679,14 +713,33 @@ pub async fn restart(app: &AppHandle) -> Result<(), String> {
     u.set_state(app, "installing");
     let h = app.clone();
     // macOS 要输管理员密码时，插件把系统的密码框交给主线程弹，这里不能占着主线程
-    let res = tauri::async_runtime::spawn_blocking(move || install(&h, true)).await.map_err(|e| e.to_string()).and_then(|r| r);
+    let res = tauri::async_runtime::spawn_blocking(move || install(&h, true)).await.map_err(|e| InstallError::Failed(e.to_string())).and_then(|r| r);
     match res {
         Ok(v) => {
             tracing::info!("Captae 更新：{v} 装好了，重新打开");
-            // 测试数据目录：自己重新打开，带着 CAPTAE_HOME 这些环境变量（见 relaunch_keeping_env）
+            // 测试数据目录：自己重新打开，带着 CAPTAE_HOME 这些环境变量（见 relaunch_after_exit）
             #[cfg(unix)]
             if std::env::var_os("CAPTAE_HOME").is_some() {
-                return relaunch_keeping_env(app, &u.data);
+                // Linux 的 AppImage：要重新打开的是 .AppImage 文件本身（current_exe 在每次启动都换地方的临时挂载点里）
+                let exe = match std::env::var_os("APPIMAGE").map(PathBuf::from).filter(|p| p.is_file()) {
+                    Some(p) => p,
+                    None => std::env::current_exe().map_err(|e| e.to_string())?,
+                };
+                let mut cmd = vec![exe.into_os_string()];
+                cmd.extend(std::env::args_os().skip(1));
+                tracing::info!("测试数据目录：自己重新打开（带着环境变量）");
+                return relaunch_after_exit(app, &u.data, cmd);
+            }
+            // macOS：经 LaunchServices 打开、到前台（见 relaunch_after_exit）
+            #[cfg(target_os = "macos")]
+            if let Some(bundle) = std::env::current_exe().ok().as_deref().and_then(app_bundle) {
+                let mut cmd = vec!["/usr/bin/open".into(), "-n".into(), bundle.into_os_string()];
+                let args: Vec<_> = std::env::args_os().skip(1).collect();
+                if !args.is_empty() {
+                    cmd.push("--args".into());
+                    cmd.extend(args);
+                }
+                return relaunch_after_exit(app, &u.data, cmd);
             }
             app.restart();
         }
@@ -696,43 +749,141 @@ pub async fn restart(app: &AppHandle) -> Result<(), String> {
                 a.core.release_held(true);
             }
             let back = if u.ready_path().is_some() { "ready" } else { "available" };
-            u.fail(app, "install", version.as_deref(), &e, back);
+            // 用户在密码框里点了取消：不算这个版本的失败（不影响自动下载），设置里照样说「上次没装成：取消了输入密码」
+            let counted = if matches!(e, InstallError::Cancelled) { None } else { version.as_deref() };
+            let msg = e.text();
+            u.fail(app, "install", counted, &msg, back);
             u.busy.store(false, Ordering::SeqCst);
-            Err(e)
+            Err(msg)
         }
     }
 }
 
-/// 设了 CAPTAE_HOME（测试数据目录）时装好以后的重新打开。Tauri 的 restart 在 macOS 上经 LaunchServices（`open -n -g`）重新打开，
-/// 新进程拿不到 CAPTAE_HOME：测试版会去读写正式的数据目录、改浏览器里插件宿主的登记（docs/DESIGN.md 第 11 节）。
-/// 所以自己起：新进程要等这个进程退干净（单实例插件的锁还在时，新进程会把自己交给这个进程然后退出），
-/// 交给一个 sh 等这个进程号没了再 exec，参数原样（--background 这些），报错输出写进 `<数据目录>/relaunch.log`
+/// 装好以后自己重新打开，不用 Tauri 的 `restart`：交给一个 sh 等这个进程号没了再 exec `cmd`（单实例插件的锁还在时，新进程会把自己交给这个进程然后退出），
+/// 报错输出写进 `<数据目录>/relaunch.log`。两种情况：
+/// - 设了 CAPTAE_HOME（测试数据目录）：直接运行程序，环境变量、参数原样。Tauri 的 restart 在 macOS 上经 LaunchServices 重新打开，
+///   新进程拿不到 CAPTAE_HOME，测试版会去读写正式的数据目录、改浏览器里插件宿主的登记（docs/DESIGN.md 第 11 节）。
+/// - macOS 正式版：`open -n Captae.app`。Tauri 的 restart 用 `open -n -g`（-g：不到前台），新窗口出来却在访达后面；
+///   新进程自己去抢前台也不行（macOS 14 起 `activateIgnoringOtherApps` 不再能从别的程序手里抢，Devin 的 macOS M2）。
+///   不带 -g 时由 LaunchServices 打开并放到前台，和在访达里双击一样
 #[cfg(unix)]
-fn relaunch_keeping_env(app: &AppHandle, data: &Path) -> Result<(), String> {
+fn relaunch_after_exit(app: &AppHandle, data: &Path, cmd: Vec<std::ffi::OsString>) -> Result<(), String> {
     use std::os::unix::process::CommandExt;
     use std::process::{Command, Stdio};
-    // Linux 的 AppImage：要重新打开的是 .AppImage 文件本身（current_exe 在每次启动都换地方的临时挂载点里）
-    let exe = match std::env::var_os("APPIMAGE").map(PathBuf::from).filter(|p| p.is_file()) {
-        Some(p) => p,
-        None => std::env::current_exe().map_err(|e| e.to_string())?,
-    };
     let log = std::fs::File::create(data.join("relaunch.log")).map(Stdio::from).unwrap_or_else(|_| Stdio::null());
     Command::new("/bin/sh")
         .arg("-c")
         .arg(r#"while kill -0 "$1" 2>/dev/null; do sleep 0.2; done; shift; exec "$@""#)
         .arg("sh")
         .arg(std::process::id().to_string())
-        .arg(&exe)
-        .args(std::env::args_os().skip(1))
+        .args(&cmd)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(log)
         .process_group(0)
         .spawn()
         .map_err(|e| e.to_string())?;
-    tracing::info!("测试数据目录：自己重新打开 {}（带着环境变量）", exe.display());
+    tracing::info!("Captae 更新：退出以后重新打开：{}", cmd.iter().map(|s| s.to_string_lossy()).collect::<Vec<_>>().join(" "));
     app.exit(0);
     Ok(())
+}
+
+/// Linux 的 deb：自己用 pkexec 装，不交给更新插件。插件在 pkexec 失败（包括用户在系统的认证窗口里点了「取消」）以后，
+/// 还会再弹 zenity / kdialog 的密码框，那个也取消了就直接 `sudo dpkg -i`：sudo 不要密码的电脑上，用户取消了照样装上（Devin 的 Linux D4）。
+/// 这里用户取消就不装，Captae 不关，设置里说「上次没装成：取消了输入密码」。
+/// - pkexec：系统的认证窗口（polkit）。退出码 126 是用户关掉了认证窗口；127 是没能认证（没有在运行的认证代理，常见于精简桌面、远程桌面；
+///   或者密码输错的次数用完了），这时退回 zenity / kdialog 问密码、交给 `sudo -S`。
+/// - zenity / kdialog 点了取消（退出码 1）也是不装；两个都没有、都弹不出来就算失败。不退回不问密码的 sudo
+#[cfg(target_os = "linux")]
+mod deb {
+    use super::InstallError;
+    use captae_core::tr;
+    use std::process::{Command, Output, Stdio};
+
+    pub fn install(bytes: &[u8]) -> Result<(), InstallError> {
+        let dir = tempfile::Builder::new().prefix("captae-update").tempdir().map_err(|e| e.to_string())?;
+        let pkg = dir.path().join("Captae.deb");
+        std::fs::write(&pkg, bytes).map_err(|e| e.to_string())?;
+        let mut why = None;
+        if captae_core::tools::which("pkexec").is_some() {
+            match Command::new("pkexec").arg("dpkg").arg("-i").arg(&pkg).stdin(Stdio::null()).output() {
+                Ok(o) if o.status.success() => return Ok(()),
+                Ok(o) if o.status.code() == Some(126) => return Err(InstallError::Cancelled),
+                Ok(o) if o.status.code() == Some(127) => {
+                    tracing::info!("Captae 更新：pkexec 没能认证（{}），改用密码框", tail(&o));
+                    why = Some(tail(&o));
+                }
+                // 认证过了、dpkg 自己出错
+                Ok(o) => return Err(InstallError::Failed(tail(&o))),
+                Err(e) => tracing::warn!("Captae 更新：pkexec 没运行起来：{e}"),
+            }
+        }
+        let password = match ask_password() {
+            Ask::Password(p) => p,
+            Ask::Cancelled => return Err(InstallError::Cancelled),
+            Ask::Unavailable => return Err(InstallError::Failed(why.unwrap_or_else(|| tr!("没能弹出输入密码的窗口")))),
+        };
+        let mut child = Command::new("sudo")
+            .args(["-S", "-p", "", "dpkg", "-i"])
+            .arg(&pkg)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        if let Some(mut stdin) = child.stdin.take() {
+            use std::io::Write;
+            let _ = writeln!(stdin, "{password}");
+        }
+        let o = child.wait_with_output().map_err(|e| e.to_string())?;
+        if o.status.success() {
+            Ok(())
+        } else {
+            Err(InstallError::Failed(tail(&o)))
+        }
+    }
+
+    enum Ask {
+        Password(String),
+        Cancelled,
+        Unavailable,
+    }
+
+    /// zenity，没有就 kdialog。点了取消（退出码 1）算取消；没装、弹不出来（没有图形界面等）换下一个
+    fn ask_password() -> Ask {
+        let text = tr!("输入密码来安装 Captae 的更新");
+        let tries: [(&str, Vec<String>); 2] = [
+            ("zenity", vec!["--password".into(), format!("--title={text}")]),
+            ("kdialog", vec!["--title".into(), "Captae".into(), "--password".into(), text.clone()]),
+        ];
+        for (prog, args) in tries {
+            if captae_core::tools::which(prog).is_none() {
+                continue;
+            }
+            match Command::new(prog).args(&args).stdin(Stdio::null()).stderr(Stdio::null()).output() {
+                Ok(o) if o.status.success() => {
+                    let p = String::from_utf8_lossy(&o.stdout);
+                    return Ask::Password(p.trim_end_matches(['\r', '\n']).to_string());
+                }
+                Ok(o) if o.status.code() == Some(1) => return Ask::Cancelled,
+                _ => continue,
+            }
+        }
+        Ask::Unavailable
+    }
+
+    /// 出错时给人看的：stderr（没有就 stdout）最后几行，都没有就是退出码
+    fn tail(o: &Output) -> String {
+        let pick = if o.stderr.iter().any(|b| !b.is_ascii_whitespace()) { &o.stderr } else { &o.stdout };
+        let s = String::from_utf8_lossy(pick);
+        let lines: Vec<&str> = s.lines().map(str::trim).filter(|l| !l.is_empty()).collect();
+        let t = lines[lines.len().saturating_sub(3)..].join(" / ");
+        if t.is_empty() {
+            format!("exit {}", o.status.code().unwrap_or(-1))
+        } else {
+            t.chars().take(400).collect()
+        }
+    }
 }
 
 /// 正常退出时（`RunEvent::Exit`，已经收拾完）：有下好的新版、自动更新开着、不用输密码、不是关机，就装上（装完不打开）
@@ -750,6 +901,7 @@ pub fn on_exit(app: &AppHandle, quitting_on_signal: bool) {
         Ok(v) => tracing::info!("Captae 更新：退出时装好了 {v}，下次打开就是新版"),
         Err(e) => {
             // 退出流程里不发事件（窗口已经没了），只记下来，下次打开时设置里能看到
+            let e = e.text();
             tracing::warn!("Captae 更新：退出时没装成：{e}");
             let mut i = u.inner.lock().unwrap();
             i.saved.error = Some(Problem { step: "install".into(), message: e, at: now_ms() });

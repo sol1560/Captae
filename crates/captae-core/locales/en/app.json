@@ -185,5 +185,8 @@
   "这个版本的 Captae 不能自动更新": "This copy of Captae can't update itself",
   "还没有下载好的新版本": "No update has been downloaded yet",
   "下载好的版本已经不比现在的新": "The downloaded version isn't newer than this one",
-  "正在检查或下载更新，稍等一下": "Checking for or downloading an update. Try again in a moment"
+  "正在检查或下载更新，稍等一下": "Checking for or downloading an update. Try again in a moment",
+  "取消了输入密码": "Password entry was canceled",
+  "没能弹出输入密码的窗口": "Couldn't open a password prompt",
+  "输入密码来安装 Captae 的更新": "Enter your password to install the Captae update"
 }

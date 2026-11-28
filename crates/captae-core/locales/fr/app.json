@@ -185,5 +185,8 @@
   "这个版本的 Captae 不能自动更新": "Cette copie de Captae ne peut pas se mettre à jour",
   "还没有下载好的新版本": "Aucune mise à jour n’a encore été téléchargée",
   "下载好的版本已经不比现在的新": "La version téléchargée n’est pas plus récente que celle-ci",
-  "正在检查或下载更新，稍等一下": "Recherche ou téléchargement d’une mise à jour en cours. Réessayez dans un instant"
+  "正在检查或下载更新，稍等一下": "Recherche ou téléchargement d’une mise à jour en cours. Réessayez dans un instant",
+  "取消了输入密码": "La saisie du mot de passe a été annulée",
+  "没能弹出输入密码的窗口": "Impossible d’ouvrir la fenêtre de saisie du mot de passe",
+  "输入密码来安装 Captae 的更新": "Saisissez votre mot de passe pour installer la mise à jour de Captae"
 }
