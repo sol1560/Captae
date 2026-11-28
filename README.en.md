@@ -7,26 +7,6 @@ AI assistants such as Claude and Cursor can also have it download, find items an
 
 ![Downloads](screenshots/downloads.png)
 
-## Sponsor
-
-<a href="https://volae.net"><img src="docs/sponsors/volae.png" alt="Volae" height="64"></a>
-
-Thanks to **[Volae](https://volae.net)** for sponsoring Captae.
-
-Volae is a customer relationship and growth system for businesses that sell to companies or to individuals. Your customers are scattered across email, chat, social and outreach; Volae merges each person into one record
-(where they came from, what they asked, what they bought, grouped by company for B2B) and hands it to an always-on Coworker that runs the missions you set to win and keep customers. Only the calls that need your judgment land in “Waiting for you”.
-
-- **SEO and GEO**: asks ChatGPT, Perplexity, Gemini and other AI engines the questions real buyers ask, to see whether they mention you, what they say about you and whom they cite. When they get something wrong, it drafts the change to your site for your approval, then asks again after it ships to check that the answer changed.
-- **Social**: finds discussions about you across 14 platforms, writes replies and rehearses them first, and posts only after you say yes.
-- **B2B prospecting**: finds the right companies and local shops, shows you a few sample emails first, then sends first emails and follow-ups in the style you approved.
-- **Customers**: answers your inbox, tracks customer health and writes check-in emails. Questions that keep coming up in support become topics for content and outreach.
-- **Getting started**: paste your URL. Your Coworker reads your site, asks up to 4 quick questions, shares its take on your product, buyers and competitors, and drafts your first plan. No forms to fill in or accounts to connect first.
-- Use it on the web or from your own Claude Code / Codex. Every plan has every feature and differs only in credits; start free with 200 credits when you add a card (adding a card doesn't charge it).
-
-## Friends
-
-- [LINUX DO](https://linux.do): a Chinese-language tech community about development, AI, open-source software and handy tools.
-
 ## What it does
 
 - **Download**: video and audio from YouTube, Bilibili, X, Douyin / TikTok, Instagram and other sites (web pages go to yt-dlp), M3U8 (HLS) streams and direct media links.
@@ -184,3 +164,23 @@ To make the switch possible, you need to agree to the Contributor License Agreem
 
 Captae's own code is licensed under AGPL-3.0-or-later (`LICENSE`); see “Roadmap” above for the plan to switch later. The yt-dlp, FFmpeg and aria2 bundled in the installer are standalone programs that keep their own licenses (including GPL).
 Open-source components, fonts and images used in the interface are listed in `THIRD_PARTY_NOTICES.md` and `licenses/`.
+
+## Sponsor
+
+<a href="https://volae.net"><img src="docs/sponsors/volae.png" alt="Volae" height="64"></a>
+
+Thanks to **[Volae](https://volae.net)** for sponsoring Captae.
+
+Volae is a customer relationship and growth system for businesses that sell to companies or to individuals. Your customers are scattered across email, chat, social and outreach; Volae merges each person into one record
+(where they came from, what they asked, what they bought, grouped by company for B2B) and hands it to an always-on Coworker that runs the missions you set to win and keep customers. Only the calls that need your judgment land in “Waiting for you”.
+
+- **SEO and GEO**: asks ChatGPT, Perplexity, Gemini and other AI engines the questions real buyers ask, to see whether they mention you, what they say about you and whom they cite. When they get something wrong, it drafts the change to your site for your approval, then asks again after it ships to check that the answer changed.
+- **Social**: finds discussions about you across 14 platforms, writes replies and rehearses them first, and posts only after you say yes.
+- **B2B prospecting**: finds the right companies and local shops, shows you a few sample emails first, then sends first emails and follow-ups in the style you approved.
+- **Customers**: answers your inbox, tracks customer health and writes check-in emails. Questions that keep coming up in support become topics for content and outreach.
+- **Getting started**: paste your URL. Your Coworker reads your site, asks up to 4 quick questions, shares its take on your product, buyers and competitors, and drafts your first plan. No forms to fill in or accounts to connect first.
+- Use it on the web or from your own Claude Code / Codex. Every plan has every feature and differs only in credits; start free with 200 credits when you add a card (adding a card doesn't charge it).
+
+## Friends
+
+- [LINUX DO](https://linux.do): a Chinese-language tech community about development, AI, open-source software and handy tools.
