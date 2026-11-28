@@ -36,6 +36,16 @@ Claude、Cursor 这些 AI 助手也能通过 MCP 让它下载、找素材、转�
   没来得及整理的原始数据会留着，命令行会告诉你在哪，7 天后自动删掉。
 - Captae 在录制中途退出了，下次打开时会把录到的部分整理好放进素材库，并提示一次放在哪。
 
+## 连接 AI 助手
+
+在 Captae 的「AI 助手」页：
+
+- **Claude Desktop、Cursor**：点「一键写入」，先给你看会改哪个配置文件、加什么，确认了才写；写好以后重启 AI 助手。
+- **Claude Code**：在终端里运行页面上那一行，形如 `claude mcp add captae -- /Applications/Captae.app/Contents/MacOS/captae mcp --stdio`。
+- **其他支持 MCP 的 AI 助手**：MCP 命令是 `<Captae 的位置>/Contents/MacOS/captae mcp --stdio`（Windows 是安装目录里的 `captae.exe`，Linux 是 `/usr/lib/Captae/captae`；stdio 方式）。支持 Skill 的，点「导出 Skill 文件」，放进它的 skills 文件夹（内容同 `skills/captae/SKILL.md`）。
+
+页面上可以整个关掉 AI 访问，或者单独关掉某个工具；高级模式打开后 AI 才能自己传 yt-dlp、aria2、ffmpeg 的参数。AI 助手看不到你的登录状态（cookie）；它让 Captae 下载时，和你自己下载一样会带上你在 Captae 里登录过的网站。它做过的每件事都记在「AI 最近做了什么」里。
+
 ## 支持范围
 
 - 网页视频靠附带的 [yt-dlp](https://github.com/yt-dlp/yt-dlp)（安装包里自带，每天自动检查更新），覆盖上千个网站。网站改版以后 yt-dlp 可能暂时读不了，
@@ -90,16 +100,6 @@ Windows 上支持 Chrome、Chromium、Edge 各渠道、Brave、Vivaldi、Opera�
 2. 在扩展程序页右上角打开「开发者模式」。
 3. 点「加载已解压的扩展程序」，选中插件文件夹（macOS 是 `Captae.app/Contents/Resources/extension`，Windows 是安装目录里的 `extension`，Linux 是 `/usr/lib/Captae/extension`；「浏览器插件」页上能复制位置）。
 4. 回到 Captae，看到「已连上」就好了。Captae 每次启动会给装了的浏览器登记插件要用的连接程序，不用手动设置。
-
-## 连接 AI 助手
-
-在 Captae 的「AI 助手」页：
-
-- **Claude Desktop、Cursor**：点「一键写入」，先给你看会改哪个配置文件、加什么，确认了才写；写好以后重启 AI 助手。
-- **Claude Code**：在终端里运行页面上那一行，形如 `claude mcp add captae -- /Applications/Captae.app/Contents/MacOS/captae mcp --stdio`。
-- **其他支持 MCP 的 AI 助手**：MCP 命令是 `<Captae 的位置>/Contents/MacOS/captae mcp --stdio`（Windows 是安装目录里的 `captae.exe`，Linux 是 `/usr/lib/Captae/captae`；stdio 方式）。支持 Skill 的，点「导出 Skill 文件」，放进它的 skills 文件夹（内容同 `skills/captae/SKILL.md`）。
-
-页面上可以整个关掉 AI 访问，或者单独关掉某个工具；高级模式打开后 AI 才能自己传 yt-dlp、aria2、ffmpeg 的参数。AI 助手看不到你的登录状态（cookie）；它让 Captae 下载时，和你自己下载一样会带上你在 Captae 里登录过的网站。它做过的每件事都记在「AI 最近做了什么」里。
 
 ## 登录要登录的网站
 
