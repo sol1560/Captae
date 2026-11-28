@@ -36,6 +36,16 @@ AI assistants such as Claude and Cursor can also have it download, find items an
   Raw data that hasn't been processed yet is kept: the command line tells you where, and it's deleted automatically after 7 days.
 - If Captae quits in the middle of a recording, it processes what was recorded into your library the next time it opens, and tells you once where it is.
 
+## Connect an AI assistant
+
+On Captae's “AI assistant” page:
+
+- **Claude Desktop, Cursor**: click “Add automatically”. It first shows you which config file it will change and what it will add, and writes only after you confirm. Restart the AI assistant afterward.
+- **Claude Code**: run the line shown on the page in a terminal; it looks like `claude mcp add captae -- /Applications/Captae.app/Contents/MacOS/captae mcp --stdio`.
+- **Other AI assistants that support MCP**: the MCP command is `<Captae's location>/Contents/MacOS/captae mcp --stdio` (`captae.exe` in the install folder on Windows, `/usr/lib/Captae/captae` on Linux; stdio transport). If the assistant supports Skills, click “Export Skill file” and put the file in its skills folder (same content as `skills/captae/SKILL.md`).
+
+On that page you can turn off AI access entirely or turn off individual tools. Only with Advanced mode on can the AI pass its own yt-dlp, aria2 and ffmpeg arguments. AI assistants can't see your sign-ins (cookies); when one asks Captae to download, the sites you've signed in to in Captae are used, just as when you download yourself. Everything it does is listed in “Recent calls”.
+
 ## What's supported
 
 - Web videos go through the bundled [yt-dlp](https://github.com/yt-dlp/yt-dlp) (included in the installer and checked for updates every day), which covers over a thousand sites. After a site changes, yt-dlp may not be able to read it for a while;
@@ -90,16 +100,6 @@ The extension isn't in the stores yet, so load it in developer mode:
 2. Turn on “Developer mode” in the top-right corner of the extensions page.
 3. Click “Load unpacked” and choose the extension folder (`Captae.app/Contents/Resources/extension` on macOS, `extension` in the install folder on Windows, `/usr/lib/Captae/extension` on Linux; you can copy the location on the “Browser extension” page).
 4. Back in Captae, once you see “Connected”, you're done. Each time Captae starts, it registers the connector the extension needs with the browsers you have installed, so there's nothing to set up by hand.
-
-## Connect an AI assistant
-
-On Captae's “AI assistant” page:
-
-- **Claude Desktop, Cursor**: click “Add automatically”. It first shows you which config file it will change and what it will add, and writes only after you confirm. Restart the AI assistant afterward.
-- **Claude Code**: run the line shown on the page in a terminal; it looks like `claude mcp add captae -- /Applications/Captae.app/Contents/MacOS/captae mcp --stdio`.
-- **Other AI assistants that support MCP**: the MCP command is `<Captae's location>/Contents/MacOS/captae mcp --stdio` (`captae.exe` in the install folder on Windows, `/usr/lib/Captae/captae` on Linux; stdio transport). If the assistant supports Skills, click “Export Skill file” and put the file in its skills folder (same content as `skills/captae/SKILL.md`).
-
-On that page you can turn off AI access entirely or turn off individual tools. Only with Advanced mode on can the AI pass its own yt-dlp, aria2 and ffmpeg arguments. AI assistants can't see your sign-ins (cookies); when one asks Captae to download, the sites you've signed in to in Captae are used, just as when you download yourself. Everything it does is listed in “Recent calls”.
 
 ## Signing in to sites that need it
 
