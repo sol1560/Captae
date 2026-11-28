@@ -107,7 +107,7 @@ The extension isn't in the stores yet, so load it in developer mode:
   Once you're signed in, the window closes and the waiting download continues. You can also sign in and out in Settings › Signed-in sites. Verification works the same way: complete it in the window, then click “Done”.
 - **Bring your browser's sign-in with the extension**: “Use my sign-in for this site” in the extension panel is on by default (remembered per site), so sites you've signed in to in your browser just work when you download with the extension.
 - **Read sign-ins from your browser**: “Also use sign-ins from your browser” in Settings is off by default. Turn it on and pasted links also use your browser's sign-ins (reading Chrome brings up a Keychain prompt; reading Safari needs Full Disk Access for Captae).
-- YouTube is the exception: by default no sign-in is used, only for age-restricted videos, members-only videos, or when YouTube asks you to confirm you're not a bot (downloading a lot with an account may get the account limited by YouTube). You'll see a note the first time.
+- YouTube is the exception: by default no sign-in is used, except for age-restricted videos, members-only videos, or when YouTube asks you to confirm you're not a bot (downloading a lot with an account may get the account limited by YouTube). You'll see a note the first time.
 - Sign-ins stay on this computer: sign-ins made in Captae are kept in the sign-in window's own storage, written temporarily for the download engine during a download and deleted afterward; sign-ins brought along by the extension are used only for that one download.
 
 ## Development
