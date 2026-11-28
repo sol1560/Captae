@@ -47,6 +47,12 @@ export type Asset = {
   day: number;
   /** 文件还在不在原来的地方 */
   exists: boolean;
+  /** 分类（没有就是未分类） */
+  category_id?: number | null;
+  /** 分类是谁定的：空 = 还没整理过 / ai / user（用户亲手放的，AI 不再动） */
+  category_by?: string;
+  /** tags 里哪些是 AI 加的 */
+  ai_tags?: string[];
 };
 
 /** library_query 的返回：这一页、符合筛选的总数、库里一共多少、筛选条要用的来源和标签（按数量排） */
@@ -67,8 +73,9 @@ export type NewFile = { path: string; assetId: number };
 /* ---------------- 筛选和查询 ---------------- */
 
 export type KindFilter = "" | "video" | "audio" | "image";
-export type Filters = { kind: KindFilter; site: string; days: 0 | 1 | 7 | 30; tag: string; q: string };
-export const NO_FILTERS: Filters = { kind: "", site: "", days: 0, tag: "", q: "" };
+/** cat：按分类筛，"" 不筛、"none" 未分类、或分类 id（字符串） */
+export type Filters = { kind: KindFilter; site: string; days: 0 | 1 | 7 | 30; tag: string; q: string; cat: string };
+export const NO_FILTERS: Filters = { kind: "", site: "", days: 0, tag: "", q: "", cat: "" };
 
 /** 一页多少条：和旧界面一样 60，往下滚到底附近再要下一页 */
 export const PAGE = 60;
@@ -80,6 +87,7 @@ export function queryOf(f: Filters, offset: number, limit: number): Record<strin
   if (f.site) q.site = f.site;
   if (f.days) q.days = f.days;
   if (f.tag) q.tags = [f.tag];
+  if (f.cat) q.cat = f.cat === "none" ? 0 : Number(f.cat);
   const text = f.q.trim();
   if (text) q.q = text;
   return q;
@@ -87,7 +95,7 @@ export function queryOf(f: Filters, offset: number, limit: number): Record<strin
 
 /** 除了类型以外还筛了什么（类型在分段控件上已经看得见） */
 export const extraFilters = (f: Filters) => !!(f.site || f.days || f.tag);
-export const anyFilter = (f: Filters) => !!(f.kind || f.site || f.days || f.tag || f.q.trim());
+export const anyFilter = (f: Filters) => !!(f.kind || f.site || f.days || f.tag || f.cat || f.q.trim());
 
 /** 时间筛选的几档；label 是原文，显示时 t(label)。「今天」加了说明：lib/format.ts 的「今天」嵌在句子里（英文小写），这里是单独的选项 */
 export const DAYS: { v: Filters["days"]; label: Key }[] = [
@@ -117,6 +125,7 @@ const NO_MATCH: Record<KindFilter, Key> = {
 export function emptyText(all: number, f: Filters): { title: string; text: string; clear: boolean } {
   if (!all && !anyFilter(f)) return { title: t("素材库还是空的"), text: t("下载完成的视频、音乐和图片都会自动放进来"), clear: false };
   if (f.q.trim()) return { title: t("没有找到"), text: t("可以搜标题、简介、标签和字幕里的话，换个词试试"), clear: true };
+  if (f.cat && !extraFilters(f) && !f.kind) return f.cat === "none" ? { title: t("都分好类了"), text: t("没有未分类的素材"), clear: false } : { title: t("这个分类里还没有素材"), text: t("在素材详情里可以把素材放进这个分类"), clear: false };
   return { title: t(NO_MATCH[f.kind] ?? NO_MATCH[""]), text: t("换个筛选条件试试"), clear: extraFilters(f) || !!f.kind };
 }
 

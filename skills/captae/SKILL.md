@@ -12,13 +12,15 @@ Captae is a local media tool installed on the user's computer, and all files sta
 | Tool | When to use it |
 |---|---|
 | `download` | The user gives you a link and wants to save it. Pages on YouTube, Bilibili and other sites, direct media links and m3u8 all work. By default it waits until the download finishes and returns `path`, `asset_id` and `type` (video / audio / image). For playlists and posts with several videos, see “Playlists and live streams” below |
-| `library_query` | The user says “the one I downloaded before” or “find xx”. `q` searches titles, descriptions, tags and speech transcripts; you can filter by `type`, `source` (source site), `days` and `tags` |
+| `library_query` | The user says “the one I downloaded before” or “find xx”. `q` searches titles, descriptions, tags and speech transcripts; you can filter by `type`, `source` (source site), `days`, `tags` and `category` |
 | `share_video` | You need to **understand** what a video is about. Returns a Markdown transcript (with timestamps) and several key frame images, so you don't have to watch the video yourself; the prepared files are in `bundle_dir` |
 | `subtitle` | The user wants a subtitle file. It uses the site's own subtitles first, and transcribes locally if there are none |
 | `convert` | Change the format: MP4 / WebM / MOV / ProRes 422 / MP3 / AAC / FLAC / WAV / PNG / JPG / WebP / AVIF |
 | `trim` | Cut out a section. Times can be seconds or `mm:ss`; pass an audio item id or a file path in `replace_audio` to replace the sound |
 | `concat` | Join several videos into one, in order. `inputs` is an array of item ids or local paths, at least two |
 | `library_add_tag` | Tag an item so it's easier to find later |
+| `library_categories` | See how the user's library is organized: categories (like folders, each item in at most one), item counts, how many are uncategorized |
+| `library_set_category` | The user asks you to file an item somewhere. Use an existing category name from `library_categories` when one fits; a new name creates a category. Captae's automatic sorting won't move items filed this way |
 | `preset_list` / `preset_run` | One-click workflows the user has saved, such as “Douyin footage” or “Podcast to text”. When the user mentions a preset by name, check it with `preset_list` first |
 
 Most tools accept either an `asset_id` (from what `download` or `library_query` returned) or a local `path`. Prefer `asset_id`.

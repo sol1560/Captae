@@ -137,10 +137,22 @@ pub struct Settings {
     pub pick_seconds: u32,
     /// faster-whisper 模型
     pub whisper_model: String,
-    /// 字幕翻译用的 OpenAI 兼容接口（本地 Ollama 或远程），为空就不提供翻译
+    /// 「AI 模型」：OpenAI 兼容接口（DeepSeek、OpenAI、本地 Ollama……），字幕翻译和素材库分类共用。地址或模型为空就不提供这两样
     pub llm_base_url: String,
     pub llm_model: String,
+    /// 密钥：不写进 settings.json，单独存在同一目录的 secrets.json（权限 600），见 `save` / `load`。
+    /// 界面拿不到它（序列化时跳过），只拿到 `llm_key_hint`；界面发来的 `llmApiKey` 照常收（填新的密钥）
+    #[serde(skip_serializing)]
     pub llm_api_key: String,
+    /// 密钥的提示（「…3f9a」），给界面显示「已设置」用。由 `with_hint` 算，不存盘
+    #[serde(skip_deserializing)]
+    pub llm_key_hint: String,
+    /// 这个模型能不能看图：空 = 还不知道 / yes / no（设置里「测试连接」时测出来，见 llm.rs）
+    pub llm_vision: String,
+    /// 素材库整理过以后，新下载的自动放进分类（categorize.rs）
+    pub ai_auto_categorize: bool,
+    /// 分类时，标题、简介看不出内容的素材附上封面给模型看
+    pub ai_send_covers: bool,
     /// 自定义工具路径，为空时依次找：随包 sidecar → PATH
     pub ytdlp_path: String,
     pub ffmpeg_path: String,
@@ -182,6 +194,10 @@ impl Default for Settings {
             llm_base_url: String::new(),
             llm_model: String::new(),
             llm_api_key: String::new(),
+            llm_key_hint: String::new(),
+            llm_vision: String::new(),
+            ai_auto_categorize: true,
+            ai_send_covers: true,
             ytdlp_path: String::new(),
             ffmpeg_path: String::new(),
             aria2_path: String::new(),
@@ -200,15 +216,68 @@ impl Default for Settings {
 }
 
 impl Settings {
-    pub fn load(p: &Path) -> Settings {
-        std::fs::read(p).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default()
+    /// 密钥文件：和 settings.json 同一个目录
+    pub fn secrets_path(p: &Path) -> PathBuf {
+        p.with_file_name("secrets.json")
     }
+
+    pub fn load(p: &Path) -> Settings {
+        let raw: Option<serde_json::Value> = std::fs::read(p).ok().and_then(|b| serde_json::from_slice(&b).ok());
+        let mut s: Settings = raw.clone().and_then(|v| serde_json::from_value(v).ok()).unwrap_or_default();
+        let sp = Self::secrets_path(p);
+        match std::fs::read(&sp).ok().and_then(|b| serde_json::from_slice::<serde_json::Value>(&b).ok()) {
+            Some(v) => s.llm_api_key = v["llmApiKey"].as_str().unwrap_or("").to_string(),
+            // 旧版把密钥写在 settings.json 里：挪到 secrets.json，settings.json 去掉它（失败了下次再挪，这次照常用）
+            None if !s.llm_api_key.is_empty() && raw.as_ref().is_some_and(|v| v.get("llmApiKey").is_some()) => {
+                if let Err(e) = s.save(p) {
+                    tracing::warn!("把密钥挪到 secrets.json 失败：{e}");
+                }
+            }
+            None => {}
+        }
+        s.with_hint()
+    }
+
+    /// 算好给界面看的密钥提示
+    pub fn with_hint(mut self) -> Self {
+        let k = self.llm_api_key.trim();
+        self.llm_key_hint = if k.is_empty() {
+            String::new()
+        } else {
+            let tail: String = k.chars().rev().take(4).collect::<Vec<_>>().into_iter().rev().collect();
+            format!("…{tail}")
+        };
+        self
+    }
+
     pub fn save(&self, p: &Path) -> Result<()> {
+        let mut v = serde_json::to_value(self)?;
+        if let Some(o) = v.as_object_mut() {
+            o.remove("llmKeyHint");
+        }
+        write_private(&Self::secrets_path(p), &serde_json::to_vec_pretty(&serde_json::json!({"llmApiKey": self.llm_api_key.trim()}))?)?;
         let tmp = p.with_extension("json.tmp");
-        std::fs::write(&tmp, serde_json::to_vec_pretty(self)?)?;
+        std::fs::write(&tmp, serde_json::to_vec_pretty(&v)?)?;
         std::fs::rename(tmp, p)?;
         Ok(())
     }
+}
+
+/// 只有自己能读写的文件（unix 600；Windows 上数据目录在 %LOCALAPPDATA%，本来只有这个用户能读）。先写临时文件再换过去
+fn write_private(p: &Path, bytes: &[u8]) -> Result<()> {
+    use std::io::Write;
+    let tmp = p.with_extension("json.tmp");
+    let _ = std::fs::remove_file(&tmp);
+    let mut o = std::fs::OpenOptions::new();
+    o.write(true).create_new(true);
+    #[cfg(unix)]
+    std::os::unix::fs::OpenOptionsExt::mode(&mut o, 0o600);
+    let mut f = o.open(&tmp)?;
+    f.write_all(bytes)?;
+    f.sync_all()?;
+    drop(f);
+    std::fs::rename(&tmp, p)?;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -228,6 +297,41 @@ mod tests {
             assert_eq!(p.human_dir(&p.pictures.join("a.jpg")), "Pictures › Captae");
         });
         assert_eq!(p.human_dir(Path::new("/nonexistent/x/a.mp4")), "/nonexistent/x");
+    }
+
+    /// 密钥不进 settings.json：存在 secrets.json（600），读回来照样有；旧版写在 settings.json 里的打开时挪过去
+    #[test]
+    fn api_key_lives_in_secrets_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let p = dir.path().join("settings.json");
+        let s = Settings { llm_base_url: "https://api.deepseek.com".into(), llm_api_key: "sk-test-1234abcd".into(), ..Default::default() };
+        s.save(&p).unwrap();
+        let text = std::fs::read_to_string(&p).unwrap();
+        assert!(!text.contains("sk-test") && !text.contains("llmApiKey") && !text.contains("llmKeyHint"), "{text}");
+        assert!(std::fs::read_to_string(Settings::secrets_path(&p)).unwrap().contains("sk-test-1234abcd"));
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            assert_eq!(std::fs::metadata(Settings::secrets_path(&p)).unwrap().permissions().mode() & 0o777, 0o600);
+        }
+        let back = Settings::load(&p);
+        assert_eq!((back.llm_api_key.as_str(), back.llm_key_hint.as_str()), ("sk-test-1234abcd", "…abcd"));
+        // 给界面的 JSON 里没有密钥，只有提示
+        let ui = serde_json::to_value(&back).unwrap();
+        assert!(ui.get("llmApiKey").is_none());
+        assert_eq!(ui["llmKeyHint"], "…abcd");
+        // 界面发来新的密钥照常收
+        let patched: Settings = serde_json::from_value(serde_json::json!({"llmApiKey": "sk-new"})).unwrap();
+        assert_eq!(patched.llm_api_key, "sk-new");
+
+        // 旧版：密钥在 settings.json 里，没有 secrets.json
+        let old = dir.path().join("old").join("settings.json");
+        std::fs::create_dir_all(old.parent().unwrap()).unwrap();
+        std::fs::write(&old, r#"{"llmBaseUrl":"http://localhost:11434/v1","llmModel":"qwen","llmApiKey":"sk-old-9999"}"#).unwrap();
+        let s = Settings::load(&old);
+        assert_eq!(s.llm_api_key, "sk-old-9999");
+        assert!(!std::fs::read_to_string(&old).unwrap().contains("sk-old"), "打开以后 settings.json 里不再有密钥");
+        assert_eq!(Settings::load(&old).llm_api_key, "sk-old-9999");
     }
 
     /// 默认数据目录（不设 CAPTAE_HOME 时）：Windows 在 %LOCALAPPDATA%\Captae\data，Linux 在 XDG 数据目录，macOS 照旧

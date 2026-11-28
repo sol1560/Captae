@@ -14,11 +14,12 @@ AI assistants such as Claude and Cursor can also have it download, find items an
 - **Sites that need sign-in work too**: sign in once in Captae's own sign-in window, or let the browser extension bring along your browser's sign-in (see “Signing in” below).
 - **Says why a download failed**: needs sign-in, needs verification, region-locked, blocked by the network, video removed, DRM-protected… Each case has its own explanation and a button for the next step, not a generic “failed”.
 - **Library**: downloads are added automatically; search by title, tag and what's said in the subtitles. Convert formats (MP4, WebM, MOV, ProRes, MP3, FLAC…), trim precisely, combine, swap audio tracks, generate and burn in subtitles, Show in Finder.
+  You can have your own AI model (DeepSeek, OpenAI, a local Ollama…, with your own key) sort items into categories by content and tag them. Rename or merge the categories as you like, and new downloads are filed automatically. Only titles, descriptions and sources are sent, plus thumbnails when the text says too little.
 - **Speech to text**: videos without subtitles are transcribed on your computer into subtitles and a transcript (faster-whisper; audio is never uploaded).
 - **Send to AI**: turns a video into a transcript plus key frames on your clipboard. Paste it into an AI chat and the AI can understand the video.
 - **Copy a link, then download**: if you copy a video link and open Captae within a minute, it asks on the Downloads page whether to download it (nothing pops up at the moment you copy). You can also paste straight into Captae.
 - **Browser extension**: a download button and a quality menu appear next to videos on web pages, with progress in the bottom-right corner. The toolbar panel lists the videos, audio and images you can download from the page, and recent finds also show up in Captae's sidebar.
-- **AI assistants**: the MCP server offers tools for downloading, converting, subtitles, trimming, combining, searching the library, presets, Send to AI and more. You can turn it off entirely or allow only some tools, and every call is logged.
+- **AI assistants**: the MCP server offers tools for downloading, converting, subtitles, trimming, combining, searching and filing the library, presets, Send to AI and more. You can turn it off entirely or allow only some tools, and every call is logged.
 - **Languages**: the interface, messages and command line support 简体中文, English, 繁體中文, 日本語, 한국어, Deutsch, Español and Français. It follows your system by default and can be changed in Settings.
 
 | | |

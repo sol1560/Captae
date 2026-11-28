@@ -43,6 +43,18 @@ export function openDialog(d: DialogName) {
   subs.forEach((f) => f());
 }
 
+/** 打开设置并滚到某一组（「AI 模型」：素材库整理、字幕翻译没填模型时从那里跳过来）。设置弹窗挂好后取走 */
+let settingsAt: string | null = null;
+export function openSettingsAt(section: "ai") {
+  settingsAt = section;
+  openDialog("settings");
+}
+export function takeSettingsAt(): string | null {
+  const s = settingsAt;
+  settingsAt = null;
+  return s;
+}
+
 /** 进行中的任务，按优先级排 */
 export function activeJobs() {
   return Object.values(getState().jobs)

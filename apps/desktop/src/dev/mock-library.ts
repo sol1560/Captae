@@ -13,6 +13,7 @@
 // 想一打开就选中某一条，用真实的跳转地址：#/library?asset=124
 import type { Asset, SubInfo, Track } from "@/pages/library/model";
 import type { MockCtx, MockHandler } from "./mock";
+import { catFilter, decorate } from "./mock-categories";
 
 const qs = new URLSearchParams(location.search);
 const EMPTY = qs.get("mock") === "empty";
@@ -443,6 +444,13 @@ let db: Map<number, Asset> | null = null;
 const gone = new Set<number>();
 const SITE_NAME: Record<string, string> = { youtube: "YouTube", bilibili: "哔哩哔哩", x: "X", tiktok: "TikTok", douyin: "抖音", instagram: "Instagram" };
 
+const copy0 = (a: Asset): Asset => ({ ...a, tags: [...a.tags] });
+
+/** 素材库（mock-categories.ts 也用） */
+export function libOf(ctx: MockCtx): Map<number, Asset> {
+  return lib(ctx);
+}
+
 function lib(ctx: MockCtx): Map<number, Asset> {
   if (!db) {
     db = new Map();
@@ -498,7 +506,8 @@ function counted(L: string[]): [string, number][] {
   return [...m.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 }
 
-const copy = (a: Asset): Asset => ({ ...a, tags: [...a.tags] });
+/** 给界面的一份：带上分类和 AI 标签（mock-categories.ts 记着） */
+const copy = (a: Asset): Asset => decorate({ ...a, tags: [...a.tags] });
 
 function need(ctx: MockCtx, id: number): Asset {
   const a = lib(ctx).get(Number(id));
@@ -640,9 +649,10 @@ export const libraryHandlers: Record<string, MockHandler> = {
     if (q.site) L = L.filter((a) => a.src.toLowerCase() === String(q.site).toLowerCase());
     if (q.format) L = L.filter((a) => a.fmt.toUpperCase() === String(q.format).toUpperCase());
     if (q.days) L = L.filter((a) => a.created_at >= Date.now() - Number(q.days) * DAY);
-    for (const t of (q.tags ?? []) as string[]) L = L.filter((a) => a.tags.includes(t));
+    for (const t of (q.tags ?? []) as string[]) L = L.filter((a) => decorate(copy0(a)).tags.includes(t));
+    if (q.cat != null) L = L.filter((a) => catFilter(a.id, Number(q.cat)));
     const text = String(q.q ?? "").trim();
-    if (text) L = L.filter((a) => matches(a, text));
+    if (text) L = L.filter((a) => matches(decorate(copy0(a)), text));
     L = L.sort((a, b) => b.created_at - a.created_at);
     const offset = Number(q.offset ?? 0),
       limit = Math.min(1000, Number(q.limit ?? 200));
@@ -651,7 +661,7 @@ export const libraryHandlers: Record<string, MockHandler> = {
       total: L.length,
       all: all.length,
       sites: counted(all.map((a) => a.src)),
-      tags: counted(all.flatMap((a) => a.tags)),
+      tags: counted(all.flatMap((a) => decorate(copy0(a)).tags)),
     };
   },
   library_get: ({ id }, ctx) => {

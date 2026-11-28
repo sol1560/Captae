@@ -19,6 +19,7 @@ use tauri::{Emitter, Manager, State};
 
 mod agent_cmds;
 mod asset_scope;
+mod category_cmds;
 mod clip_ask;
 mod ext_cmds;
 mod login;
@@ -66,6 +67,8 @@ fn boot(app: State<App>) -> R<Value> {
         "sniffed": sniffed,
         "presets": c.presets(),
         "libraryCount": c.lib.count().map_err(e)?,
+        // 素材库的分类（侧栏「分类」那一组）
+        "categories": c.lib.categories().map_err(e)?.0,
         "tools": tools,
         "calls": c.lib.calls(100).map_err(e)?,
         "mcpCommand": mcp_command(),
@@ -601,6 +604,14 @@ fn main() {
                     tracing::info!("外部工具预热用了 {:.1}s", t.elapsed().as_secs_f64());
                 });
             }
+            // 素材库整理过、开着自动归类：补上还没归类的（上次没分成的、Captae 关着时命令行下的）。等启动忙完再做
+            {
+                let c = core.clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_secs(20)).await;
+                    captae_core::categorize::sweep(&c).await;
+                });
+            }
             // core 事件 → 页面
             let mut rx = core.subscribe();
             let h = app.handle().clone();
@@ -822,6 +833,9 @@ fn invoke_handler() -> impl Fn(tauri::ipc::Invoke) -> bool + Send + Sync + 'stat
             library_cmds::library_get, library_cmds::library_remove, library_cmds::library_trash, library_cmds::library_share,
             library_cmds::library_frames, library_cmds::library_waveform, library_cmds::subtitle_tracks, library_cmds::pick_audio_file,
             library_cmds::task_concat,
+            category_cmds::library_categories, category_cmds::category_save, category_cmds::category_delete, category_cmds::category_merge,
+            category_cmds::category_reorder, category_cmds::asset_set_category, category_cmds::categorize_estimate, category_cmds::categorize_propose,
+            category_cmds::categorize_apply, category_cmds::categorize_discard, category_cmds::categorize_rest, category_cmds::ai_tags_clear, category_cmds::llm_test,
             agent_cmds::mcp_status, agent_cmds::agent_info, agent_cmds::mcp_config_plan, agent_cmds::mcp_config_write,
             agent_cmds::pick_folder, agent_cmds::export_skill, agent_cmds::preset_trial,
             ext_cmds::extension_status, ext_cmds::extension_register, ext_cmds::extension_test,

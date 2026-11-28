@@ -5,7 +5,7 @@
 // 文件不在了、详情（播放、胶片条、波形、信息、标签、在访达中显示、打开、复制来源链接、发给 AI、移除、移到废纸篓）、
 // 转换 / 字幕 / 剪辑、多选后批量转换 / 拼接 / 加标签、后台任务的进度、#/library?asset= 和 ?search 跳转。
 // 键盘：方向键换素材（不动画）、空格选上 / 取消（多选）、⌘A 全选、⌘⌫ 移到废纸篓、⌘F 搜索、Esc 退出多选或收起详情、Shift F10 右键菜单。
-import { Album02Icon, ArrowDown01Icon, CheckmarkSquare02Icon, Search01Icon, Cancel01Icon, Download04Icon } from "@hugeicons/core-free-icons";
+import { Album02Icon, ArrowDown01Icon, CheckmarkSquare02Icon, Search01Icon, Cancel01Icon, Download04Icon, SparklesIcon, FolderLibraryIcon, Tag01Icon, Settings02Icon, GitMergeIcon } from "@hugeicons/core-free-icons";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,8 @@ import { notify } from "@/lib/notify";
 import { isMac, modKey } from "@/lib/os";
 import { getPref, setPref } from "@/lib/prefs";
 import { clearParams, go, useRoute } from "@/lib/route";
-import { onEvent, useApp } from "@/lib/store";
-import { Icon, SiteIcon } from "@/parts";
+import { onEvent, setState, useApp } from "@/lib/store";
+import { Icon, SiteIcon, TipIcon } from "@/parts";
 import { Topbar } from "@/shell/Topbar";
 import { moveToTrash, openFile, removeFromLibrary, TRASH, trash, useOps } from "./library/act";
 import { BatchBar } from "./library/Batch";
@@ -33,6 +33,9 @@ import { fetchAsset, knownAsset, useHidden, useLibrary } from "./library/data";
 import { Detail } from "./library/Detail";
 import { GridSkeleton, Tile } from "./library/Grid";
 import { assetMenu, type Tool } from "./library/menu";
+import { clearAiTags, fileRest } from "./library/categories";
+import { OrganizeDialog, type OrganizeMode } from "./library/Organize";
+import { openSettingsAt } from "@/shell/actions";
 import { anyFilter, DAYS, emptyText, extraFilters, filterLabel, gridColumns, isMedia, NO_FILTERS, siteKeyOf, type Asset, type Filters, type KindFilter } from "./library/model";
 import "./library/library.css";
 
@@ -66,6 +69,13 @@ export function Library() {
   const [kbdPick, setKbdPick] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [trashing, setTrashing] = useState<Asset | null>(null);
+  /** 「用 AI 整理」/「管理分类」弹窗 */
+  const [org, setOrg] = useState<OrganizeMode | null>(null);
+  const lastOrg = useRef<OrganizeMode>("organize");
+  if (org) lastOrg.current = org;
+  const cats = useApp((s) => s.categories);
+  const uncategorized = useApp((s) => s.uncategorized);
+  const [hintOff, setHintOff] = useState(() => getPref<boolean>("orgHintOff", false));
 
   const mainRef = useRef<HTMLElement>(null);
   const colRef = useRef<HTMLDivElement>(null);
@@ -84,7 +94,17 @@ export function Library() {
   }, [qText]);
   useEffect(() => {
     lastFilters = filters;
+    // 侧栏据此标出选中的分类
+    setState({ libCat: filters.cat });
   }, [filters]);
+  useEffect(() => () => setState({ libCat: "" }), []);
+  // 按着的分类被删掉了：回到全部
+  useEffect(() => {
+    if (filters.cat && filters.cat !== "none" && cats.length >= 0 && !cats.some((c) => String(c.id) === filters.cat)) {
+      const t0 = setTimeout(() => setFilters((f) => (f.cat && f.cat !== "none" && !cats.some((c) => String(c.id) === f.cat) ? { ...f, cat: "" } : f)), 300);
+      return () => clearTimeout(t0);
+    }
+  }, [cats, filters.cat]);
 
   const items = useMemo(() => lib.items.filter((a) => !hidden.has(a.id)), [lib.items, hidden]);
   // 后面还有：底下那一行「正在读取更多」等 300ms 才出现、文字扫光（配方 m）；位置先留着，出现时列表不跳
@@ -181,6 +201,17 @@ export function Library() {
     if (p.has("asset") && id) {
       used = true;
       selectById(id);
+    }
+    // ?org=manage（侧栏「分类」旁边的「管理」）/ organize
+    if (p.has("org")) {
+      used = true;
+      setOrg(p.get("org") === "manage" ? "manage" : "organize");
+    }
+    // ?cat=<id> / none / 空（侧栏点了某个分类、「未分类」、或者「素材库」本身）
+    if (p.has("cat")) {
+      used = true;
+      const c = p.get("cat") ?? "";
+      setFilters((f) => (f.cat === c ? f : { ...f, cat: c }));
     }
     if (p.has("search")) {
       used = true;
@@ -374,10 +405,12 @@ export function Library() {
 
   /* ---------------- 顶栏 ---------------- */
 
+  const catTitle = filters.cat === "none" ? t("未分类") : filters.cat ? (cats.find((c) => String(c.id) === filters.cat)?.name ?? "") : "";
   const setF = (patch: Partial<Filters>) => setFilters((f) => ({ ...f, ...patch }));
   const clearFilters = () => {
     setQText("");
-    setFilters({ ...NO_FILTERS });
+    // 正在看某个分类时，「清除筛选和搜索」不把分类也清掉（分类是侧栏选的，回到「素材库」才是全部）
+    setFilters((f) => ({ ...NO_FILTERS, cat: f.cat }));
   };
   const sub = !lib.loaded ? "" : anyFilter(filters) ? t("{total} / {n}项", { total, n: all }) : t("{n}项", { n: all });
 
@@ -405,13 +438,33 @@ export function Library() {
           ...lib.tags.slice(0, 40).map(([tag, n]) => ({ label: tag, description: t("{n}项", { n }), checked: filters.tag === tag, onSelect: () => setF({ tag }) })),
         ],
       });
+    if (cats.length)
+      L.push({
+        label: t("分类"),
+        description: catTitle || t("全部"),
+        divider: !lib.tags.length,
+        submenu: [
+          { label: t("全部分类"), checked: !filters.cat, onSelect: () => setF({ cat: "" }) },
+          ...cats.map((c) => ({ label: c.name, description: t("{n}项", { n: c.count }), checked: filters.cat === String(c.id), onSelect: () => setF({ cat: String(c.id) }) })),
+          { label: t("未分类"), description: t("{n}项", { n: uncategorized }), divider: true, checked: filters.cat === "none", onSelect: () => setF({ cat: "none" }) },
+        ],
+      });
     if (extraFilters(filters)) L.push({ label: t("清除筛选"), icon: Cancel01Icon, divider: true, onSelect: () => setF({ site: "", days: 0, tag: "" }) });
     return L;
-  }, [lib.sites, lib.tags, filters]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lib.sites, lib.tags, filters, cats, uncategorized, catTitle]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 「用 AI 整理」的菜单（已经有分类时）；还没有分类时按钮直接打开整理
+  const orgItems: DropdownMenuItem[] = [
+    { label: t("给未分类的归类"), icon: FolderLibraryIcon, description: uncategorized ? t("{n}项", { n: uncategorized }) : undefined, disabled: !uncategorized, onSelect: () => void fileRest() },
+    { label: t("重新整理…"), icon: SparklesIcon, onSelect: () => setOrg("organize") },
+    { label: t("管理分类…"), icon: GitMergeIcon, onSelect: () => setOrg("manage") },
+    { label: t("清除 AI 加的标签"), icon: Tag01Icon, divider: true, onSelect: () => void clearAiTags() },
+    { label: t("AI 模型设置…"), icon: Settings02Icon, onSelect: () => openSettingsAt("ai") },
+  ];
 
   const topbar = (
     <Topbar
-      title={t("素材库")}
+      title={catTitle || t("素材库")}
       sub={sub}
       mid={
         <SegmentedControl
@@ -459,6 +512,26 @@ export function Library() {
               </Button>
             )}
           />
+          {cats.length ? (
+            <DropdownMenu
+              align="end"
+              aria-label={t("用 AI 整理")}
+              items={orgItems}
+              trigger={({ triggerProps }) => (
+                <Tooltip content={t("用 AI 整理")}>
+                  <button className="cp-round lib-org" aria-label={t("用 AI 整理")} {...triggerProps}>
+                    <Icon icon={SparklesIcon} size={16} />
+                  </button>
+                </Tooltip>
+              )}
+            />
+          ) : (
+            <Tooltip content={t("用 AI 整理：按内容分好类")}>
+              <button className="cp-round lib-org" aria-label={t("用 AI 整理")} onClick={() => setOrg("organize")}>
+                <Icon icon={SparklesIcon} size={16} />
+              </button>
+            </Tooltip>
+          )}
           <Tooltip content={selecting ? t("退出多选") : t("多选：批量转换、拼接、加标签")}>
             <button
               className="cp-round lib-multi"
@@ -558,6 +631,28 @@ export function Library() {
       <div className="cp-listwrap">
         <div className="cp-col lib-col" ref={colRef} onScroll={fill} data-batch={selecting || undefined}>
           {topbar}
+          {lib.loaded && !cats.length && !hintOff && lib.all >= 8 && !filters.cat && (
+            <div className="cp-note lib-orghint">
+              <Icon icon={SparklesIcon} size={16} />
+              <div className="grow">
+                {t("素材多了不好找？让 AI 按内容分好类")}
+                <small>{t("用你自己的模型服务，分好以后可以改，新下载的会自动放进去")}</small>
+              </div>
+              <Button variant="secondary" size="sm" className="cp-pill" onClick={() => setOrg("organize")}>
+                {t("用 AI 整理")}
+              </Button>
+              <TipIcon
+                size="sm"
+                variant="ghost"
+                icon={Cancel01Icon}
+                label={t("不再提示")}
+                onClick={() => {
+                  setHintOff(true);
+                  setPref("orgHintOff", true);
+                }}
+              />
+            </div>
+          )}
           {grid}
           {hasMore && (
             <div className="lib-more" aria-live="polite">
@@ -594,6 +689,8 @@ export function Library() {
           )}
         </AnimatePresence>
       )}
+
+      <OrganizeDialog open={!!org} mode={org ?? lastOrg.current} onClose={() => setOrg(null)} onMode={setOrg} />
 
       <AlertDialog
         className="cp"

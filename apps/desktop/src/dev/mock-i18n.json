@@ -188,7 +188,22 @@
    "网络不稳定，没连上对方网站": "網路不穩定，無法連線到對方網站",
    "直播：开放电影放映会": "直播：開放電影放映會",
    "视频封面": "影片封面",
-   "关于我们 · Example": "關於我們 · Example"
+   "关于我们 · Example": "關於我們 · Example",
+   "Blender 基金会的开放电影、预告和片段": "Blender 基金會的開放電影、預告和片段",
+   "配乐原声": "配樂原聲",
+   "电影原声、配乐和音乐": "電影原聲、配樂和音樂",
+   "访谈播客": "訪談播客",
+   "访谈、播客和讲座": "訪談、播客和講座",
+   "海报剧照": "海報劇照",
+   "海报、剧照和截图": "海報、劇照和截圖",
+   "海报": "海報",
+   "访谈": "訪談",
+   "正在想怎么分": "正在想怎麼分",
+   "分类名不能是空的": "分類名稱不能是空的",
+   "这个分类已经不在了": "這個分類已經不在了",
+   "整理的结果已经不在了，再整理一次": "整理的結果已經不在了，再整理一次",
+   "先填上地址和模型名": "先填上網址和模型名稱",
+   "用 AI 整理素材库": "用 AI 整理素材庫"
   },
   "patterns": [
    [
@@ -278,6 +293,22 @@
    [
     "${fmt} · 最清晰",
     "${fmt} · 最高畫質"
+   ],
+   [
+    "正在看封面 ${done} / ${total}",
+    "正在看封面 ${done} / ${total}"
+   ],
+   [
+    "正在归类 ${done} / ${total}",
+    "正在歸類 ${done} / ${total}"
+   ],
+   [
+    "AI 模型返回了错误 ${status}，请求太频繁或额度用完了：${body}",
+    "AI 模型傳回了錯誤 ${status}，請求太頻繁或額度用完了：${body}"
+   ],
+   [
+    "已经有叫「${name}」的分类了",
+    "已經有叫「${name}」的分類了"
    ]
   ]
  },
@@ -470,7 +501,22 @@
    "网络不稳定，没连上对方网站": "The network is unstable. Couldn't connect to the site",
    "直播：开放电影放映会": "Live: Open Film Screening",
    "视频封面": "Video Cover",
-   "关于我们 · Example": "About Us · Example"
+   "关于我们 · Example": "About Us · Example",
+   "Blender 基金会的开放电影、预告和片段": "Open movies, trailers and clips from the Blender Foundation",
+   "配乐原声": "Soundtracks",
+   "电影原声、配乐和音乐": "Film soundtracks, scores and music",
+   "访谈播客": "Talks & podcasts",
+   "访谈、播客和讲座": "Interviews, podcasts and lectures",
+   "海报剧照": "Posters & stills",
+   "海报、剧照和截图": "Posters, stills and screenshots",
+   "海报": "Poster",
+   "访谈": "Interview",
+   "正在想怎么分": "Working out categories",
+   "分类名不能是空的": "A category name can't be empty",
+   "这个分类已经不在了": "This category no longer exists",
+   "整理的结果已经不在了，再整理一次": "The organizing result is no longer available. Organize again",
+   "先填上地址和模型名": "Add the address and model name first",
+   "用 AI 整理素材库": "Organize library with AI"
   },
   "patterns": [
    [
@@ -560,6 +606,22 @@
    [
     "${fmt} · 最清晰",
     "${fmt} · Best quality"
+   ],
+   [
+    "正在看封面 ${done} / ${total}",
+    "Looking at thumbnails ${done} / ${total}"
+   ],
+   [
+    "正在归类 ${done} / ${total}",
+    "Filing ${done} / ${total}"
+   ],
+   [
+    "AI 模型返回了错误 ${status}，请求太频繁或额度用完了：${body}",
+    "The AI model returned error ${status}. Too many requests, or your credit has run out: ${body}"
+   ],
+   [
+    "已经有叫「${name}」的分类了",
+    "There's already a category called “${name}”"
    ]
   ]
  },
@@ -752,7 +814,22 @@
    "网络不稳定，没连上对方网站": "ネットワークが不安定で、サイトに接続できませんでした",
    "直播：开放电影放映会": "ライブ：オープン映画上映会",
    "视频封面": "動画カバー",
-   "关于我们 · Example": "私たちについて · Example"
+   "关于我们 · Example": "私たちについて · Example",
+   "Blender 基金会的开放电影、预告和片段": "Blender Foundation のオープンムービー、予告編、クリップ",
+   "配乐原声": "サウンドトラック",
+   "电影原声、配乐和音乐": "映画のサウンドトラック、劇伴、音楽",
+   "访谈播客": "トーク・ポッドキャスト",
+   "访谈、播客和讲座": "インタビュー、ポッドキャスト、講演",
+   "海报剧照": "ポスター・スチル",
+   "海报、剧照和截图": "ポスター、スチル、スクリーンショット",
+   "海报": "ポスター",
+   "访谈": "インタビュー",
+   "正在想怎么分": "分け方を検討中",
+   "分类名不能是空的": "カテゴリ名を空にすることはできません",
+   "这个分类已经不在了": "このカテゴリはもう存在しません",
+   "整理的结果已经不在了，再整理一次": "整理の結果はもうありません。もう一度整理してください",
+   "先填上地址和模型名": "先に URL とモデル名を入力してください",
+   "用 AI 整理素材库": "AI でライブラリを整理"
   },
   "patterns": [
    [
@@ -842,6 +919,22 @@
    [
     "${fmt} · 最清晰",
     "${fmt} · 最高画質"
+   ],
+   [
+    "正在看封面 ${done} / ${total}",
+    "サムネイルを確認中 ${done} / ${total}"
+   ],
+   [
+    "正在归类 ${done} / ${total}",
+    "振り分け中 ${done} / ${total}"
+   ],
+   [
+    "AI 模型返回了错误 ${status}，请求太频繁或额度用完了：${body}",
+    "AI モデルがエラー ${status} を返しました。リクエストが多すぎるか、利用枠を使い切っています：${body}"
+   ],
+   [
+    "已经有叫「${name}」的分类了",
+    "「${name}」というカテゴリはすでにあります"
    ]
   ]
  },
@@ -1034,7 +1127,22 @@
    "网络不稳定，没连上对方网站": "네트워크가 불안정해 사이트에 연결하지 못했습니다",
    "直播：开放电影放映会": "라이브: 오픈 영화 상영회",
    "视频封面": "동영상 커버",
-   "关于我们 · Example": "소개 · Example"
+   "关于我们 · Example": "소개 · Example",
+   "Blender 基金会的开放电影、预告和片段": "Blender 재단의 오픈 무비, 예고편, 클립",
+   "配乐原声": "사운드트랙",
+   "电影原声、配乐和音乐": "영화 사운드트랙, 배경음악, 음악",
+   "访谈播客": "인터뷰·팟캐스트",
+   "访谈、播客和讲座": "인터뷰, 팟캐스트, 강연",
+   "海报剧照": "포스터·스틸컷",
+   "海报、剧照和截图": "포스터, 스틸컷, 스크린샷",
+   "海报": "포스터",
+   "访谈": "인터뷰",
+   "正在想怎么分": "카테고리 구성 중",
+   "分类名不能是空的": "카테고리 이름은 비워 둘 수 없습니다",
+   "这个分类已经不在了": "이 카테고리는 더 이상 없습니다",
+   "整理的结果已经不在了，再整理一次": "정리 결과가 더 이상 없습니다. 다시 정리하세요",
+   "先填上地址和模型名": "먼저 URL과 모델 이름을 입력하세요",
+   "用 AI 整理素材库": "AI로 라이브러리 정리"
   },
   "patterns": [
    [
@@ -1124,6 +1232,22 @@
    [
     "${fmt} · 最清晰",
     "${fmt} · 최고 화질"
+   ],
+   [
+    "正在看封面 ${done} / ${total}",
+    "썸네일 확인 중 ${done} / ${total}"
+   ],
+   [
+    "正在归类 ${done} / ${total}",
+    "분류 중 ${done} / ${total}"
+   ],
+   [
+    "AI 模型返回了错误 ${status}，请求太频繁或额度用完了：${body}",
+    "AI 모델에서 오류가 발생했습니다(${status}). 요청이 너무 많거나 사용 한도를 다 썼습니다: ${body}"
+   ],
+   [
+    "已经有叫「${name}」的分类了",
+    "‘${name}’ 카테고리가 이미 있습니다"
    ]
   ]
  },
@@ -1316,7 +1440,22 @@
    "网络不稳定，没连上对方网站": "Das Netzwerk ist instabil. Keine Verbindung zur Website",
    "直播：开放电影放映会": "Live: Offene Filmvorführung",
    "视频封面": "Video-Cover",
-   "关于我们 · Example": "Über uns · Example"
+   "关于我们 · Example": "Über uns · Example",
+   "Blender 基金会的开放电影、预告和片段": "Open Movies, Trailer und Ausschnitte der Blender Foundation",
+   "配乐原声": "Soundtracks",
+   "电影原声、配乐和音乐": "Filmsoundtracks, Filmmusik und Musik",
+   "访谈播客": "Gespräche & Podcasts",
+   "访谈、播客和讲座": "Interviews, Podcasts und Vorträge",
+   "海报剧照": "Poster & Standbilder",
+   "海报、剧照和截图": "Poster, Standbilder und Screenshots",
+   "海报": "Poster",
+   "访谈": "Interview",
+   "正在想怎么分": "Kategorien werden ermittelt",
+   "分类名不能是空的": "Der Kategoriename darf nicht leer sein",
+   "这个分类已经不在了": "Diese Kategorie gibt es nicht mehr",
+   "整理的结果已经不在了，再整理一次": "Das Ergebnis des Ordnens ist nicht mehr verfügbar. Ordne noch einmal",
+   "先填上地址和模型名": "Gib zuerst die URL und den Modellnamen ein",
+   "用 AI 整理素材库": "Mediathek mit KI ordnen"
   },
   "patterns": [
    [
@@ -1406,6 +1545,22 @@
    [
     "${fmt} · 最清晰",
     "${fmt} · Beste Qualität"
+   ],
+   [
+    "正在看封面 ${done} / ${total}",
+    "Vorschaubilder ansehen ${done} / ${total}"
+   ],
+   [
+    "正在归类 ${done} / ${total}",
+    "Einordnen ${done} / ${total}"
+   ],
+   [
+    "AI 模型返回了错误 ${status}，请求太频繁或额度用完了：${body}",
+    "Das KI-Modell hat den Fehler ${status} gemeldet. Zu viele Anfragen oder dein Guthaben ist aufgebraucht: ${body}"
+   ],
+   [
+    "已经有叫「${name}」的分类了",
+    "Es gibt bereits eine Kategorie namens „${name}“"
    ]
   ]
  },
@@ -1598,7 +1753,22 @@
    "网络不稳定，没连上对方网站": "La red es inestable. No se pudo conectar con el sitio",
    "直播：开放电影放映会": "En vivo: Proyección de cine abierto",
    "视频封面": "Portada del video",
-   "关于我们 · Example": "Sobre nosotros · Example"
+   "关于我们 · Example": "Sobre nosotros · Example",
+   "Blender 基金会的开放电影、预告和片段": "Películas abiertas, tráileres y fragmentos de la Blender Foundation",
+   "配乐原声": "Bandas sonoras",
+   "电影原声、配乐和音乐": "Bandas sonoras, música de cine y música",
+   "访谈播客": "Charlas y pódcasts",
+   "访谈、播客和讲座": "Entrevistas, pódcasts y conferencias",
+   "海报剧照": "Carteles y fotogramas",
+   "海报、剧照和截图": "Carteles, fotogramas y capturas",
+   "海报": "Cartel",
+   "访谈": "Entrevista",
+   "正在想怎么分": "Pensando las categorías",
+   "分类名不能是空的": "El nombre de la categoría no puede estar vacío",
+   "这个分类已经不在了": "Esta categoría ya no existe",
+   "整理的结果已经不在了，再整理一次": "El resultado de la organización ya no está disponible. Vuelve a organizar",
+   "先填上地址和模型名": "Primero añade la URL y el nombre del modelo",
+   "用 AI 整理素材库": "Organizar la Biblioteca con IA"
   },
   "patterns": [
    [
@@ -1688,6 +1858,22 @@
    [
     "${fmt} · 最清晰",
     "${fmt} · Máxima calidad"
+   ],
+   [
+    "正在看封面 ${done} / ${total}",
+    "Revisando miniaturas ${done} / ${total}"
+   ],
+   [
+    "正在归类 ${done} / ${total}",
+    "Clasificando ${done} / ${total}"
+   ],
+   [
+    "AI 模型返回了错误 ${status}，请求太频繁或额度用完了：${body}",
+    "El modelo de IA devolvió el error ${status}. Demasiadas solicitudes o se agotó tu saldo: ${body}"
+   ],
+   [
+    "已经有叫「${name}」的分类了",
+    "Ya hay una categoría llamada “${name}”"
    ]
   ]
  },
@@ -1880,7 +2066,22 @@
    "网络不稳定，没连上对方网站": "Réseau instable : impossible de joindre le site",
    "直播：开放电影放映会": "En direct : Projection de cinéma ouvert",
    "视频封面": "Couverture vidéo",
-   "关于我们 · Example": "À propos · Example"
+   "关于我们 · Example": "À propos · Example",
+   "Blender 基金会的开放电影、预告和片段": "Films libres, bandes-annonces et extraits de la Blender Foundation",
+   "配乐原声": "Bandes originales",
+   "电影原声、配乐和音乐": "Bandes originales, musiques de film et musique",
+   "访谈播客": "Entretiens et podcasts",
+   "访谈、播客和讲座": "Entretiens, podcasts et conférences",
+   "海报剧照": "Affiches et photos",
+   "海报、剧照和截图": "Affiches, photos et captures d'écran",
+   "海报": "Affiche",
+   "访谈": "Entretien",
+   "正在想怎么分": "Recherche des catégories",
+   "分类名不能是空的": "Le nom de la catégorie ne peut pas être vide",
+   "这个分类已经不在了": "Cette catégorie n’existe plus",
+   "整理的结果已经不在了，再整理一次": "Le résultat de l’organisation n’est plus disponible. Relancez l’organisation",
+   "先填上地址和模型名": "Renseignez d’abord l’URL et le nom du modèle",
+   "用 AI 整理素材库": "Organiser la Bibliothèque avec l’IA"
   },
   "patterns": [
    [
@@ -1970,6 +2171,22 @@
    [
     "${fmt} · 最清晰",
     "${fmt} · Meilleure qualité"
+   ],
+   [
+    "正在看封面 ${done} / ${total}",
+    "Analyse des miniatures ${done} / ${total}"
+   ],
+   [
+    "正在归类 ${done} / ${total}",
+    "Classement ${done} / ${total}"
+   ],
+   [
+    "AI 模型返回了错误 ${status}，请求太频繁或额度用完了：${body}",
+    "Le modèle d’IA a renvoyé l’erreur ${status}. Trop de requêtes, ou votre crédit est épuisé : ${body}"
+   ],
+   [
+    "已经有叫「${name}」的分类了",
+    "Une catégorie « ${name} » existe déjà"
    ]
   ]
  }

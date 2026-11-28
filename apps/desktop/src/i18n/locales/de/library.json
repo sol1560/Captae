@@ -142,10 +142,8 @@
   "视频里说的语言": "Gesprochene Sprache",
   "导出格式": "Exportformat",
   "翻译成中文§字幕翻译成界面语言：每种语言都写「翻译成这种语言」（英文 Translate to English）": "Auf Deutsch übersetzen",
-  "先在设置里填翻译服务": "Richte zuerst einen Übersetzungsdienst in den Einstellungen ein",
   "去设置": "Einstellungen öffnen",
   "已经是中文了§字幕已经是界面语言，不用翻译：每种语言都写「已经是这种语言了」（英文 It's already in English）": "Ist bereits auf Deutsch",
-  "用你在设置里填的 AI 翻译": "Nutzt die KI-Übersetzung aus deinen Einstellungen",
   "把字幕嵌进画面": "Untertitel einbrennen",
   "另存一份新视频，原文件不变": "Speichert ein neues Video, das Original bleibt unverändert",
   "现在的 ffmpeg 做不到，需要完整版": "Das aktuelle ffmpeg kann das nicht, dafür ist die Vollversion nötig",
@@ -324,5 +322,127 @@
   "下载{lang}字幕": "Untertitel ({lang}) herunterladen",
   "提取声音": "Audio extrahieren",
   "把语音转成文字": "Sprache transkribieren",
-  "导出{fmt}": "{fmt} exportieren"
+  "导出{fmt}": "{fmt} exportieren",
+  "分类": "Kategorie",
+  "全部分类": "Alle Kategorien",
+  "给未分类的归类": "Objekte ohne Kategorie einordnen",
+  "重新整理…": "Neu ordnen…",
+  "管理分类…": "Kategorien verwalten…",
+  "清除 AI 加的标签": "KI-Tags entfernen",
+  "AI 模型设置…": "KI-Modell-Einstellungen…",
+  "用 AI 整理": "Mit KI ordnen",
+  "用 AI 整理：按内容分好类": "Mit KI ordnen: nach Inhalt sortieren",
+  "素材多了不好找？让 AI 按内容分好类": "Schwer, etwas zu finden? Lass die KI deine Mediathek nach Inhalt ordnen",
+  "用你自己的模型服务，分好以后可以改，新下载的会自动放进去": "Nutzt deinen eigenen Modelldienst. Die Kategorien kannst du danach ändern, neue Downloads werden automatisch eingeordnet",
+  "不再提示": "Nicht mehr anzeigen",
+  "放进分类": "In Kategorie verschieben",
+  "AI 加的标签": "Tag von der KI",
+  "{n}项放进了分类": {
+    "one": "{n} Objekt eingeordnet",
+    "other": "{n} Objekte eingeordnet"
+  },
+  "{n}项没把握，还在未分类": {
+    "one": "{n} Objekt ist noch ohne Kategorie (keine sichere Zuordnung)",
+    "other": "{n} Objekte sind noch ohne Kategorie (keine sichere Zuordnung)"
+  },
+  "整理好了：{n}个分类": {
+    "one": "In {n} Kategorie geordnet",
+    "other": "In {n} Kategorien geordnet"
+  },
+  "没有用上这套分类": "Kategorien konnten nicht übernommen werden",
+  "分成了{n}类": {
+    "one": "{n} Kategorie",
+    "other": "{n} Kategorien"
+  },
+  "用 AI 整理素材库": "Mediathek mit KI ordnen",
+  "开始整理": "Ordnen starten",
+  "去设置 AI 模型": "KI-Modell einrichten",
+  "取消整理": "Ordnen abbrechen",
+  "用这套分类": "Diese Kategorien verwenden",
+  "这次没有整理完": "Das Ordnen wurde nicht abgeschlossen",
+  "按内容把素材分成几类，每条放进一类，再加两三个标签方便以后搜。分好以后可以改名、合并、删掉；新下载的会自动放进去。": "Ordnet deine Objekte nach Inhalt in einige Kategorien, jedes Objekt in genau eine, und vergibt zwei, drei Tags, damit du sie später leichter findest. Danach kannst du Kategorien umbenennen, zusammenführen oder löschen; neue Downloads werden automatisch eingeordnet.",
+  "还没有设置 AI 模型": "Noch kein KI-Modell eingerichtet",
+  "用你自己的模型服务和密钥（DeepSeek、OpenAI、本地的 Ollama……），在设置 › AI 模型里填上": "Nutze deinen eigenen Modelldienst und Schlüssel (DeepSeek, OpenAI, ein lokales Ollama …). Trag sie unter Einstellungen › KI-Modell ein",
+  "素材都由你亲手放好了，没有要 AI 整理的": "Du hast alle Objekte selbst eingeordnet, für die KI gibt es nichts zu ordnen",
+  "素材库还是空的，先下载一些再来": "Deine Mediathek ist leer. Lade zuerst etwas herunter",
+  "发给§整理前的说明：发给哪个模型服务": "Gesendet an",
+  "内容§整理前的说明：发过去的是什么": "Was gesendet wird",
+  "{n}项素材的标题、简介和来源": {
+    "one": "Titel, Beschreibung und Quelle von {n} Objekt",
+    "other": "Titel, Beschreibungen und Quellen von {n} Objekten"
+  },
+  "其中{n}项光看文字看不出内容，会附上封面": {
+    "one": "Bei {n} davon sagt der Text zu wenig, daher wird das Vorschaubild mitgeschickt",
+    "other": "Bei {n} davon sagt der Text zu wenig, daher werden die Vorschaubilder mitgeschickt"
+  },
+  "用量§整理前的说明：大约多少 token": "Verbrauch",
+  "大约 {n} token": "Etwa {n} Token",
+  "按你的模型服务的价格算，费用记在你自己的账户上": "Wird zu den Preisen deines Modelldienstes über dein eigenes Konto abgerechnet",
+  "已有§整理前的说明：已经有的分类": "Bestehend",
+  "你建的分类和你亲手放的{n}项素材不会动": {
+    "one": "Deine eigenen Kategorien und {n} selbst eingeordnetes Objekt bleiben unverändert",
+    "other": "Deine eigenen Kategorien und {n} selbst eingeordnete Objekte bleiben unverändert"
+  },
+  "你建的分类不会动，AI 建的会重新整理": "Deine eigenen Kategorien bleiben, die von der KI erstellten werden neu geordnet",
+  "整理进度": "Fortschritt beim Ordnen",
+  "正在准备": "Wird vorbereitet",
+  "关掉这个窗口就是取消，已经看过的封面描述会留着，下次不用再看": "Schließen des Fensters bricht ab. Bereits erstellte Beschreibungen der Vorschaubilder bleiben fürs nächste Mal erhalten",
+  "整理了{n}项。名字可以直接改；不合适的可以并进别的类，或者不要这一类（里面的放回未分类）。": {
+    "one": "{n} Objekt geordnet. Benenne eine Kategorie direkt hier um, führe sie mit einer anderen zusammen oder entferne sie (ihre Objekte sind dann ohne Kategorie).",
+    "other": "{n} Objekte geordnet. Benenne eine Kategorie direkt hier um, führe sie mit einer anderen zusammen oder entferne sie (ihre Objekte sind dann ohne Kategorie)."
+  },
+  "并进别的类": "Zusammenführen mit",
+  "不要这一类": "Kategorie entfernen",
+  "分类名": "Kategoriename",
+  "你建的": "Eigene",
+  "这一类的操作": "Kategorieaktionen",
+  "{n}项没把握，会留在未分类，之后可以自己放": {
+    "one": "{n} Objekt ließ sich nicht sicher zuordnen und bleibt ohne Kategorie. Du kannst es später selbst einordnen",
+    "other": "{n} Objekte ließen sich nicht sicher zuordnen und bleiben ohne Kategorie. Du kannst sie später selbst einordnen"
+  },
+  "删掉这一类": "Kategorie löschen",
+  "管理分类": "Kategorien verwalten",
+  "重新整理": "Neu ordnen",
+  "改名、合并、删掉都马上生效。删掉的分类里的素材放回未分类。": "Umbenennen, Zusammenführen und Löschen wirken sofort. Objekte aus einer gelöschten Kategorie sind danach ohne Kategorie.",
+  "新分类的名字": "Neuer Kategoriename",
+  "新分类的名字，回车建好": "Neuer Kategoriename, mit Return hinzufügen",
+  "还有{n}项未分类": {
+    "one": "{n} Objekt ist noch ohne Kategorie",
+    "other": "{n} Objekte sind noch ohne Kategorie"
+  },
+  "先在设置里填 AI 模型": "Richte zuerst in den Einstellungen ein KI-Modell ein",
+  "用你在设置里填的 AI 模型翻译": "Nutzt das KI-Modell aus den Einstellungen",
+  "没有放进分类": "Konnte nicht in die Kategorie verschoben werden",
+  "{n}项放进了「{name}」": {
+    "one": "{n} Objekt nach „{name}“ verschoben",
+    "other": "{n} Objekte nach „{name}“ verschoben"
+  },
+  "{n}项放回了未分类": {
+    "one": "{n} Objekt ist jetzt ohne Kategorie",
+    "other": "{n} Objekte sind jetzt ohne Kategorie"
+  },
+  "没有改名": "Umbenennen fehlgeschlagen",
+  "没有建好分类": "Kategorie konnte nicht hinzugefügt werden",
+  "删掉了「{name}」": "„{name}“ gelöscht",
+  "里面的{n}项放回了未分类": {
+    "one": "{n} Objekt daraus ist jetzt ohne Kategorie",
+    "other": "{n} Objekte daraus sind jetzt ohne Kategorie"
+  },
+  "没有删掉": "Löschen fehlgeschlagen",
+  "「{from}」并进了「{into}」": "„{from}“ mit „{into}“ zusammengeführt",
+  "没有合并": "Zusammenführen fehlgeschlagen",
+  "正在给未分类的素材归类": "Objekte ohne Kategorie werden eingeordnet",
+  "好了会告诉你": "Du bekommst Bescheid, wenn es fertig ist",
+  "归类好了": "Einordnen abgeschlossen",
+  "没有归类完": "Einordnen nicht abgeschlossen",
+  "清掉了{n}个 AI 加的标签": {
+    "one": "{n} KI-Tag entfernt",
+    "other": "{n} KI-Tags entfernt"
+  },
+  "没有 AI 加的标签": "Keine KI-Tags vorhanden",
+  "没有清掉": "Entfernen fehlgeschlagen",
+  "都分好类了": "Alles ist eingeordnet",
+  "没有未分类的素材": "Keine Objekte ohne Kategorie",
+  "这个分类里还没有素材": "Noch nichts in dieser Kategorie",
+  "在素材详情里可以把素材放进这个分类": "In den Objektdetails kannst du Objekte hierher verschieben"
 }

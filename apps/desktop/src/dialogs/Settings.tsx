@@ -20,7 +20,7 @@ import { installWhisper, modelInfo, useWhisper, WHISPER_MODELS } from "@/lib/whi
 import { Collapse, Icon, ProgressBar, SiteIcon } from "@/parts";
 import { restartOnboarding } from "@/dialogs/Onboarding";
 import { Phones } from "@/dialogs/SettingsPhones";
-import { openSiteLogin } from "@/shell/actions";
+import { openSiteLogin, takeSettingsAt } from "@/shell/actions";
 import "./settings-login.css";
 
 /** 换了界面语言以后整个窗口重新挂一次（main.tsx），设置弹窗也是新挂的：焦点放回语言这一栏，不跳到「完成」。
@@ -111,10 +111,34 @@ function Body({ s, open }: { s: Settings; open: boolean }) {
         <Engines s={s} open={open} />
       </div>
 
+      <h3 className="cp-set-h" id="set-ai">
+        {t("AI 模型")}
+      </h3>
+      <div className="cp-group">
+        <AiModel s={s} open={open} />
+        <div className="cp-set-sw">
+          <Switch
+            placement="end"
+            label={t("新下载的自动放进分类")}
+            description={t("素材库用 AI 整理过以后，下载完在后台放进已有的分类")}
+            checked={s.aiAutoCategorize ?? true}
+            onChange={(e) => setSettings({ aiAutoCategorize: e.target.checked })}
+          />
+        </div>
+        <div className="cp-set-sw">
+          <Switch
+            placement="end"
+            label={t("看不出内容时附上封面")}
+            description={t("标题只有账号名这类，整理时把封面发给模型看；模型看不了图时不发")}
+            checked={s.aiSendCovers ?? true}
+            onChange={(e) => setSettings({ aiSendCovers: e.target.checked })}
+          />
+        </div>
+      </div>
+
       <h3 className="cp-set-h">{t("字幕")}</h3>
       <div className="cp-group">
         <Whisper />
-        <Translate s={s} />
       </div>
 
       <h3 className="cp-set-h">{t("AI 助手")}</h3>
@@ -570,24 +594,124 @@ function Whisper() {
   );
 }
 
-function Translate({ s }: { s: Settings }) {
-  const [open, setOpen] = useState(false);
-  const sub = s.llmBaseUrl ? `${t("已设置")} · ${bare(s.llmBaseUrl).slice(0, 40)}${s.llmModel ? ` · ${s.llmModel}` : ""}` : t("填一个 OpenAI 兼容的接口，本地的 Ollama 也可以");
+/* ---------------- AI 模型（字幕翻译、素材库整理共用；core llm.rs） ---------------- */
+
+/** 常见的模型服务：选了填好地址（和确定的模型名）。都是 OpenAI 兼容接口。model 为空的要用户自己填，placeholder 给个样子 */
+const LLM_PRESETS: { id: string; name: string; url: string; model: string; placeholder: string; local?: boolean }[] = [
+  { id: "deepseek", name: "DeepSeek", url: "https://api.deepseek.com", model: "deepseek-flash", placeholder: "deepseek-flash" },
+  { id: "openai", name: "OpenAI", url: "https://api.openai.com/v1", model: "gpt-5-mini", placeholder: "gpt-5-mini" },
+  { id: "openrouter", name: "OpenRouter", url: "https://openrouter.ai/api/v1", model: "deepseek/deepseek-v4.1-flash", placeholder: "deepseek/deepseek-v4.1-flash" },
+  { id: "gemini", name: "Gemini", url: "https://generativelanguage.googleapis.com/v1beta/openai", model: "", placeholder: "gemini-…-flash" },
+  { id: "ollama", name: "Ollama", url: "http://localhost:11434/v1", model: "", placeholder: "qwen2.5:7b", local: true },
+  { id: "lmstudio", name: "LM Studio", url: "http://localhost:1234/v1", model: "", placeholder: "google/gemma-4-e4b", local: true },
+];
+const presetOf = (url: string) => LLM_PRESETS.find((p) => url.trim().replace(/\/+$/, "") === p.url) ?? null;
+
+type LlmTest = { st: "idle" | "run" } | { st: "ok"; ms: number; vision: boolean } | { st: "err"; msg: string };
+
+function AiModel({ s, open }: { s: Settings; open: boolean }) {
+  const [fields, setFields] = useState(false);
+  const [test, setTest] = useState<LlmTest>({ st: "idle" });
+  const preset = presetOf(s.llmBaseUrl);
+  const set = !!(s.llmBaseUrl && s.llmModel);
+  // 从「用 AI 整理」跳过来：滚到这一组、把填写的地方打开
+  useEffect(() => {
+    if (!open || takeSettingsAt() !== "ai") return;
+    setFields(true);
+    requestAnimationFrame(() => document.getElementById("set-ai")?.scrollIntoView({ block: "start" }));
+  }, [open]);
+  // 换了地址、模型、密钥：上次测的结果不算了
+  useEffect(() => setTest({ st: "idle" }), [s.llmBaseUrl, s.llmModel, s.llmKeyHint]);
+
+  const vision = s.llmVision === "yes" ? t("能看图") : s.llmVision === "no" ? t("不能看图") : "";
+  const sub = set
+    ? [preset?.name ?? bare(s.llmBaseUrl).slice(0, 40), s.llmModel, vision].filter(Boolean).join(" · ")
+    : t("用你自己的模型服务和密钥：字幕翻译、素材库整理会用到");
+
+  const runTest = () => {
+    setTest({ st: "run" });
+    invoke<{ ms: number; vision: boolean }>("llm_test")
+      .then((r) => setTest({ st: "ok", ms: r.ms, vision: r.vision }))
+      .catch((e) => setTest({ st: "err", msg: errText(e) }));
+  };
+
   return (
     <>
-      <Row title={t("字幕翻译")} sub={sub}>
-        <Button variant="secondary" size="sm" className="cp-pill" aria-expanded={open} onClick={() => setOpen(!open)}>
-          {open ? t("收起") : s.llmBaseUrl ? t("修改") : t("填写")}
-        </Button>
+      <Row title={t("模型服务")} sub={sub}>
+        <div className="acts">
+          <Select
+            size="sm"
+            aria-label={t("模型服务")}
+            className="cp-set-select"
+            value={preset?.id ?? (s.llmBaseUrl ? "custom" : "")}
+            placeholder={t("选一个")}
+            onChange={(v) => {
+              setFields(true);
+              const p = LLM_PRESETS.find((x) => x.id === v);
+              if (p) setSettings({ llmBaseUrl: p.url, llmModel: p.model || (presetOf(s.llmBaseUrl)?.id === p.id ? s.llmModel : "") });
+            }}
+            options={[...LLM_PRESETS.map((p) => ({ value: p.id, label: p.name, description: p.local ? t("在这台电脑上跑") : undefined })), { value: "custom", label: t("其他（自己填）") }]}
+          />
+          <Button variant="secondary" size="sm" className="cp-pill" aria-expanded={fields} onClick={() => setFields(!fields)}>
+            {fields ? t("收起") : set ? t("修改") : t("填写")}
+          </Button>
+        </div>
       </Row>
-      <Collapse open={open}>
+      <Collapse open={fields}>
         <div className="cp-set-fields">
-          <LazyField k="llmBaseUrl" value={s.llmBaseUrl} label={t("接口地址")} placeholder="http://localhost:11434/v1" />
-          <LazyField k="llmModel" value={s.llmModel} label={t("模型")} placeholder="qwen2.5:7b" />
-          <LazyField k="llmApiKey" value={s.llmApiKey} label={t("密钥（本地的可以不填）")} placeholder="sk-…" type="password" />
+          <LazyField k="llmBaseUrl" value={s.llmBaseUrl} label={t("接口地址")} placeholder="https://api.deepseek.com" />
+          <LazyField k="llmModel" value={s.llmModel} label={t("模型")} placeholder={preset?.placeholder ?? "deepseek-flash"} />
+          <KeyField hint={s.llmKeyHint ?? ""} local={!!preset?.local} />
+          <div className="cp-set-test">
+            <Button variant="secondary" size="sm" className="cp-pill" disabled={!set || test.st === "run"} onClick={runTest}>
+              {test.st === "run" ? t("正在测试") : t("测试连接")}
+            </Button>
+            <span className="cp-set-test-r" data-tone={test.st === "err" ? "err" : undefined} aria-live="polite">
+              {test.st === "ok"
+                ? test.vision
+                  ? t("连上了 · {s} 秒 · 能看图", { s: (test.ms / 1000).toFixed(1) })
+                  : t("连上了 · {s} 秒 · 不能看图，整理时只看文字", { s: (test.ms / 1000).toFixed(1) })
+                : test.st === "err"
+                  ? test.msg
+                  : t("密钥只存在这台电脑上，只发给上面这个地址")}
+            </span>
+          </div>
         </div>
       </Collapse>
     </>
+  );
+}
+
+/** 密钥：后端不把它发给界面，这里只显示「已设置 …3f9a」。填了新的离开输入框（或回车）才保存；「清除」删掉 */
+function KeyField({ hint, local }: { hint: string; local: boolean }) {
+  const [v, setV] = useState("");
+  const save = () => {
+    const val = v.trim();
+    if (!val) return;
+    setSettings({ llmApiKey: val });
+    setV("");
+  };
+  return (
+    <div className="cp-set-key">
+      <TextField
+        size="sm"
+        label={local ? t("密钥（本地的可以不填）") : t("密钥")}
+        placeholder={hint ? t("已设置 {hint}，填新的会换掉", { hint }) : "sk-…"}
+        type="password"
+        value={v}
+        inputClassName="mono"
+        spellCheck={false}
+        autoComplete="off"
+        onChange={(e) => setV(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => e.key === "Enter" && save()}
+      />
+      {hint && (
+        <Button variant="ghost" size="sm" onClick={() => setSettings({ llmApiKey: "" })}>
+          {t("清除")}
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -600,7 +724,7 @@ function LazyField({
   type,
   check,
 }: {
-  k: "llmBaseUrl" | "llmModel" | "llmApiKey" | "proxyUrl";
+  k: "llmBaseUrl" | "llmModel" | "proxyUrl";
   value: string;
   label: string;
   placeholder?: string;

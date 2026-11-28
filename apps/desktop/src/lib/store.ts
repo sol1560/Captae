@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { loadLang, parseLang, setLang, loadAndSetLang, t, type Lang } from "@/i18n";
 import { errText, invoke, listenEvents } from "./bridge";
-import type { AddRequest, Boot, CallRecord, CaptaeEvent, DepStatus, Job, McpClient, Preset, Settings, Sniffed, TaskStatus } from "./types";
+import type { AddRequest, Boot, CallRecord, CaptaeEvent, Category, DepStatus, Job, McpClient, Preset, Settings, Sniffed, TaskStatus } from "./types";
 import { notify } from "./notify";
 
 export type AppState = {
@@ -20,6 +20,12 @@ export type AppState = {
   sniffed: Sniffed[];
   presets: Preset[];
   libraryCount: number;
+  /** 素材库的分类（侧栏「分类」、素材库的筛选、详情里的「分类」），素材库一变就重新要 */
+  categories: Category[];
+  /** 未分类的条数 */
+  uncategorized: number;
+  /** 素材库现在按哪个分类筛着（"" 没筛、"none" 未分类、或分类 id）：侧栏据此标出选中的那一行 */
+  libCat: string;
   tools: Boot["tools"];
   calls: CallRecord[];
   mcpCommand: unknown;
@@ -41,6 +47,9 @@ let state: AppState = {
   sniffed: [],
   presets: [],
   libraryCount: 0,
+  categories: [],
+  uncategorized: 0,
+  libCat: "",
   tools: [],
   calls: [],
   mcpCommand: null,
@@ -124,6 +133,7 @@ function handle(ev: CaptaeEvent) {
       invoke<number>("library_count")
         .then((n) => setState({ libraryCount: n }))
         .catch(() => undefined);
+      loadCategories();
       break;
     case "agent_call":
       // 同一次调用的后续（进行中 → 完成）原地更新、时间留开始的那一刻（后端每次推送都带当时的时间；和旧界面一样）
@@ -146,6 +156,19 @@ function handle(ev: CaptaeEvent) {
       console.error(e);
     }
   });
+}
+
+/* ---------------- 素材库的分类 ---------------- */
+
+let catSeq = 0;
+/** 重新要一遍分类和未分类的条数（素材库变了、改了分类以后） */
+export function loadCategories(): Promise<void> {
+  const seq = ++catSeq;
+  return invoke<{ items: Category[]; none: number }>("library_categories")
+    .then((r) => {
+      if (seq === catSeq) setState({ categories: r.items, uncategorized: r.none });
+    })
+    .catch(() => undefined);
 }
 
 /* ---------------- 界面语言 ---------------- */
@@ -198,12 +221,15 @@ export async function boot() {
         sniffed: b.sniffed,
         presets: b.presets,
         libraryCount: b.libraryCount,
+        categories: b.categories ?? [],
         tools: b.tools,
         calls: b.calls,
         mcpCommand: b.mcpCommand,
       }),
       true,
     );
+    // 未分类的条数不在启动快照里
+    loadCategories();
   } catch (e) {
     const l = effectiveLang(null);
     await loadAndSetLang(l).catch(() => undefined);

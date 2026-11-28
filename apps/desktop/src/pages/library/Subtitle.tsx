@@ -16,7 +16,7 @@ import { getPref, setPref } from "@/lib/prefs";
 import { getState, loadDeps, useApp } from "@/lib/store";
 import { installWhisper, modelInfo, useWhisper } from "@/lib/whisper";
 import { Icon, ProgressBar } from "@/parts";
-import { openDialog } from "@/shell/actions";
+import { openDialog, openSettingsAt } from "@/shell/actions";
 import { subtitle, useOp } from "./act";
 import { useSubInfo } from "./data";
 import { isVideo, SUB_FORMATS, subSteps, trackName, whisperLangs, type Asset, type SubMode, type SubResult, type Track, translateTarget } from "./model";
@@ -155,15 +155,15 @@ export function Subtitle({ a }: { a: Asset }) {
               description={
                 !llm ? (
                   <>
-                    {t("先在设置里填翻译服务")}{" "}
-                    <button className="cp-link" onClick={() => openDialog("settings")}>
+                    {t("先在设置里填 AI 模型")}{" "}
+                    <button className="cp-link" onClick={() => openSettingsAt("ai")}>
                       {t("去设置")}
                     </button>
                   </>
                 ) : sameLang ? (
                   t("已经是中文了§字幕已经是界面语言，不用翻译：每种语言都写「已经是这种语言了」（英文 It's already in English）")
                 ) : (
-                  t("用你在设置里填的 AI 翻译")
+                  t("用你在设置里填的 AI 模型翻译")
                 )
               }
               checked={doTranslate}

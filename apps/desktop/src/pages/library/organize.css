@@ -1,0 +1,189 @@
+/* 「用 AI 整理」弹窗、「管理分类」（Organize.tsx）。颜色、圆角都是 theme.css 的变量；弹窗里的内容不透明，不用玻璃（docs/design/README.md 第 1 节第 2 条） */
+
+.org-body {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 2px;
+}
+.org-wait {
+  min-height: 120px;
+}
+.org-body .cp-dlg-p {
+  margin: 0;
+}
+
+/* 说明那一步：发给谁、发什么、大约多少 */
+/* 左边一栏按最长的名字定宽（德文「Was gesendet wird」），最宽 120px；右边的说明要换行，不跟详情里的 .cp-kv 一样省略 */
+.org-kv {
+  grid-template-columns: fit-content(120px) minmax(0, 1fr);
+  column-gap: 20px;
+  row-gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--well);
+  font-size: 13px;
+}
+.org-kv dd {
+  margin: 0;
+  color: var(--ink);
+  white-space: normal;
+  overflow: visible;
+}
+.org-kv dd small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.org-kv .mono {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+/* 整理中 */
+.org-run {
+  padding: 18px 0 6px;
+  gap: 10px;
+}
+.org-run-note {
+  font-size: 13px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.org-run-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* 结果、管理：一类一行 */
+/* position: relative：popLayout 退场的那一行按它来定位 */
+.org-list {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: min(52vh, 440px);
+  overflow-y: auto;
+}
+.org-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 8px 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--well);
+}
+.org-main {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.org-main small {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.org-fixed {
+  font-size: 13px;
+  font-weight: 560;
+  padding: 0 2px;
+}
+.org-name {
+  max-width: 220px;
+}
+.org-n {
+  flex: none;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.org-tag {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  padding-right: 6px;
+}
+/* 「…」：弹窗里的普通圆按钮（不是玻璃，玻璃只给浮在内容上的东西） */
+.org-more {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .org-more:hover {
+    background: var(--hover);
+  }
+}
+.org-add {
+  background: transparent;
+  padding-left: 0;
+}
+.org-none {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* 几张封面叠在一起，看一眼就知道这一类大概是什么 */
+.org-covers {
+  flex: none;
+  display: flex;
+  width: 84px;
+}
+.org-covers > img,
+.org-covers > .ph {
+  flex: none;
+  width: 40px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--line);
+  box-shadow: 0 0 0 1.5px var(--well);
+}
+/* 后一张压在前一张上，露出 22px */
+.org-covers > * + * {
+  margin-left: -18px;
+}
+
+.org-err {
+  margin: 4px 0;
+}
+
+/* 素材库顶上「用 AI 整理」的提示（还没整理过、素材又不少时） */
+.lib-orghint {
+  margin: 0 0 12px;
+}
+.lib-orghint > svg {
+  color: var(--accent);
+}
+.lib-orghint .ui-icbtn,
+.lib-orghint .x {
+  flex: none;
+}
+
+/* 详情里 AI 加的标签：前面一个小星号，颜色淡一点 */
+.lib-tag[data-ai] {
+  color: var(--ink-2);
+}
+/* 详情「信息」里的分类：选择框比一行字高。上下各收进 5px，这一行不比别的行高太多；左边的「分类」和选择框按中线对齐 */
+.lib-cat-dd {
+  margin: -5px 0;
+}
+.lib-cat-dd,
+.lib-cat-dt {
+  align-self: center;
+}
+.lib-cat-select {
+  max-width: 100%;
+}

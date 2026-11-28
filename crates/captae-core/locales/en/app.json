@@ -176,5 +176,9 @@
   "没能移到回收站：{err}。外置盘、网络盘上可能没有回收站，可以在文件管理器里直接删除": "Couldn't move to the Trash: {err}. External and network drives may not have a Trash. You can delete the file in your file manager instead",
   "Captae 还没启动好，请稍后再试": "Captae is still starting. Try again in a moment",
   "读登录存储用的窗口没建好": "Couldn't open the window used to read sign-in data",
-  "登录存储没有回应": "Sign-in data didn't respond"
+  "登录存储没有回应": "Sign-in data didn't respond",
+  "这个分类已经不在了": "This category no longer exists",
+  "用 AI 整理素材库": "Organize library with AI",
+  "给未分类的素材归类": "Filing uncategorized items",
+  "先填上地址和模型名": "Add the address and model name first"
 }

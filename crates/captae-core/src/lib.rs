@@ -4,6 +4,7 @@
 //! 本库不链接它们的代码。
 
 pub mod agent;
+pub mod categorize;
 // 只有桌面端用（desktop feature），手机端不编进去，见 Cargo.toml
 #[cfg(feature = "desktop")]
 pub mod api;
@@ -15,6 +16,7 @@ pub mod errors;
 pub mod ffmpeg;
 pub mod i18n;
 pub mod library;
+pub mod llm;
 pub mod login;
 // 只有桌面端用（desktop feature），手机端不编进去，见 Cargo.toml
 #[cfg(feature = "desktop")]

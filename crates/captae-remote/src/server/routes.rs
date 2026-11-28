@@ -428,6 +428,9 @@ async fn library(State(r): St, q: Result<Query<LibQuery>, axum::extract::rejecti
         days: q.days,
         since: None,
         tags: q.tag.into_iter().collect(),
+        // 按分类筛手机端还没有（协议里没有这个参数），以后手机端做分类时再加
+        cat: None,
+        category: None,
         limit: Some(q.limit.unwrap_or(60).clamp(1, 200)),
         offset: q.offset,
     };

@@ -151,5 +151,8 @@
   "连着": "Connected",
   "视频§Windows、Linux 的用户文件夹": "Videos",
   "音乐§Windows、Linux 的用户文件夹": "Music",
-  "图片§Windows、Linux 的用户文件夹": "Pictures"
+  "图片§Windows、Linux 的用户文件夹": "Pictures",
+  "分类§侧栏里的一组：素材库的分类": "Categories",
+  "未分类": "Uncategorized",
+  "测试连接": "Test connection"
 }
